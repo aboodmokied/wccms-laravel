@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-bs-theme="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>المراجعات المجدولة - نظام إدارة عيادة العناية بالجروح</title>
+  <meta name="description" content="إدارة وتوثيق المراجعات المجدولة للمرضى بعد الخروج من المتابعة اليومية في عيادة العناية بالجروح."/>
+  
+  <!-- CSS Dependencies -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="../pages/metronic8/css/metronic8.css"/>
+  <link rel="stylesheet" href="css/custom.css"/>
+  <link rel="stylesheet" href="css/registered-patients.css"/>
+  <link rel="stylesheet" href="css/scheduled-reviews.css"/>
+</head>
+<body>
+
+<!-- ====================================================================
+     TOAST CONTAINER
+     ==================================================================== -->
+<div class="m8-toast-container" id="toast-container"></div>
+
+<!-- ====================================================================
+     SIDEBAR
+     ==================================================================== -->
+<aside class="m8-sidebar" id="m8-sidebar">
+  <a href="index.html" class="m8-brand text-decoration-none">
+    <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--m8-primary),#7239ea);display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-heart-pulse-fill text-white" style="font-size:1.2rem;"></i>
+    </div>
+    <div class="d-flex flex-column">
+      <span class="m8-brand-title">WCCMS</span>
+      <span class="text-muted" style="font-size:0.725rem;">عيادة العناية بالجروح</span>
+    </div>
+  </a>
+
+  <div class="m8-menu-container">
+    <div class="m8-menu-section">القائمة الرئيسية</div>
+    <a href="index.html" class="m8-nav-item"><i class="bi bi-speedometer2"></i><span>لوحة التحكم</span></a>
+    <a href="requests.html" class="m8-nav-item"><i class="bi bi-send-plus-fill"></i><span>طلبات التسجيل</span></a>
+    <a href="registered-patients.html" class="m8-nav-item"><i class="bi bi-people-fill"></i><span>المرضى المسجلون</span></a>
+    <a href="daily-review.html" class="m8-nav-item"><i class="bi bi-calendar-check-fill"></i><span>المراجعات اليومية</span></a>
+    <a href="scheduled-reviews.html" class="m8-nav-item active"><i class="bi bi-calendar2-week-fill"></i><span>المراجعات المجدولة</span></a>
+    <a href="patient-history.html" class="m8-nav-item"><i class="bi bi-clock-history"></i><span>سجل المرضى</span></a>
+    <div class="m8-menu-section mt-3">الإدارة</div>
+    <a href="#" class="m8-nav-item"><i class="bi bi-bar-chart-line-fill"></i><span>التقارير</span></a>
+    <a href="#" class="m8-nav-item"><i class="bi bi-shield-lock-fill"></i><span>سجل التدقيق</span></a>
+    <a href="admin.html" class="m8-nav-item"><i class="bi bi-gear-fill"></i><span>الإعدادات</span></a>
+  </div>
+
+  <div class="m8-sidebar-footer">
+    <div class="m8-user-pill">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3e97ff,#7239ea);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-person-fill text-white" style="font-size:1.15rem;"></i>
+      </div>
+      <div class="d-flex flex-column text-truncate flex-grow-1">
+        <span class="fw-bold text-white fs-7 text-truncate">أ. فاطمة الزهراني</span>
+        <span class="text-muted" style="font-size:0.725rem;">ممرضة عيادة الجروح</span>
+      </div>
+    </div>
+    <button class="m8-logout-btn mt-2"><i class="bi bi-box-arrow-right"></i><span>تسجيل الخروج</span></button>
+  </div>
+</aside>
+
+<!-- ====================================================================
+     MAIN WRAPPER
+     ==================================================================== -->
+<div class="m8-main-wrapper d-flex flex-column min-vh-100">
+
+  <!-- HEADER -->
+  <header class="m8-header">
+    <div class="d-flex align-items-center gap-3">
+      <button id="m8-mobile-toggle" class="btn btn-sm btn-icon btn-light d-lg-none">
+        <i class="bi bi-list fs-3"></i>
+      </button>
+      <div class="d-flex flex-column">
+        <span class="fw-bold fs-6">المراجعات المجدولة</span>
+        <span class="text-muted" style="font-size:0.75rem;">الرئيسية / المراجعات المجدولة</span>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <span class="m8-header-date d-none d-md-inline-block" id="header-date-display"></span>
+      <button id="m8-theme-toggle" class="m8-theme-toggle">
+        <i id="m8-theme-toggle-icon" class="bi bi-moon-stars-fill"></i>
+        <span id="m8-theme-toggle-text">الوضع الليلي</span>
+      </button>
+      <button class="btn btn-sm btn-icon btn-light position-relative m8-notification-badge">
+        <i class="bi bi-bell fs-5"></i><span class="badge-dot"></span>
+      </button>
+      <a href="registered-patients.html" class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center gap-1">
+        <i class="bi bi-people-fill"></i><span>المرضى المسجلون</span>
+      </a>
+      <div class="d-flex align-items-center gap-2 d-none d-md-flex">
+        <div class="d-flex flex-column text-end">
+          <span class="fw-semibold" style="font-size:0.82rem;">أ. فاطمة الزهراني</span>
+          <span class="text-muted" style="font-size:0.7rem;">ممرضة</span>
+        </div>
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#3e97ff,#7239ea);display:flex;align-items:center;justify-content:center;">
+          <i class="bi bi-person-fill text-white" style="font-size:1rem;"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-grow-1 p-4 p-md-5">
+    <div class="m8-page-container-wide">
+
+      <!-- ================================================================
+           PAGE TITLE ROW
+           ================================================================ -->
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-5">
+        <div>
+          <h1 class="fw-bolder fs-2 mb-1">المراجعات المجدولة</h1>
+          <p class="text-muted fs-6 mb-0">إدارة وتوثيق المراجعات المجدولة للمرضى الذين تم إنهاء متابعتهم اليومية ويحتاجون مواعيد زيارة مجدولة.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="badge badge-light-primary px-3 py-2 fs-7 d-flex align-items-center gap-2">
+            <i class="bi bi-calendar2-week-fill text-primary"></i>
+            <span>إجمالي المواعيد: <strong id="table-count-badge" class="fs-6">0 مراجعة</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           1. SUMMARY STAT CARDS (4 Compact Cards)
+           ================================================================ -->
+      <div class="row g-4 mb-5" id="stat-cards-row">
+        <!-- Card 1: Today's Reviews -->
+        <div class="col-6 col-md-3">
+          <div class="m8-stat-card" id="card-stat-today">
+            <div class="m8-stat-icon icon-primary">
+              <i class="bi bi-calendar-event-fill"></i>
+            </div>
+            <div>
+              <div class="m8-stat-value" id="stat-today-count">0</div>
+              <div class="m8-stat-label">مواعيد اليوم</div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 2: Upcoming Reviews -->
+        <div class="col-6 col-md-3">
+          <div class="m8-stat-card" id="card-stat-upcoming">
+            <div class="m8-stat-icon icon-info">
+              <i class="bi bi-calendar2-check-fill"></i>
+            </div>
+            <div>
+              <div class="m8-stat-value" id="stat-upcoming-count">0</div>
+              <div class="m8-stat-label">المواعيد القادمة</div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 3: Overdue Reviews -->
+        <div class="col-6 col-md-3">
+          <div class="m8-stat-card" id="card-stat-overdue">
+            <div class="m8-stat-icon icon-danger">
+              <i class="bi bi-calendar-x-fill"></i>
+            </div>
+            <div>
+              <div class="m8-stat-value" id="stat-overdue-count">0</div>
+              <div class="m8-stat-label">مواعيد متأخرة</div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 4: Completed Reviews -->
+        <div class="col-6 col-md-3">
+          <div class="m8-stat-card" id="card-stat-completed">
+            <div class="m8-stat-icon icon-success">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+              <div class="m8-stat-value" id="stat-completed-count">0</div>
+              <div class="m8-stat-label">مكتملة</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           2. FILTERS AND SEARCH CARD
+           ================================================================ -->
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body p-4">
+
+          <!-- Quick Filter Bar / Tabs (Primary Nurse Workflow) -->
+          <div class="m8-quick-tabs mb-4">
+            <button class="m8-quick-tab active" data-tab="ALL">
+              <span>الكل</span>
+              <span class="badge badge-sm badge-light-secondary rounded-pill badge-count" id="tab-count-all">0</span>
+            </button>
+            <button class="m8-quick-tab tab-today" data-tab="TODAY">
+              <i class="bi bi-clock-history"></i>
+              <span>مواعيد اليوم</span>
+              <span class="badge badge-sm badge-light-warning rounded-pill badge-count" id="tab-count-today">0</span>
+            </button>
+            <button class="m8-quick-tab" data-tab="UPCOMING">
+              <i class="bi bi-calendar-event"></i>
+              <span>المواعيد القادمة</span>
+              <span class="badge badge-sm badge-light-info rounded-pill badge-count" id="tab-count-upcoming">0</span>
+            </button>
+            <button class="m8-quick-tab tab-overdue" data-tab="OVERDUE">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>مواعيد متأخرة</span>
+              <span class="badge badge-sm badge-light-danger rounded-pill badge-count" id="tab-count-overdue">0</span>
+            </button>
+            <button class="m8-quick-tab" data-tab="COMPLETED">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>مكتملة</span>
+              <span class="badge badge-sm badge-light-success rounded-pill badge-count" id="tab-count-completed">0</span>
+            </button>
+          </div>
+
+          <!-- Main Filters Row -->
+          <div class="row g-3 mb-3">
+            <!-- Search Input -->
+            <div class="col-12 col-md-5 col-lg-4">
+              <label class="form-label fw-semibold text-muted fs-7 mb-1">البحث</label>
+              <div class="m8-search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="sch-search" class="m8-search-input w-100 form-control"
+                  placeholder="البحث عن مريض..." autocomplete="off"/>
+              </div>
+            </div>
+
+            <!-- Appointment Date Filter -->
+            <div class="col-6 col-md-3 col-lg-2">
+              <label class="form-label fw-semibold text-muted fs-7 mb-1">تاريخ الموعد</label>
+              <select id="filter-date-range" class="form-select">
+                <option value="">كل التواريخ</option>
+                <option value="today">اليوم</option>
+                <option value="tomorrow">غدًا</option>
+                <option value="this_week">هذا الأسبوع</option>
+                <option value="this_month">الشهر الحالي</option>
+                <option value="custom">تاريخ مخصص</option>
+              </select>
+            </div>
+
+            <!-- Department Filter -->
+            <div class="col-6 col-md-4 col-lg-3">
+              <label class="form-label fw-semibold text-muted fs-7 mb-1">القسم</label>
+              <select id="filter-dept" class="form-select">
+                <option value="">جميع الأقسام</option>
+                <option value="Medical">الباطنة (Medical)</option>
+                <option value="ICU">العناية المركزة (ICU)</option>
+                <option value="CCU">العناية القلبية (CCU)</option>
+                <option value="Oncology">الأورام (Oncology)</option>
+                <option value="Surgery">الجراحة (Surgery)</option>
+                <option value="Ortho">العظام (Orthopedics)</option>
+                <option value="Neuro">الأعصاب (Neurology)</option>
+              </select>
+            </div>
+
+            <!-- Appointment Status Filter -->
+            <div class="col-6 col-md-4 col-lg-3">
+              <label class="form-label fw-semibold text-muted fs-7 mb-1">حالة الموعد</label>
+              <select id="filter-status" class="form-select">
+                <option value="">الكل</option>
+                <option value="TODAY">اليوم</option>
+                <option value="SCHEDULED">مجدول</option>
+                <option value="OVERDUE">متأخر</option>
+                <option value="COMPLETED">مكتمل</option>
+                <option value="CANCELLED">ملغى</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom Date Range Inputs (hidden by default) -->
+          <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3" id="custom-date-from-wrapper" style="display:none;">
+              <label class="form-label fw-semibold text-muted fs-7 mb-1">من تاريخ</label>
+              <input type="date" id="filter-date-from" class="form-control"/>
+            </div>
+            <div class="col-6 col-md-3" id="custom-date-to-wrapper" style="display:none;">
+              <label class="form-label fw-semibold text-muted fs-7 mb-1">إلى تاريخ</label>
+              <input type="date" id="filter-date-to" class="form-control"/>
+            </div>
+          </div>
+
+          <!-- Filter Action Buttons -->
+          <div class="d-flex align-items-center justify-content-end gap-2">
+            <button class="btn btn-primary px-4 d-flex align-items-center gap-2" onclick="applyFilters()">
+              <i class="bi bi-search"></i><span>بحث</span>
+            </button>
+            <button class="btn btn-light px-3 d-flex align-items-center gap-1" onclick="resetFilters()" title="إعادة تعيين الفلاتر">
+              <i class="bi bi-arrow-clockwise"></i><span>إعادة تعيين</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================================================================
+           3. SCHEDULED REVIEWS TABLE CARD
+           ================================================================ -->
+      <div class="card shadow-sm">
+
+        <!-- Card Header -->
+        <div class="card-header border-0 pt-4 pb-2 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <h2 class="card-title fs-5 mb-0">
+            <i class="bi bi-table me-2 text-primary"></i>جدول المراجعات المجدولة
+          </h2>
+        </div>
+
+        <!-- Table Wrapper -->
+        <div class="m8-table-wrapper px-4" id="sch-table-wrapper">
+          <table class="m8-table align-middle" id="sch-table">
+            <thead>
+              <tr class="text-muted fw-bold fs-7 text-uppercase gs-0">
+                <th class="cursor-pointer sch-sortable" data-sort="patientName" style="min-width:200px;">
+                  المريض <i class="bi bi-arrow-down-up fs-8 ms-1"></i>
+                </th>
+                <th class="cursor-pointer sch-sortable" data-sort="department" style="min-width:140px;">
+                  القسم <i class="bi bi-arrow-down-up fs-8 ms-1"></i>
+                </th>
+                <th style="min-width:160px;">التشخيص / الجرح</th>
+                <th style="min-width:140px;">نوع الجرح</th>
+                <th class="cursor-pointer sch-sortable" data-sort="scheduledDate" style="min-width:130px;">
+                  تاريخ الموعد <i class="bi bi-arrow-down-up fs-8 ms-1"></i>
+                </th>
+                <th style="min-width:120px;">آخر مراجعة</th>
+                <th class="cursor-pointer sch-sortable" data-sort="status" style="min-width:120px;">
+                  حالة الموعد <i class="bi bi-arrow-down-up fs-8 ms-1"></i>
+                </th>
+                <th class="text-center" style="min-width:130px;">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody id="sch-tbody">
+              <!-- Rendered dynamically via JS -->
+            </tbody>
+          </table>
+
+          <!-- Empty State (No Reviews Overall) -->
+          <div id="sch-empty" class="rp-empty-state d-none py-5 text-center">
+            <div class="rp-empty-icon mx-auto mb-3">
+              <i class="bi bi-calendar2-x-fill text-muted fs-1"></i>
+            </div>
+            <p class="fw-bold fs-4 mb-1">لا توجد مراجعات مجدولة</p>
+            <p class="text-muted fs-6 mb-0">ستظهر هنا المراجعات التي يتم جدولتها للمرضى بعد انتهاء المتابعة اليومية.</p>
+          </div>
+
+          <!-- No Search Results State -->
+          <div id="sch-no-results" class="rp-empty-state d-none py-5 text-center">
+            <div class="rp-empty-icon mx-auto mb-3">
+              <i class="bi bi-search text-muted fs-1"></i>
+            </div>
+            <p class="fw-bold fs-4 mb-1">لا توجد نتائج مطابقة للبحث</p>
+            <p class="text-muted fs-6 mb-0">جرّب تغيير كلمات البحث أو إعادة تعيين الفلاتر.</p>
+            <button class="btn btn-light-primary mt-3 d-inline-flex align-items-center gap-2" onclick="resetFilters()">
+              <i class="bi bi-arrow-clockwise"></i><span>إعادة تعيين الفلاتر</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Footer: Pagination & Page Size -->
+        <div class="card-footer py-3 d-flex flex-wrap align-items-center justify-content-between gap-3 border-0">
+          <div class="d-flex align-items-center gap-3">
+            <div class="text-muted fs-7" id="pagination-info">عرض 0–0 من 0 مراجعة</div>
+            <select id="filter-page-size" class="form-select form-select-sm" style="width:110px;">
+              <option value="10">عرض 10</option>
+              <option value="25">عرض 25</option>
+              <option value="50">عرض 50</option>
+            </select>
+          </div>
+          <nav aria-label="ترقيم الصفحات">
+            <ul class="pagination pagination-sm mb-0" id="pagination-container">
+              <!-- Rendered dynamically -->
+            </ul>
+          </nav>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer py-3 px-4 border-top d-flex flex-column flex-md-row justify-content-between text-muted fs-7">
+    <div>حقوق الطبع والنشر © 2026 نظام إدارة عيادة العناية بالجروح (WCCMS).</div>
+    <div class="d-flex gap-3 justify-content-center mt-2 mt-md-0">
+      <a href="#" class="text-muted">الشروط والأحكام</a>
+      <a href="#" class="text-muted">سياسة الخصوصية</a>
+      <a href="#" class="text-muted">الدعم الفني</a>
+    </div>
+  </footer>
+</div>
+
+<!-- ====================================================================
+     MODAL 1: SCHEDULED REVIEW MODAL (المراجعة المجدولة)
+     ==================================================================== -->
+<div class="modal fade" id="scheduled-review-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header m8-modal-header-compact d-flex align-items-center justify-content-between">
+        <div>
+          <h5 class="modal-title fs-4 fw-bolder mb-0 text-primary">
+            <i class="bi bi-calendar2-pulse-fill me-2"></i>المراجعة المجدولة
+          </h5>
+          <span class="text-muted fs-7">توثيق حالة الجرح وتسجيل نتيجة المراجعة للمريض</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body p-4 p-md-5">
+
+        <!-- 1. Compact Patient Summary -->
+        <div class="m8-patient-summary-box">
+          <div class="m8-patient-summary-grid">
+            <div class="m8-summary-item">
+              <span class="item-label">اسم المريض</span>
+              <span class="item-value" id="rev-patient-name">—</span>
+            </div>
+            <div class="m8-summary-item">
+              <span class="item-label">رقم الهوية الوطنية</span>
+              <span class="item-value ltr-val" id="rev-patient-nid">—</span>
+            </div>
+            <div class="m8-summary-item">
+              <span class="item-label">رقم الملف (Patient ID)</span>
+              <span class="item-value ltr-val text-primary" id="rev-patient-hid">—</span>
+            </div>
+            <div class="m8-summary-item">
+              <span class="item-label">العمر / الجنس</span>
+              <span class="item-value" id="rev-patient-age-gender">—</span>
+            </div>
+            <div class="m8-summary-item">
+              <span class="item-label">الطبيب المشرف</span>
+              <span class="item-value" id="rev-patient-doctor">—</span>
+            </div>
+            <div class="m8-summary-item">
+              <span class="item-label">القسم الرئيسي</span>
+              <span class="item-value text-muted" id="rev-patient-dept">—</span>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-top d-flex justify-content-end">
+            <a href="#" id="modal-rev-history-btn" target="_blank" class="btn btn-sm btn-light-info fw-bold d-inline-flex align-items-center gap-1">
+              <i class="bi bi-clock-history"></i>
+              <span>عرض السجل المرضي الكامل للمريض (Page 6)</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Overdue Alert Banner (if date passed) -->
+        <div class="m8-alert alert-danger mb-4 d-flex align-items-center gap-3" id="rev-overdue-banner" style="display:none;">
+          <i class="bi bi-exclamation-triangle-fill fs-3 text-danger flex-shrink-0"></i>
+          <div>
+            <div class="fw-bold fs-6">تنبيه: موعد المراجعة متأخر!</div>
+            <div class="fs-7">تاريخ الموعد الأصلي: <strong id="rev-original-date-text" class="ltr-val">—</strong>. يمكنك إجراء المراجعة الآن وتوثيق الحالة الفعلية.</div>
+          </div>
+        </div>
+
+        <!-- 2. Appointment Info -->
+        <div class="card mb-4 border">
+          <div class="card-body p-3 bg-light-subtle rounded">
+            <div class="row g-3 fs-7">
+              <div class="col-12 col-md-4">
+                <span class="fw-bold text-muted d-block">تاريخ الموعد المجدول:</span>
+                <span class="fw-extrabold text-primary fs-6" id="rev-sch-date">—</span>
+              </div>
+              <div class="col-12 col-md-4">
+                <span class="fw-bold text-muted d-block">تاريخ إنشاء الموعد:</span>
+                <span class="fw-bold text-dark" id="rev-created-date">—</span>
+              </div>
+              <div class="col-12 col-md-4">
+                <span class="fw-bold text-muted d-block">سبب المتابعة المجدولة:</span>
+                <span class="fw-semibold text-dark" id="rev-reason">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Diagnosis Target Identification Banner -->
+        <div class="m8-diag-target-banner">
+          <div>
+            <div class="m8-diag-target-title" id="rev-diag-title">الجرح المستهدف للمراجعة</div>
+            <div class="m8-diag-target-sub" id="rev-diag-type">نوع الجرح: —</div>
+          </div>
+          <span class="badge badge-light-primary px-3 py-2 fs-8 fw-bold">مراجعة مخصصة للجرح</span>
+        </div>
+
+        <!-- 4. Previous Clinical Information (Read-Only) -->
+        <div class="m8-history-read-card">
+          <div class="card-title-sm">
+            <i class="bi bi-journal-medical text-primary fs-5"></i>
+            <span>البيانات السريرية المرجعية (المراجعة السابقة — القراءة فقط)</span>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-md-6 border-end-md">
+              <div class="m8-history-row">
+                <span class="m8-history-label">التشخيص:</span>
+                <span class="m8-history-val" id="rev-prev-diag">—</span>
+              </div>
+              <div class="m8-history-row">
+                <span class="m8-history-label">نوع الجرح:</span>
+                <span class="m8-history-val" id="rev-prev-wound-type">—</span>
+              </div>
+              <div class="m8-history-row">
+                <span class="m8-history-label">الضماد الحالي:</span>
+                <span class="m8-history-val text-primary" id="rev-prev-dressing">—</span>
+              </div>
+              <div class="m8-history-row">
+                <span class="m8-history-label">الدواء الحالي:</span>
+                <span class="m8-history-val text-primary" id="rev-prev-med">—</span>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="m8-history-row">
+                <span class="m8-history-label">تاريخ المراجعة:</span>
+                <span class="m8-history-val text-muted" id="rev-prev-date">—</span>
+              </div>
+              <div class="m8-history-row">
+                <span class="m8-history-label">وصف الجرح:</span>
+                <span class="m8-history-val" id="rev-prev-desc">—</span>
+              </div>
+              <div class="m8-history-row">
+                <span class="m8-history-label">التغيرات:</span>
+                <span class="m8-history-val" id="rev-prev-changes">—</span>
+              </div>
+              <div class="m8-history-row">
+                <span class="m8-history-label">النتيجة السابقة:</span>
+                <span class="m8-history-val text-success" id="rev-prev-outcome">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Current Review Section (Nurse Documentation) -->
+        <div class="card mb-4 border border-primary-subtle">
+          <div class="card-header bg-light-primary py-3">
+            <h6 class="card-title mb-0 fw-bold text-primary">
+              <i class="bi bi-pencil-square me-2"></i>بيانات المراجعة الحالية
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-4">
+              <!-- Wound Description -->
+              <div class="col-12">
+                <label class="form-label fw-bold required text-dark">وصف الجرح الحالي (Wound Description)</label>
+                <textarea id="rev-input-desc" class="form-control" rows="3"
+                  placeholder="أدخل وصفاً تفصيلياً لحالة الجرح الحالية، الأبعاد، وجود إفرازات، لون الأنسجة..."></textarea>
+              </div>
+
+              <!-- Wound Changes -->
+              <div class="col-12">
+                <label class="form-label fw-bold required text-dark">التغيرات والتطورات (Wound Changes)</label>
+                <textarea id="rev-input-changes" class="form-control" rows="2"
+                  placeholder="سجل التغيرات الملاحظة مقارنة بالمراجعة السابقة (تحسن، انكماش الأبعاد، انخفاض الإفرازات...)"></textarea>
+              </div>
+
+              <!-- Dressing Section -->
+              <div class="col-12 col-md-6 border-end-md">
+                <div class="bg-light p-3 rounded">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-bold text-dark fs-7">تحديث الضماد (Dressing)</span>
+                    <span class="badge badge-light-secondary fs-8" id="rev-current-dressing-name">رغوية (Foam)</span>
+                  </div>
+                  <label class="form-label fw-bold text-muted fs-7 mb-2">هل تم تغيير الضماد؟</label>
+                  <div class="d-flex align-items-center gap-4">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="dressingChangeRadio" id="dressing-change-no" value="NO" checked/>
+                      <label class="form-check-label fw-semibold" for="dressing-change-no">لا (مستمر)</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="dressingChangeRadio" id="dressing-change-yes" value="YES"/>
+                      <label class="form-check-label fw-semibold text-primary" for="dressing-change-yes">نعم (تغيير الضماد)</label>
+                    </div>
+                  </div>
+
+                  <!-- Conditional New Dressing Dropdown -->
+                  <div class="mt-3" id="new-dressing-wrapper" style="display:none;">
+                    <label class="form-label fw-bold text-dark fs-7">الضماد الجديد</label>
+                    <select id="rev-new-dressing" class="form-select form-select-sm">
+                      <option value="رغوية (Foam)">رغوية (Foam)</option>
+                      <option value="هيدروجيل (Hydrogel)">هيدروجيل (Hydrogel)</option>
+                      <option value="ألجينات (Alginate)">ألجينات (Alginate)</option>
+                      <option value="فضة مضادة للميكروبات (Silver)">فضة مضادة للميكروبات (Silver)</option>
+                      <option value="سيليكون (Silicone)">سيليكون (Silicone)</option>
+                      <option value="هيدروكولويد (Hydrocolloid)">هيدروكولويد (Hydrocolloid)</option>
+                      <option value="ضغط سلبي NPWT">ضغط سلبي NPWT</option>
+                      <option value="شاش فازلين (Petrolatum Gauze)">شاش فازلين (Petrolatum Gauze)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Medication Section -->
+              <div class="col-12 col-md-6">
+                <div class="bg-light p-3 rounded">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-bold text-dark fs-7">تحديث الدواء (Medication)</span>
+                    <span class="badge badge-light-secondary fs-8" id="rev-current-med-name">مرهم مضاد حيوي</span>
+                  </div>
+                  <label class="form-label fw-bold text-muted fs-7 mb-2">هل تم تغيير الدواء؟</label>
+                  <div class="d-flex align-items-center gap-4">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="medicationChangeRadio" id="medication-change-no" value="NO" checked/>
+                      <label class="form-check-label fw-semibold" for="medication-change-no">لا (مستمر)</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="medicationChangeRadio" id="medication-change-yes" value="YES"/>
+                      <label class="form-check-label fw-semibold text-primary" for="medication-change-yes">نعم (تغيير الدواء)</label>
+                    </div>
+                  </div>
+
+                  <!-- Conditional New Medication Dropdown -->
+                  <div class="mt-3" id="new-medication-wrapper" style="display:none;">
+                    <label class="form-label fw-bold text-dark fs-7">الدواء الجديد</label>
+                    <select id="rev-new-medication" class="form-select form-select-sm">
+                      <option value="مرهم مضاد حيوي">مرهم مضاد حيوي</option>
+                      <option value="غسول ملحي">غسول ملحي</option>
+                      <option value="بيتادين (Betadine)">بيتادين (Betadine)</option>
+                      <option value="مرهم إنزيمي (Enzymatic Debrider)">مرهم إنزيمي (Enzymatic Debrider)</option>
+                      <option value="عسل طبي (Medical Honey)">عسل طبي (Medical Honey)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Scheduled Review Outcome Section -->
+        <div class="mb-4">
+          <label class="form-label fw-bolder fs-5 text-dark mb-2">نتيجة المراجعة المجدولة</label>
+          <div class="m8-outcome-options-container">
+
+            <!-- Option 1: Improved - No further visit -->
+            <div class="m8-outcome-card selected" id="card-outcome-1">
+              <input type="radio" name="reviewOutcomeRadio" id="outcome-radio-1" value="IMPROVED_FINISHED" class="m8-outcome-radio" checked/>
+              <div class="m8-outcome-content">
+                <div class="m8-outcome-title text-success">
+                  <i class="bi bi-check-circle-fill me-1"></i>1. تحسن — لا حاجة لزيارة أخرى
+                </div>
+                <p class="m8-outcome-desc">
+                  حالة الجرح تحسنت بشكل ممتاز ولا تتطلب أي مواعيد متابعة أخرى في عيادة الجروح. سيتم إكمال المراجعة وإبقاء حالة العناية بالجروح مغلقة.
+                </p>
+              </div>
+            </div>
+
+            <!-- Option 2: Improved - Another visit needed -->
+            <div class="m8-outcome-card" id="card-outcome-2">
+              <input type="radio" name="reviewOutcomeRadio" id="outcome-radio-2" value="IMPROVED_ANOTHER_VISIT" class="m8-outcome-radio"/>
+              <div class="m8-outcome-content">
+                <div class="m8-outcome-title text-primary">
+                  <i class="bi bi-calendar-plus-fill me-1"></i>2. تحسن — بحاجة لزيارة أخرى
+                </div>
+                <p class="m8-outcome-desc">
+                  حالة الجرح شهدت تحسناً ولكن تحتاج زيارة متابعة جديدة في تاريخ لاحق. سيتم إكمال المراجعة وجدولة الموعد القادم مباشرة.
+                </p>
+              </div>
+            </div>
+
+            <!-- Option 3: Worsened - Transfer to doctor for admission -->
+            <div class="m8-outcome-card card-outcome-worsened" id="card-outcome-3">
+              <input type="radio" name="reviewOutcomeRadio" id="outcome-radio-3" value="WORSENED_DOCTOR_TRANSFER" class="m8-outcome-radio"/>
+              <div class="m8-outcome-content">
+                <div class="m8-outcome-title text-danger">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>3. تدهور — بحاجة لتقييم طبي ودخول جديد
+                </div>
+                <p class="m8-outcome-desc">
+                  تدهورت حالة الجرح وتتطلب تقييماً طبياً مباشراً من قبل الطبيب المشرف مع احتمالية كتابة قرار دخول للمستشفى.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Conditional Doctor Transfer Notice (Option 3) -->
+        <div class="m8-doctor-transfer-notice" id="doctor-transfer-notice" style="display:none;">
+          <div class="notice-title">
+            <i class="bi bi-shield-exclamation fs-4"></i>مسار تحويل الحالة للطبيب المشرف
+          </div>
+          <div class="notice-steps">
+            <span>تحويل المريض للطبيب للتقييم</span>
+            <i class="bi bi-arrow-left text-danger fs-6"></i>
+            <span>الطبيب يقيّم الحالة ويكتب دخولًا للمستشفى</span>
+          </div>
+          <div class="text-muted fs-8 mt-2">ملاحظة: نظام العناية بالجروح لا يصدر قرارات الدخول إلى المستشفى بشكل مباشر، بل يقوم بتحويل الملف للطبيب.</div>
+        </div>
+
+        <!-- Conditional Next Appointment Controls (Option 2) -->
+        <div class="m8-next-appointment-box" id="next-appointment-box" style="display:none;">
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="bi bi-calendar-event me-2"></i>بيانات الزيارة القادمة
+          </h6>
+          <div class="row g-3">
+            <div class="col-12 col-md-5">
+              <label class="form-label fw-bold required text-dark">تاريخ الزيارة القادمة</label>
+              <input type="date" id="rev-next-date" class="form-control"/>
+            </div>
+            <div class="col-12 col-md-7">
+              <label class="form-label fw-bold text-dark">ملاحظات المتابعة (اختياري)</label>
+              <textarea id="rev-next-notes" class="form-control" rows="2"
+                placeholder="أدخل أي ملاحظات خاصة بزيارة المتابعة القادمة..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Sticky Footer -->
+      <div class="m8-modal-footer-sticky">
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-light-danger px-3" onclick="openCancelModal()">
+            <i class="bi bi-x-circle me-1"></i>إلغاء الموعد
+          </button>
+        </div>
+        <button type="button" class="btn btn-primary px-5 fw-bold" onclick="saveReviewOutcome()">
+          <i class="bi bi-check-lg me-1"></i><span id="rev-save-btn-text">حفظ المراجعة</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     MODAL 2: VIEW DETAILS MODAL (مراجعة مكتملة / ملغاة — القراءة فقط)
+     ==================================================================== -->
+<div class="modal fade" id="view-details-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-bottom py-3">
+        <h5 class="modal-title fw-bold text-dark">
+          <i class="bi bi-file-earmark-medical-fill me-2 text-primary"></i>تفاصيل المراجعة المجدولة
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-4">
+            <span class="text-muted fs-8 d-block">اسم المريض</span>
+            <span class="fw-bold text-dark fs-6" id="view-patient-name">—</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <span class="text-muted fs-8 d-block">رقم الهوية</span>
+            <span class="fw-bold ltr-val text-dark" id="view-patient-nid">—</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <span class="text-muted fs-8 d-block">رقم الملف</span>
+            <span class="fw-bold ltr-val text-primary" id="view-patient-hid">—</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-light rounded mb-4">
+          <div class="row g-3 fs-7">
+            <div class="col-6">
+              <span class="text-muted d-block">الجرح والتصنيف:</span>
+              <span class="fw-bold text-dark" id="view-diag-title">—</span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">تاريخ الموعد الأصلي:</span>
+              <span class="fw-bold text-primary ltr-val" id="view-sch-date">—</span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">تاريخ الإكمال / الإلغاء:</span>
+              <span class="fw-bold text-dark ltr-val" id="view-completion-date">—</span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">المنفذ:</span>
+              <span class="fw-bold text-dark" id="view-nurse">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="border rounded p-3 mb-3">
+          <h6 class="fw-bold text-primary mb-2" id="view-outcome-title">نتيجة المراجعة</h6>
+          <div class="mb-3">
+            <span class="fw-bold text-muted fs-8 d-block">الوصف المسجل:</span>
+            <p class="fs-7 text-dark mb-0" id="view-desc-text">—</p>
+          </div>
+          <div>
+            <span class="fw-bold text-muted fs-8 d-block">التغيرات والملاحظات:</span>
+            <p class="fs-7 text-dark mb-0" id="view-changes-text">—</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-top py-2">
+        <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     MODAL 3: CANCEL APPOINTMENT CONFIRMATION MODAL
+     ==================================================================== -->
+<div class="modal fade" id="cancel-appointment-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-bottom py-3">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-x-circle-fill me-2"></i>إلغاء الموعد المجدول
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-dark fw-semibold mb-3">هل أنت تأكد من رغبتك في إلغاء هذا الموعد المجدول للمريض؟ سيظل الموعد مسجلاً في السجل التاريخي كـ "ملغى".</p>
+        <div class="mb-3">
+          <label class="form-label fw-bold required text-dark">سبب الإلغاء</label>
+          <textarea id="cancel-reason-input" class="form-control" rows="3"
+            placeholder="أدخل سبب إلغاء الموعد (مثال: عدم حضور المريض، نقل إلى مستشفى آخر...)"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer border-top py-2">
+        <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger btn-sm px-4 fw-bold" onclick="confirmCancelAppointment()">
+          تأكيد الإلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     SCRIPTS
+     ==================================================================== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/shared-data.js"></script>
+<script src="js/scheduled-reviews.js"></script>
+
+</body>
+</html>

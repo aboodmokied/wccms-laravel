@@ -1,0 +1,769 @@
+/**
+ * ============================================================================
+ * WCCMS - Wound Care Clinic Management System
+ * Registration Request Page - Custom Styles
+ * Extends Metronic 8 Theme Design System
+ * ============================================================================
+ */
+
+/* ----------------------------------------------------------------------------
+ * 1. Metronic Stepper Component
+ * ---------------------------------------------------------------------------- */
+.m8-stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding: 1.5rem 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.m8-stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  max-width: 220px;
+}
+
+.m8-stepper-line {
+  position: absolute;
+  top: 22px;
+  height: 3px;
+  background: var(--m8-border-color);
+  z-index: 0;
+  transition: background-color 0.5s ease;
+}
+
+/* RTL: line goes from right of current step to left of next */
+.m8-stepper-item:not(:last-child) .m8-stepper-line {
+  left: 0;
+  right: 50%;
+  width: calc(100% - 22px);
+  transform: translateX(-50%);
+}
+
+.m8-stepper-item .m8-stepper-line {
+  left: calc(-50% + 22px);
+  right: 50%;
+  width: calc(100%);
+}
+
+.m8-stepper-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid var(--m8-border-color);
+  background-color: var(--m8-card-bg);
+  color: var(--m8-text-subtitle);
+  z-index: 1;
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.m8-stepper-label {
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-subtitle);
+  text-align: center;
+  transition: color 0.4s ease;
+}
+
+/* Active Step */
+.m8-stepper-item.active .m8-stepper-icon {
+  background-color: var(--m8-primary);
+  border-color: var(--m8-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(62, 151, 255, 0.35);
+  animation: stepPulse 2s infinite;
+}
+
+.m8-stepper-item.active .m8-stepper-label {
+  color: var(--m8-primary);
+  font-weight: 700;
+}
+
+/* Completed Step */
+.m8-stepper-item.completed .m8-stepper-icon {
+  background-color: var(--m8-success);
+  border-color: var(--m8-success);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(80, 205, 137, 0.3);
+}
+
+.m8-stepper-item.completed .m8-stepper-label {
+  color: var(--m8-success);
+}
+
+.m8-stepper-item.completed .m8-stepper-line,
+.m8-stepper-item.active .m8-stepper-line {
+  background-color: var(--m8-success);
+}
+
+@keyframes stepPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(62, 151, 255, 0.35); }
+  50% { box-shadow: 0 4px 20px rgba(62, 151, 255, 0.55); }
+}
+
+/* Responsive Stepper */
+@media (max-width: 575.98px) {
+  .m8-stepper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 1rem 0.5rem;
+  }
+
+  .m8-stepper-item {
+    flex-direction: row;
+    max-width: 100%;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+  }
+
+  .m8-stepper-item .m8-stepper-line {
+    display: none;
+  }
+
+  .m8-stepper-label {
+    margin-top: 0;
+    text-align: start;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * 2. Step Content Sections
+ * ---------------------------------------------------------------------------- */
+.step-section {
+  animation: fadeSlideIn 0.5s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * 3. Read-Only Data Display Fields
+ * ---------------------------------------------------------------------------- */
+.m8-readonly-field {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px dashed var(--m8-border-dashed);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.65rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.m8-readonly-field .field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--m8-text-subtitle);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.m8-readonly-field .field-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+
+.m8-readonly-field .field-value.ltr-value {
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: embed;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* ----------------------------------------------------------------------------
+ * 4. Summary Card (before submission)
+ * ---------------------------------------------------------------------------- */
+.m8-summary-card {
+  background: linear-gradient(135deg, var(--m8-primary-light) 0%, var(--m8-card-bg) 100%);
+  border: 1px solid var(--m8-primary);
+  border-radius: var(--m8-radius-md);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-bs-theme="dark"] .m8-summary-card {
+  background: linear-gradient(135deg, rgba(62, 151, 255, 0.08) 0%, var(--m8-card-bg) 100%);
+}
+
+.m8-summary-card::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(62, 151, 255, 0.06);
+}
+
+.m8-summary-row {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--m8-border-color);
+}
+
+.m8-summary-row:last-child {
+  border-bottom: none;
+}
+
+.m8-summary-row .summary-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--m8-text-muted);
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.m8-summary-row .summary-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--m8-text-main);
+}
+
+/* ----------------------------------------------------------------------------
+ * 5. Success State Animation
+ * ---------------------------------------------------------------------------- */
+.success-checkmark {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--m8-success) 0%, #2dd08b 100%);
+  margin: 0 auto 1.25rem;
+  animation: successBounce 0.6s ease-out;
+}
+
+.success-checkmark i {
+  font-size: 2.5rem;
+  color: #ffffff;
+}
+
+@keyframes successBounce {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Success details card */
+.m8-success-detail {
+  background-color: var(--m8-input-solid-bg);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.75rem 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--m8-border-color);
+}
+
+.m8-success-detail .detail-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-muted);
+}
+
+.m8-success-detail .detail-value {
+  font-weight: 700;
+  color: var(--m8-text-main);
+  font-size: 0.95rem;
+}
+
+/* ----------------------------------------------------------------------------
+ * 6. Data Source Badge
+ * ---------------------------------------------------------------------------- */
+.m8-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: var(--m8-info-light);
+  color: var(--m8-info-light-text);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--m8-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------------------
+ * 7. Loading Spinner Styles
+ * ---------------------------------------------------------------------------- */
+.m8-btn-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spinRotate 0.7s linear infinite;
+}
+
+@keyframes spinRotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------------------------
+ * 8. Card Section Headers with Icons
+ * ---------------------------------------------------------------------------- */
+.m8-card-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--m8-border-color);
+}
+
+.m8-card-section-header .section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.m8-card-section-header .section-icon.icon-primary {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+.m8-card-section-header .section-icon.icon-info {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info);
+}
+
+.m8-card-section-header .section-icon.icon-success {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success);
+}
+
+.m8-card-section-header .section-icon.icon-warning {
+  background-color: var(--m8-warning-light);
+  color: var(--m8-warning);
+}
+
+.m8-card-section-header .section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--m8-text-main);
+  margin: 0;
+}
+
+.m8-card-section-header .section-subtitle {
+  font-size: 0.8rem;
+  color: var(--m8-text-subtitle);
+  margin: 0;
+}
+
+/* ----------------------------------------------------------------------------
+ * 9. Info Notice Banner
+ * ---------------------------------------------------------------------------- */
+.m8-info-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--m8-radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.m8-info-notice.notice-info {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info-light-text);
+  border: 1px solid rgba(114, 57, 234, 0.12);
+}
+
+.m8-info-notice.notice-warning {
+  background-color: var(--m8-warning-light);
+  color: var(--m8-warning-light-text);
+  border: 1px solid rgba(255, 199, 0, 0.15);
+}
+
+/* ----------------------------------------------------------------------------
+ * 10. Page Maximum Width Constraint
+ * ---------------------------------------------------------------------------- */
+.m8-page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ----------------------------------------------------------------------------
+ * 11. Confirmation Modal Enhancements
+ * ---------------------------------------------------------------------------- */
+.modal-content {
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-lg);
+}
+
+.modal-header {
+  border-bottom-color: var(--m8-border-color);
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top-color: var(--m8-border-color);
+  padding: 1rem 1.5rem;
+}
+
+.modal-title {
+  font-weight: 700;
+  color: var(--m8-text-main);
+}
+
+/* Modal backdrop override for dark mode */
+[data-bs-theme="dark"] .modal-backdrop {
+  background-color: #000;
+}
+
+/* ----------------------------------------------------------------------------
+ * 12. Alert Enhancements
+ * ---------------------------------------------------------------------------- */
+.m8-alert {
+  border-radius: var(--m8-radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  animation: fadeSlideIn 0.3s ease-out;
+}
+
+.m8-alert.alert-danger {
+  background-color: var(--m8-danger-light);
+  color: var(--m8-danger-light-text);
+  border: 1px solid rgba(241, 65, 108, 0.15);
+}
+
+.m8-alert.alert-success {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+  border: 1px solid rgba(80, 205, 137, 0.15);
+}
+
+/* ----------------------------------------------------------------------------
+ * 13. Button Enhancements for Registration Page
+ * ---------------------------------------------------------------------------- */
+.btn-lg.btn-submit {
+  padding: 0.85rem 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--m8-radius-sm);
+  min-width: 240px;
+}
+
+.btn-success {
+  background-color: var(--m8-success);
+  border-color: var(--m8-success);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: var(--m8-radius-sm);
+}
+
+.btn-success:hover {
+  background-color: var(--m8-success-light-text);
+  border-color: var(--m8-success-light-text);
+}
+
+.btn-light-success {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+  border: none;
+  font-weight: 600;
+  border-radius: var(--m8-radius-sm);
+}
+
+.btn-light-success:hover {
+  background-color: var(--m8-success);
+  color: #ffffff;
+}
+
+/* Disabled state */
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background-color: var(--m8-text-subtitle);
+  border-color: var(--m8-text-subtitle);
+  box-shadow: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Logout button in sidebar */
+.m8-logout-btn {
+  background: rgba(241, 65, 108, 0.1);
+  border: none;
+  color: var(--m8-danger);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--m8-radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.m8-logout-btn:hover {
+  background: rgba(241, 65, 108, 0.2);
+}
+
+/* Notification badge */
+.m8-notification-badge {
+  position: relative;
+}
+
+.m8-notification-badge .badge-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--m8-danger);
+  border: 2px solid var(--m8-header-bg);
+}
+
+
+/* Date display in header */
+.m8-header-date {
+  font-size: 0.82rem;
+  color: var(--m8-text-subtitle);
+  font-weight: 500;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* ============================================================================
+   GLOBAL SIZING NORMALIZATION
+   Enforces consistent form-control / button heights across ALL pages.
+   Eliminates the lg / sm mismatch so every filter bar, card, and modal
+   renders uniform 38 px controls.
+   Keep this LAST so it overrides Bootstrap and page-specific rules.
+   ============================================================================ */
+
+/* ─── Base: all inputs, selects, textareas → 38 px ─────────────────────────── */
+.form-control,
+.form-select {
+  font-size: 0.9rem !important;
+  padding-top: 0.52rem !important;
+  padding-bottom: 0.52rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px;
+}
+
+/* Override -lg variant → same as default */
+.form-control-lg,
+.form-select-lg {
+  font-size: 0.9rem !important;
+  padding-top: 0.52rem !important;
+  padding-bottom: 0.52rem !important;
+  padding-right: 0.9rem !important;
+  padding-left: 0.9rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px !important;
+  border-radius: var(--m8-radius-sm) !important;
+}
+
+/* Override -sm variant → same as default */
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.9rem !important;
+  padding-top: 0.52rem !important;
+  padding-bottom: 0.52rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px !important;
+  border-radius: var(--m8-radius-sm) !important;
+}
+
+/* Search wrapper input */
+.m8-search-input {
+  font-size: 0.9rem !important;
+  padding-top: 0.52rem !important;
+  padding-bottom: 0.52rem !important;
+  min-height: 38px !important;
+}
+
+/* ─── Base: all buttons → 38 px ─────────────────────────────────────────────── */
+.btn {
+  font-size: 0.9rem !important;
+  padding-top: 0.46rem !important;
+  padding-bottom: 0.46rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px;
+}
+
+/* Override btn-lg → same as default */
+.btn-lg {
+  font-size: 0.9rem !important;
+  padding-top: 0.46rem !important;
+  padding-bottom: 0.46rem !important;
+  padding-right: 1.1rem !important;
+  padding-left: 1.1rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px !important;
+  border-radius: var(--m8-radius-sm) !important;
+}
+
+/* Override btn-sm → same as default */
+.btn-sm {
+  font-size: 0.9rem !important;
+  padding-top: 0.46rem !important;
+  padding-bottom: 0.46rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px !important;
+  border-radius: var(--m8-radius-sm) !important;
+}
+
+/* Icon-only square buttons stay compact */
+.btn.btn-icon {
+  min-height: unset !important;
+  padding: 0.35rem !important;
+  font-size: 1rem !important;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Primary CTA (opt-in) — Daily Review open button on Page 3 ──────────── */
+.btn-cta {
+  font-size: 0.95rem !important;
+  padding-top: 0.65rem !important;
+  padding-bottom: 0.65rem !important;
+  padding-right: 1.4rem !important;
+  padding-left: 1.4rem !important;
+  min-height: 46px !important;
+}
+
+/* ─── Header action buttons — slightly smaller ───────────────────────────── */
+.m8-header .btn {
+  min-height: 34px !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  font-size: 0.82rem !important;
+}
+
+.m8-theme-toggle {
+  min-height: 34px !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  font-size: 0.82rem !important;
+}
+
+/* ─── Modal footer buttons — normal, not forced large ───────────────────── */
+.modal-footer .btn {
+  min-height: 38px !important;
+}
+
+/* ─── Pagination buttons ─────────────────────────────────────────────────── */
+.page-link {
+  font-size: 0.82rem !important;
+  padding: 0.35rem 0.65rem !important;
+  min-height: unset !important;
+}
+
+/* ─── Table action buttons — compact ─────────────────────────────────────── */
+.btn-open-case {
+  min-height: 34px !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  font-size: 0.82rem !important;
+}
+
+/* ─── PMH Checkbox Cards ─────────────────────────────────────────────────── */
+.pmh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.pmh-card {
+  border: 1.5px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  user-select: none;
+  background-color: var(--m8-card-bg);
+}
+
+.pmh-card input[type="checkbox"] {
+  display: none;
+}
+
+.pmh-card:hover {
+  border-color: var(--m8-primary);
+  background-color: var(--m8-primary-light);
+}
+
+.pmh-card.selected {
+  border-color: var(--m8-primary);
+  border-width: 2px;
+  background-color: var(--m8-primary-light);
+}
+
+.pmh-card .pmh-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid var(--m8-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  color: transparent;
+}
+
+.pmh-card.selected .pmh-check {
+  border-color: var(--m8-primary);
+  background-color: var(--m8-primary);
+  color: #fff;
+}
+
+.pmh-card .pmh-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+

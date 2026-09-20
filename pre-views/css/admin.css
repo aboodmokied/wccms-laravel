@@ -1,0 +1,47 @@
+/**
+ * ============================================================================
+ * WCCMS — Admin Page Styles (Metronic 8 Aesthetic)
+ * ============================================================================
+ */
+
+.admin-card {
+  border-radius: 12px;
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s ease;
+}
+
+.admin-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+
+.lookup-tab-btn {
+  border-radius: 10px !important;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  color: var(--bs-body-color);
+  transition: all 0.2s ease;
+}
+
+.lookup-tab-btn.active {
+  background-color: var(--m8-primary, #3e97ff) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(62, 151, 255, 0.3);
+}
+
+.table-lookup-item {
+  vertical-align: middle;
+}
+
+.badge-active {
+  background-color: rgba(80, 205, 137, 0.15);
+  color: #50cd89;
+  font-weight: 600;
+}
+
+.badge-inactive {
+  background-color: rgba(241, 65, 108, 0.15);
+  color: #f1416c;
+  font-weight: 600;
+}

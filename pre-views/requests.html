@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>طلبات تسجيل المرضى - نظام إدارة عيادة العناية بالجروح</title>
+    <meta name="description"
+        content="استقبال طلبات تسجيل المرضى المحولين واستكمال بيانات التسجيل في عيادة العناية بالجروح." />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="../pages/metronic8/css/metronic8.css" />
+    <link rel="stylesheet" href="css/custom.css" />
+    <link rel="stylesheet" href="css/requests.css?v=2" />
+</head>
+
+<body>
+
+    <!-- ====================================================================
+     TOAST CONTAINER
+     ==================================================================== -->
+    <div class="m8-toast-container" id="toast-container"></div>
+
+    <!-- ====================================================================
+     SIDEBAR
+     ==================================================================== -->
+    <aside class="m8-sidebar" id="m8-sidebar">
+        <a href="index.html" class="m8-brand text-decoration-none">
+            <div
+                style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--m8-primary),#7239ea);display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-heart-pulse-fill text-white" style="font-size:1.2rem;"></i>
+            </div>
+            <div class="d-flex flex-column">
+                <span class="m8-brand-title">WCCMS</span>
+                <span class="text-muted" style="font-size:0.725rem;">عيادة العناية بالجروح</span>
+            </div>
+        </a>
+
+        <div class="m8-menu-container">
+            <div class="m8-menu-section">القائمة الرئيسية</div>
+            <a href="index.html" class="m8-nav-item"><i class="bi bi-speedometer2"></i><span>لوحة التحكم</span></a>
+            <a href="requests.html" class="m8-nav-item active"><i class="bi bi-send-plus-fill"></i><span>طلبات
+                    التسجيل</span></a>
+            <a href="registered-patients.html" class="m8-nav-item"><i class="bi bi-people-fill"></i><span>المرضى
+                    المسجلون</span></a>
+            <a href="daily-review.html" class="m8-nav-item"><i class="bi bi-calendar-check-fill"></i><span>المراجعات
+                    اليومية</span></a>
+            <a href="scheduled-reviews.html" class="m8-nav-item"><i
+                    class="bi bi-calendar2-week-fill"></i><span>المراجعات المجدولة</span></a>
+            <a href="patient-history.html" class="m8-nav-item"><i class="bi bi-clock-history"></i><span>سجل
+                    المرضى</span></a>
+            <div class="m8-menu-section mt-3">الإدارة</div>
+            <a href="#" class="m8-nav-item"><i class="bi bi-bar-chart-line-fill"></i><span>التقارير</span></a>
+            <a href="#" class="m8-nav-item"><i class="bi bi-shield-lock-fill"></i><span>سجل التدقيق</span></a>
+            <a href="admin.html" class="m8-nav-item"><i class="bi bi-gear-fill"></i><span>الإعدادات</span></a>
+        </div>
+
+        <div class="m8-sidebar-footer">
+            <div class="m8-user-pill">
+                <div
+                    style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3e97ff,#7239ea);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-person-fill text-white" style="font-size:1.15rem;"></i>
+                </div>
+                <div class="d-flex flex-column text-truncate flex-grow-1">
+                    <span class="fw-bold text-white fs-7 text-truncate">أ. فاطمة الزهراني</span>
+                    <span class="text-muted" style="font-size:0.725rem;">ممرضة عيادة الجروح</span>
+                </div>
+            </div>
+            <button class="m8-logout-btn mt-2"><i class="bi bi-box-arrow-right"></i><span>تسجيل الخروج</span></button>
+        </div>
+    </aside>
+
+    <!-- ====================================================================
+     MAIN WRAPPER
+     ==================================================================== -->
+    <div class="m8-main-wrapper d-flex flex-column min-vh-100">
+
+        <!-- HEADER -->
+        <header class="m8-header">
+            <div class="d-flex align-items-center gap-3">
+                <button id="m8-mobile-toggle" class="btn btn-sm btn-icon btn-light d-lg-none">
+                    <i class="bi bi-list fs-3"></i>
+                </button>
+                <div class="d-flex flex-column">
+                    <span class="fw-bold fs-6">طلبات تسجيل المرضى</span>
+                    <span class="text-muted" style="font-size:0.75rem;">الرئيسية / طلبات التسجيل</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="m8-header-date d-none d-md-inline-block">05/09/2026</span>
+                <button id="m8-theme-toggle" class="m8-theme-toggle">
+                    <i id="m8-theme-toggle-icon" class="bi bi-moon-stars-fill"></i>
+                    <span id="m8-theme-toggle-text">الوضع الليلي</span>
+                </button>
+                <button class="btn btn-sm btn-icon btn-light position-relative m8-notification-badge">
+                    <i class="bi bi-bell fs-5"></i><span class="badge-dot"></span>
+                </button>
+                <a href="index.html" class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center gap-1">
+                    <i class="bi bi-plus-lg"></i><span>إرسال طلب جديد</span>
+                </a>
+                <div class="d-flex align-items-center gap-2 d-none d-md-flex">
+                    <div class="d-flex flex-column text-end">
+                        <span class="fw-semibold" style="font-size:0.82rem;">أ. فاطمة الزهراني</span>
+                        <span class="text-muted" style="font-size:0.7rem;">ممرضة</span>
+                    </div>
+                    <div
+                        style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#3e97ff,#7239ea);display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-person-fill text-white" style="font-size:1rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-grow-1 p-4 p-md-5">
+
+            <!-- ================================================================
+         1. REGISTRATION REQUESTS TABLE VIEW
+         ================================================================ -->
+            <div id="requests-list-view" class="m8-page-container-wide">
+
+                <!-- Page Title & Header Banner -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                    <div>
+                        <h1 class="fw-bolder fs-2 mb-1">طلبات تسجيل المرضى</h1>
+                        <p class="text-muted fs-6 mb-0">عرض المرضى المحولين لعيادة الجروح بانتظار استكمال إجراءات
+                            التسجيل بواسطة الممرض.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="badge badge-light-primary px-3 py-2 fs-7 d-flex align-items-center gap-2">
+                            <i class="bi bi-hourglass-split fs-6"></i>
+                            <span>طلبات بانتظار التسجيل: <strong id="stat-pending-count" class="fs-6">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REQUESTS TABLE CARD -->
+                <div class="card">
+                    <!-- Table Header Bar -->
+                    <div
+                        class="card-header border-0 pt-4 pb-2 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <h2 class="card-title fs-5 mb-0">
+                            <i class="bi bi-list-stars me-2 text-primary"></i>قائمة المحولين للتسجيل
+                        </h2>
+                        <span class="badge badge-light-secondary fs-7" id="req-count">0 طلب</span>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div
+                        class="m8-filter-bar d-flex flex-wrap align-items-center gap-3 p-3 bg-light rounded-2 mx-4 my-2 border">
+                        <!-- Search -->
+                        <div class="m8-search-wrapper flex-grow-1" style="min-width: 220px;">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" id="req-search" class="m8-search-input w-100"
+                                placeholder="بحث باسم المريض أو رقم الهوية..." />
+                        </div>
+
+                        <!-- Dept Filter -->
+                        <div style="min-width: 160px;">
+                            <select id="filter-dept" class="form-select form-select-sm">
+                                <option value="">جميع الأقسام</option>
+                                <option value="ICU">ICU العناية المركزة</option>
+                                <option value="CCU">CCU العناية القلبية</option>
+                                <option value="Medical">Medical الباطنية</option>
+                                <option value="Oncology">Oncology الأورام</option>
+                                <option value="Surgery">Surgery الجراحة</option>
+                            </select>
+                        </div>
+
+                        <!-- Request Date Filter -->
+                        <div style="min-width: 170px;">
+                            <input type="date" id="filter-date" class="form-control form-control-sm"
+                                title="تصفية حسب تاريخ الطلب" />
+                        </div>
+
+                        <!-- Sort Select -->
+                        <div style="min-width: 170px;">
+                            <select id="sort-select" class="form-select form-select-sm">
+                                <option value="reqDate-desc">تاريخ الطلب: الأحدث</option>
+                                <option value="reqDate-asc">تاريخ الطلب: الأقدم</option>
+                                <option value="admDate-desc">تاريخ الدخول: الأحدث</option>
+                                <option value="name-asc">اسم المريض: أ - ي</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-sm btn-light-primary ms-auto d-flex align-items-center gap-1 text-nowrap"
+                            onclick="resetFilters()">
+                            <i class="bi bi-arrow-clockwise"></i> إعادة ضبط
+                        </button>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="m8-table-wrapper px-4">
+                        <table class="m8-table align-middle">
+                            <thead>
+                                <tr class="text-muted fw-bold fs-7 text-uppercase gs-0">
+                                    <th class="cursor-pointer text-nowrap" onclick="sortTable('name')">اسم المريض <i
+                                            class="bi bi-arrow-down-up fs-8 ms-1"></i></th>
+                                    <th class="text-nowrap">رقم الهوية</th>
+                                    <th class="text-nowrap">رقم المريض</th>
+                                    <th class="text-nowrap">العمر / الجنس</th>
+                                    <th class="text-nowrap">الطبيب المشرف</th>
+                                    <th class="cursor-pointer text-nowrap" onclick="sortTable('dept')">قسم المستشفى <i
+                                            class="bi bi-arrow-down-up fs-8 ms-1"></i></th>
+                                    <th class="cursor-pointer text-nowrap" onclick="sortTable('admDate')">تاريخ الدخول
+                                        <i class="bi bi-arrow-down-up fs-8 ms-1"></i></th>
+                                    <th class="cursor-pointer text-nowrap" onclick="sortTable('reqDate')">تاريخ الطلب <i
+                                            class="bi bi-arrow-down-up fs-8 ms-1"></i></th>
+                                    <th class="text-end text-nowrap" style="min-width: 165px; width: 165px;">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requests-tbody"></tbody>
+                        </table>
+
+                        <!-- Empty State -->
+                        <div id="table-empty" class="m8-table-empty d-none py-5 text-center">
+                            <i class="bi bi-inbox fs-1 mb-2 d-block text-muted opacity-50"></i>
+                            <p class="fw-semibold mb-1 fs-6">لا توجد طلبات تسجيل بانتظار الممرض</p>
+                            <small class="text-muted">تم استكمال جميع الطلبات أو لا توجد نتائج مطابقة لفلترة
+                                البحث.</small>
+                        </div>
+                    </div>
+
+                    <!-- Table Footer with Pagination -->
+                    <div
+                        class="card-footer py-3 d-flex flex-wrap align-items-center justify-content-between gap-3 border-0">
+                        <div class="text-muted fs-7" id="pagination-info">عرض 0 من 0 طلبات</div>
+                        <nav aria-label="جدول الطلبات">
+                            <ul class="pagination pagination-sm mb-0" id="pagination-container">
+                                <!-- Rendered dynamically -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+            </div>
+
+                            <span class="detail-label">حالة التسجيل</span>
+                            <span class="detail-value"><span class="badge badge-light-success px-3 py-1 fs-7">نشطة
+                                    (ACTIVE)</span></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center mt-2">
+                        <button type="button"
+                            class="btn btn-primary d-flex align-items-center justify-content-center gap-2"
+                            onclick="closeRegistrationWorkspace()">
+                            <i class="bi bi-arrow-right"></i>
+                            <span>العودة إلى طلبات التسجيل</span>
+                        </button>
+                        <a href="registered-patients.html"
+                            class="btn btn-light-primary d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-people-fill"></i>
+                            <span>عرض المرضى المسجلين</span>
+                        </a>
+                    </div>
+                </div>
+
+            </div><!-- end registration-workspace-view -->
+
+        </main>
+
+        <!-- Footer -->
+        <footer
+            class="footer py-3 px-4 border-top d-flex flex-column flex-md-row justify-content-between text-muted fs-7">
+            <div>حقوق الطبع والنشر © 2026 نظام إدارة عيادة العناية بالجروح (WCCMS).</div>
+            <div class="d-flex gap-3 justify-content-center mt-2 mt-md-0">
+                <a href="#" class="text-muted">الشروط والأحكام</a>
+                <a href="#" class="text-muted">سياسة الخصوصية</a>
+                <a href="#" class="text-muted">الدعم الفني</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ====================================================================
+     SCRIPTS
+     ==================================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/shared-data.js"></script>
+    <script src="js/requests.js?v=2"></script>
+
+</body>
+
+</html>

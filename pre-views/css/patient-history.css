@@ -1,0 +1,315 @@
+/**
+ * ============================================================================
+ * WCCMS — Patient History Page Styles (Page 6)
+ * Extends Metronic 8 Design System (Arabic RTL)
+ * ============================================================================
+ */
+
+/* ============================================================================
+   1. PAGE CONTAINER & CARDS
+   ============================================================================ */
+.m8-page-container-wide {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Patient Master Summary Header Box */
+.m8-patient-history-header {
+  background: linear-gradient(135deg, var(--m8-card-bg) 0%, var(--m8-input-solid-bg) 100%);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Stat Cards for History */
+.m8-hist-stat-card {
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.25rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.m8-hist-stat-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.m8-hist-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.m8-hist-stat-icon.icon-primary { background-color: var(--m8-primary-light); color: var(--m8-primary); }
+.m8-hist-stat-icon.icon-success { background-color: var(--m8-success-light); color: var(--m8-success); }
+.m8-hist-stat-icon.icon-info    { background-color: var(--m8-info-light);    color: var(--m8-info); }
+.m8-hist-stat-icon.icon-warning { background-color: var(--m8-warning-light); color: var(--m8-warning); }
+
+.m8-hist-stat-val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--m8-text-main);
+  line-height: 1;
+}
+
+.m8-hist-stat-lbl {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ============================================================================
+   2. REGISTRATION CARDS & ACCORDION
+   ============================================================================ */
+.m8-reg-history-card {
+  border: 1.5px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  background-color: var(--m8-card-bg);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.m8-reg-history-card.active-case {
+  border-color: var(--m8-primary);
+  box-shadow: 0 4px 20px rgba(62, 151, 255, 0.12);
+}
+
+.m8-reg-card-header {
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, var(--m8-card-bg) 0%, var(--m8-input-solid-bg) 100%);
+  border-bottom: 1px solid var(--m8-border-color);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.m8-reg-card-body {
+  padding: 1.5rem;
+}
+
+/* Status Badges */
+.m8-hist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.m8-hist-badge.badge-active {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+  border: 1px solid rgba(80, 205, 137, 0.25);
+}
+
+.m8-hist-badge.badge-closed {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-subtitle);
+  border: 1px dashed var(--m8-border-dashed);
+}
+
+.m8-hist-badge.badge-auto-closed {
+  background-color: var(--m8-danger-light);
+  color: var(--m8-danger-light-text);
+  border: 1px solid rgba(241, 65, 108, 0.2);
+}
+
+/* ============================================================================
+   3. SECTION HEADERS & READ-ONLY FIELDS
+   ============================================================================ */
+.m8-hist-section-header {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--m8-text-main);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--m8-border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m8-hist-read-field {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.65rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.m8-hist-read-field .lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--m8-text-subtitle);
+  text-transform: uppercase;
+}
+
+.m8-hist-read-field .val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--m8-text-main);
+}
+
+/* ============================================================================
+   4. CHRONOLOGICAL WOUND TIMELINE COMPONENT
+   ============================================================================ */
+.m8-wound-timeline {
+  position: relative;
+  padding-right: 2.2rem;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Vertical line on RTL right side */
+.m8-wound-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0.8rem;
+  width: 3px;
+  background: var(--m8-border-color);
+  border-radius: 2px;
+}
+
+.m8-timeline-step {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.m8-timeline-step:last-child {
+  margin-bottom: 0;
+}
+
+/* Node icon badge */
+.m8-timeline-node {
+  position: absolute;
+  right: -2.2rem;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--m8-card-bg);
+  border: 2px solid var(--m8-primary);
+  color: var(--m8-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.m8-timeline-node.node-reg       { border-color: var(--m8-primary); color: var(--m8-primary); background-color: var(--m8-primary-light); }
+.m8-timeline-node.node-daily     { border-color: var(--m8-info);    color: var(--m8-info);    background-color: var(--m8-info-light); }
+.m8-timeline-node.node-scheduled { border-color: #f6c000;          color: #b58400;           background-color: #fff8dd; }
+.m8-timeline-node.node-outcome   { border-color: var(--m8-success); color: var(--m8-success); background-color: var(--m8-success-light); }
+
+.m8-timeline-card {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  padding: 1rem 1.25rem;
+}
+
+.m8-timeline-date {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--m8-text-muted);
+  direction: ltr;
+  font-family: 'Inter', sans-serif;
+}
+
+.m8-timeline-title {
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--m8-text-main);
+}
+
+.m8-timeline-body {
+  font-size: 0.88rem;
+  color: var(--m8-text-main);
+  margin-top: 0.4rem;
+}
+
+/* ============================================================================
+   5. COLLAPSIBLE DAILY & SCHEDULED REVIEWS CARDS
+   ============================================================================ */
+.m8-rev-collapse-card {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.m8-rev-collapse-header {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--m8-card-bg);
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.m8-rev-collapse-header:hover {
+  background-color: var(--m8-primary-light);
+}
+
+.m8-rev-collapse-body {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--m8-border-color);
+}
+
+/* Notice Banner */
+.m8-readonly-notice-banner {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info-light-text);
+  border: 1px solid rgba(114, 57, 234, 0.15);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+  .m8-wound-timeline {
+    padding-right: 1.8rem;
+  }
+  .m8-wound-timeline::before {
+    right: 0.6rem;
+  }
+  .m8-timeline-node {
+    right: -1.8rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+}

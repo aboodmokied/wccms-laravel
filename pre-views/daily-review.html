@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-bs-theme="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>المراجعة اليومية - نظام إدارة عيادة العناية بالجروح</title>
+  <meta name="description" content="توثيق المراجعات اليومية وتتبع تطور الجروح والمراجعات المجدولة."/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="../pages/metronic8/css/metronic8.css"/>
+  <link rel="stylesheet" href="css/custom.css"/>
+  <link rel="stylesheet" href="css/requests.css"/>
+  <link rel="stylesheet" href="css/daily-review.css"/>
+</head>
+<body>
+
+<!-- ====================================================================
+     TOAST CONTAINER
+     ==================================================================== -->
+<div class="m8-toast-container" id="toast-container"></div>
+
+<!-- ====================================================================
+     SIDEBAR
+     ==================================================================== -->
+<aside class="m8-sidebar" id="m8-sidebar">
+  <a href="index.html" class="m8-brand text-decoration-none">
+    <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--m8-primary),#7239ea);display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-heart-pulse-fill text-white" style="font-size:1.2rem;"></i>
+    </div>
+    <div class="d-flex flex-column">
+      <span class="m8-brand-title">WCCMS</span>
+      <span class="text-muted" style="font-size:0.725rem;">عيادة العناية بالجروح</span>
+    </div>
+  </a>
+
+  <div class="m8-menu-container">
+    <div class="m8-menu-section">القائمة الرئيسية</div>
+    <a href="index.html" class="m8-nav-item"><i class="bi bi-speedometer2"></i><span>لوحة التحكم</span></a>
+    <a href="requests.html" class="m8-nav-item"><i class="bi bi-send-plus-fill"></i><span>طلبات التسجيل</span></a>
+    <a href="registered-patients.html" class="m8-nav-item"><i class="bi bi-people-fill"></i><span>المرضى المسجلون</span></a>
+    <a href="daily-review.html" class="m8-nav-item active"><i class="bi bi-calendar-check-fill"></i><span>المراجعات اليومية</span></a>
+    <a href="scheduled-reviews.html" class="m8-nav-item"><i class="bi bi-calendar2-week-fill"></i><span>المراجعات المجدولة</span></a>
+    <a href="patient-history.html" class="m8-nav-item"><i class="bi bi-clock-history"></i><span>سجل المرضى</span></a>
+    <div class="m8-menu-section mt-3">الإدارة</div>
+    <a href="#" class="m8-nav-item"><i class="bi bi-bar-chart-line-fill"></i><span>التقارير</span></a>
+    <a href="#" class="m8-nav-item"><i class="bi bi-shield-lock-fill"></i><span>سجل التدقيق</span></a>
+    <a href="admin.html" class="m8-nav-item"><i class="bi bi-gear-fill"></i><span>الإعدادات</span></a>
+  </div>
+
+  <div class="m8-sidebar-footer">
+    <div class="m8-user-pill">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3e97ff,#7239ea);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-person-fill text-white" style="font-size:1.15rem;"></i>
+      </div>
+      <div class="d-flex flex-column text-truncate flex-grow-1">
+        <span class="fw-bold text-white fs-7 text-truncate">أ. فاطمة الزهراني</span>
+        <span class="text-muted" style="font-size:0.725rem;">ممرضة عيادة الجروح</span>
+      </div>
+    </div>
+    <button class="m8-logout-btn mt-2"><i class="bi bi-box-arrow-right"></i><span>تسجيل الخروج</span></button>
+  </div>
+</aside>
+
+<!-- ====================================================================
+     MAIN WRAPPER
+     ==================================================================== -->
+<div class="m8-main-wrapper d-flex flex-column min-vh-100">
+
+  <!-- HEADER -->
+  <header class="m8-header">
+    <div class="d-flex align-items-center gap-3">
+      <button id="m8-mobile-toggle" class="btn btn-sm btn-icon btn-light d-lg-none">
+        <i class="bi bi-list fs-3"></i>
+      </button>
+      <div class="d-flex flex-column">
+        <span class="fw-bold fs-6">تفاصيل المريض والمراجعة اليومية</span>
+        <!-- BREADCRUMB -->
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0 fs-7 text-muted">
+            <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none">العناية بالجروح</a></li>
+            <li class="breadcrumb-item"><a href="registered-patients.html" id="bc-registered-patients-link" class="text-muted text-decoration-none">المرضى المسجلون</a></li>
+            <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page" id="bc-patient-name">—</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <span class="m8-header-date d-none d-md-inline-block">05/09/2026</span>
+      <button id="m8-theme-toggle" class="m8-theme-toggle">
+        <i id="m8-theme-toggle-icon" class="bi bi-moon-stars-fill"></i>
+        <span id="m8-theme-toggle-text">الوضع الليلي</span>
+      </button>
+      <!-- Simulation Controls Trigger -->
+      <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" onclick="toggleHospitalAutoDischarge()" title="محاكاة الخروج التلقائي من المستشفى">
+        <i class="bi bi-arrow-repeat"></i>
+        <span class="d-none d-sm-inline">محاكاة الخروج الآلي</span>
+      </button>
+      <a href="patient-history.html" id="hdr-patient-history-link" class="btn btn-sm btn-light-info d-none d-sm-inline-flex align-items-center gap-1" title="عرض التاريخ الصحي للمريض">
+        <i class="bi bi-file-earmark-medical-fill"></i><span>التاريخ الصحي للمريض</span>
+      </a>
+      <a href="registered-patients.html" id="btn-back-to-patients" class="btn btn-sm btn-light-primary d-none d-sm-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-right"></i><span>المرضى المسجلون</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-grow-1 p-4 p-md-5">
+    <div class="m8-page-container-wide">
+
+      <!-- ================================================================
+           HOSPITAL AUTO-DISCHARGE ALERT BANNER (SYNC SIMULATION)
+           ================================================================ -->
+      <div id="hospital-auto-discharge-banner" class="alert alert-danger d-none p-4 mb-4 align-items-center gap-3 shadow-sm border-danger border-2">
+        <i class="bi bi-exclamation-octagon-fill fs-1 flex-shrink-0 text-danger"></i>
+        <div>
+          <h4 class="alert-heading fw-bolder mb-1">تم تسجيل خروج المريض من نظام المستشفى تلقائياً</h4>
+          <p class="mb-0 fs-6">
+            Patient discharged from the Hospital System. The Wound Care Registration has been automatically closed.
+          </p>
+          <small class="text-muted d-block mt-1">رمز نوع الخروج: <code>HOSPITAL_AUTO</code> — تم تعطيل إنشاء المراجعات اليومية الجديدة لهذا التسجيل المغلق.</small>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           1. PATIENT SUMMARY CARD (READ-ONLY HOSPITAL DATA SUMMARY)
+           ================================================================ -->
+      <div class="card mb-4">
+        <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <h2 class="card-title fs-4 fw-bolder mb-0" id="hdr-patient-name">أحمد محمد علي</h2>
+            <span class="badge badge-light-primary fs-8">رقم التسجيل: <strong id="hdr-reg-id">REG-001</strong></span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="m8-source-badge">
+              <i class="bi bi-database-fill me-1"></i>بيانات من نظام المستشفى
+            </span>
+            <span class="badge badge-light-success fs-7 px-3 py-2" id="reg-status-badge">
+              <i class="bi bi-circle-fill me-1 text-success fs-9"></i> نشطة (ACTIVE)
+            </span>
+            <a href="patient-history.html" id="btn-patient-history-link" class="btn btn-sm btn-primary fw-bold ms-2 d-inline-flex align-items-center gap-1" title="فتح التاريخ الصحي والسجل الكامل للمريض">
+              <i class="bi bi-file-earmark-medical-fill"></i>
+              <span>التاريخ الصحي والسجل الكامل</span>
+            </a>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <div class="m8-readonly-field">
+                <span class="field-label">رقم الهوية الوطنية</span>
+                <span class="field-value text-ltr fw-bold" id="card-national-id">1087654321</span>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="m8-readonly-field">
+                <span class="field-label">رقم المريض بالمستشفى</span>
+                <span class="field-value text-ltr fw-bold" id="card-hospital-id">HP-10025</span>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="m8-readonly-field">
+                <span class="field-label">العمر / الجنس</span>
+                <span class="field-value fw-bold" id="card-age-gender">52 سنة · ذكر</span>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="m8-readonly-field">
+                <span class="field-label">تاريخ التسجيل الحالي</span>
+                <span class="field-value text-ltr fw-bold text-success" id="card-reg-date">2026/08/31</span>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="m8-readonly-field">
+                <span class="field-label">الطبيب المشرف</span>
+                <span class="field-value fw-bold" id="card-doctor">د. محمد خالد</span>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="m8-readonly-field">
+                <span class="field-label">قسم المستشفى</span>
+                <span class="field-value fw-bold" id="card-dept">العناية المركزة ICU</span>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="m8-readonly-field">
+                <span class="field-label">الممرض المسجل</span>
+                <span class="field-value fw-bold" id="card-nurse">أ. فاطمة الزهراني</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           2. CURRENT REGISTRATION & MULTI-WOUND DIAGNOSES TABS
+           ================================================================ -->
+      <div class="card mb-4">
+        <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <h3 class="card-title fs-5 mb-0">
+            <i class="bi bi-clipboard2-pulse-fill text-primary me-2"></i>بيانات التسجيل الحالي والتشخيصات والجروح
+          </h3>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge badge-light-info">الإجراء: <strong id="current-proc-name">تنضير الجرح (Debridement)</strong></span>
+            <span class="badge badge-light-secondary">التاريخ المرضي: <strong id="current-pmh-list">السكري، ضغط الدم</strong></span>
+          </div>
+        </div>
+        <div class="card-body p-4">
+
+          <!-- WOUND / DIAGNOSIS TABS -->
+          <ul class="nav nav-tabs nav-line-tabs mb-4 fs-6 fw-bold" id="woundTabs" role="tablist">
+            <!-- Dynamic Tab Links rendered by JS -->
+          </ul>
+
+          <!-- WOUND TABS CONTENT -->
+          <div class="tab-content" id="woundTabsContent">
+            <!-- Dynamic Tab Content rendered by JS -->
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================================================================
+           3. DAILY REVIEW ACTION WORKSPACE (PROMINENT MODAL BUTTON)
+           ================================================================ -->
+      <div class="card mb-4 border-primary border-2 shadow-sm" id="daily-review-header-card">
+        <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div>
+            <h3 class="card-title fs-4 fw-bolder mb-1 text-primary">
+              <i class="bi bi-calendar2-check-fill me-2"></i>المراجعة اليومية (Daily Review)
+            </h3>
+            <p class="text-muted fs-6 mb-0">قم بإضافة وتوثيق التغيرات اليومية لكل تشخيص للجرح وتقييم حالة المريض وإقرار الإجراء المناسب.</p>
+          </div>
+          <button type="button" class="btn btn-primary btn-cta d-inline-flex align-items-center gap-2 fw-bold" id="btn-open-daily-review-modal" onclick="openDailyReviewModal()">
+            <i class="bi bi-plus-circle-fill fs-5"></i>
+            <span>+ إضافة مراجعة يومية (Add Daily Review)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           4. RECENT DAILY REVIEWS (RECENT CLINICAL CONTEXT ONLY)
+           ================================================================ -->
+      <div class="card mb-4">
+        <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="card-title fs-5 mb-0">
+              <i class="bi bi-journal-text text-primary me-2"></i>سجل المراجعات اليومية الأخيرة (Recent Reviews)
+            </h3>
+            <span class="badge badge-light-primary" id="review-history-count">0 مراجعة حديثة</span>
+          </div>
+          <a href="patient-history.html" id="btn-view-full-history" class="btn btn-sm btn-light-primary fw-bold d-inline-flex align-items-center gap-1">
+            <i class="bi bi-clock-history"></i>
+            <span>عرض السجل الكامل (Page 6)</span>
+          </a>
+        </div>
+        <div class="card-body p-4">
+          <!-- COLLAPSIBLE TIMELINE CARDS CONTAINER (RECENT ONLY) -->
+          <div id="daily-review-timeline-cards" class="d-flex flex-column gap-3">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer py-3 px-4 border-top d-flex flex-column flex-md-row justify-content-between text-muted fs-7">
+    <div>حقوق الطبع والنشر © 2026 نظام إدارة عيادة العناية بالجروح (WCCMS).</div>
+    <div class="d-flex gap-3 justify-content-center mt-2 mt-md-0">
+      <a href="#" class="text-muted">الشروط والأحكام</a>
+      <a href="#" class="text-muted">سياسة الخصوصية</a>
+      <a href="#" class="text-muted">الدعم الفني</a>
+    </div>
+  </footer>
+</div>
+
+<!-- ====================================================================
+     MODAL 1 — MULTI-DIAGNOSIS DAILY REVIEW MODAL
+     ==================================================================== -->
+<div class="modal fade" id="dailyReviewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-bottom py-3">
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="modal-title fs-5 fw-bold text-primary mb-0">
+            <i class="bi bi-calendar2-plus-fill me-2"></i>إضافة مراجعة يومية جديدة (Add Daily Review)
+          </h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      
+      <div class="modal-body p-4">
+        <!-- COMPACT PATIENT SUMMARY BAR IN MODAL -->
+        <div class="p-3 mb-4 rounded bg-light-primary border border-primary-subtle d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--m8-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;">
+              <i class="bi bi-person-fill fs-5"></i>
+            </div>
+            <div>
+              <span class="fw-bold text-dark fs-6 d-block" id="modal-patient-name">أحمد محمد علي</span>
+              <span class="text-muted fs-7">رقم المريض: <strong class="ltr-cell" id="modal-hospital-id">HP-10025</strong> | رقم التسجيل: <strong class="ltr-cell" id="modal-reg-id">REG-001</strong></span>
+            </div>
+          </div>
+          <span class="badge badge-light-primary px-3 py-2 fs-7" id="modal-diag-count-badge">عدد التشخيصات الخاضعة للمراجعة: 2</span>
+        </div>
+
+        <form id="daily-review-modal-form" onsubmit="return false;">
+          
+          <!-- DIAGNOSES REVIEW ACCORDION (DYNAMICALLY RENDERED FOR EACH DIAGNOSIS) -->
+          <div class="mb-4">
+            <h5 class="fw-bold fs-6 text-dark mb-3">
+              <i class="bi bi-journal-medical text-primary me-2"></i>تقييم ومراجعة التشخيصات والجروح (Diagnosis-Specific Reviews)
+            </h5>
+            <div class="accordion" id="modal-diagnoses-accordion">
+              <!-- Rendered dynamically by JS for Diagnosis 1, Diagnosis 2, etc. -->
+            </div>
+          </div>
+
+          <hr class="my-4"/>
+
+          <!-- OVERALL REGISTRATION OUTCOME SECTION -->
+          <div class="card p-4 border-2 border-primary bg-light mb-3">
+            <h5 class="fw-bolder fs-6 text-dark mb-2">
+              <i class="bi bi-star-fill text-warning me-2"></i>النتيجة العامة للتسجيل (Overall Registration Outcome) <span class="text-danger">*</span>
+            </h5>
+            <p class="text-muted small mb-3">حدد الإجراء النهائي المطبق على مستوى تسجيل المريض ككل بناءً على نتائج التشخيصات:</p>
+
+            <div class="row g-3" id="overall-outcome-options">
+              
+              <!-- Option 1: Improved Needs Discharge -->
+              <div class="col-12 col-md-6 col-xl-3">
+                <label class="m8-outcome-card p-3 border rounded h-100 cursor-pointer d-flex flex-column gap-2" id="card-outcome-1" onclick="selectOverallOutcome('IMPROVED_DISCHARGE')">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="overallOutcome" value="IMPROVED_DISCHARGE" class="form-check-input flex-shrink-0" required/>
+                    <span class="fw-bold text-success fs-6">تحسن – يحتاج خروج</span>
+                  </div>
+                  <small class="text-muted">إغلاق تسجيل الجروح، تسجيل تاريخ الخروج، وتغيير الحالة إلى (DISCHARGED).</small>
+                </label>
+              </div>
+
+              <!-- Option 2: Improved Discharge & Schedule Followup -->
+              <div class="col-12 col-md-6 col-xl-3">
+                <label class="m8-outcome-card p-3 border rounded h-100 cursor-pointer d-flex flex-column gap-2" id="card-outcome-2" onclick="selectOverallOutcome('IMPROVED_SCHEDULED')">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="overallOutcome" value="IMPROVED_SCHEDULED" class="form-check-input flex-shrink-0"/>
+                    <span class="fw-bold text-primary fs-6">تحسن – خروج ومراجعة مجدولة</span>
+                  </div>
+                  <small class="text-muted">إغلاق المتابعة الحالية، وتحديد موعد مراجعة عيادة خارجية مجدولة.</small>
+                </label>
+              </div>
+
+              <!-- Option 3: Worsened Needs Stay -->
+              <div class="col-12 col-md-6 col-xl-3">
+                <label class="m8-outcome-card p-3 border rounded h-100 cursor-pointer d-flex flex-column gap-2" id="card-outcome-3" onclick="selectOverallOutcome('WORSENED_STAY')">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="overallOutcome" value="WORSENED_STAY" class="form-check-input flex-shrink-0"/>
+                    <span class="fw-bold text-warning fs-6">تفاقم – يحتاج استمرار العلاج</span>
+                  </div>
+                  <small class="text-muted">استمرار التسجيل نشطاً (ACTIVE) واستكمال المراجعات اليومية كالمعتاد.</small>
+                </label>
+              </div>
+
+              <!-- Option 4: Death -->
+              <div class="col-12 col-md-6 col-xl-3">
+                <label class="m8-outcome-card p-3 border rounded h-100 cursor-pointer d-flex flex-column gap-2" id="card-outcome-4" onclick="selectOverallOutcome('DEATH')">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="overallOutcome" value="DEATH" class="form-check-input flex-shrink-0"/>
+                    <span class="fw-bold text-danger fs-6">وفاة</span>
+                  </div>
+                  <small class="text-muted">توثيق حالة الوفاة وإغلاق تسجيل العناية بالجروح (CLOSED_DEATH).</small>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- STICKY MODAL FOOTER (CANCEL & SAVE DAILY REVIEW) -->
+      <div class="modal-footer gap-2 border-top py-3 px-4 bg-light">
+        <button type="button" class="btn btn-light-primary fw-semibold" data-bs-dismiss="modal">إلغاء (Cancel)</button>
+        <button type="button" class="btn btn-primary fw-bold d-inline-flex align-items-center gap-2 px-4" id="btn-save-review" onclick="saveDailyReview()">
+          <i class="bi bi-check2-circle fs-4"></i>
+          <span>حفظ المراجعة اليومية (Save Daily Review)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ====================================================================
+     SCRIPTS
+     ==================================================================== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/shared-data.js"></script>
+<script src="js/daily-review.js"></script>
+
+</body>
+</html>
