@@ -1,37 +1,52 @@
+<!--
+### Sync Impact Report
+- **Version Change**: 1.0.0 → 1.1.0 (MINOR bump: Locked core stack, DB-First stored procedure logic, naming protocols, Arabic/RTL support, and Actor vs. Data-Entry separation rules)
+- **Modified Principles**:
+  - Tech Stack & Environment: Defined explicit Laravel (PHP) + Oracle SQL Server stack.
+  - I. Database-First Architecture: Expanded to mandate stored procedures/triggers/views for core business operations (approval, registration, reviews, voiding).
+  - II. Unified Database Naming Protocol: Locked `<PREFIX>_<name>_TB`, `<short_prefix>_`, `CODE` PK, and `_CD` FK standards.
+  - III. First-Class Arabic & RTL Support: Mandated Arabic language and RTL UI support across all features.
+  - IV. Actor vs. Data-Entry Separation: Mandated strict audit separation between `PER_EMPLOYEE_TB` (clinical actor) and `PER_USERS_TB` (system data entry).
+- **Added Sections**: Quality Gates & Workflow, Governance.
+- **Removed Sections**: None.
+- **Follow-up TODOs**: None.
+-->
+
 # WCCMS Constitution
 
 ## Core Principles
 
-### I. Database-First Architecture (NON-NEGOTIABLE)
-The pre-existing MySQL database schema (`wccms`) is the primary source of truth. All domain tables end with `_tb` (e.g. `mr_patient_tb`, `wc_registration_tb`).
-- Models must explicitly define custom primary keys (`$primaryKey = 'PREFIX_CODE'`), `$incrementing = false`, `$keyType = 'string'`, and `$timestamps = false`.
-- Column names in queries and Eloquent relationships must match database definitions exactly.
+### I. Stack Assumption
+The application stack is **Laravel (PHP) + Oracle SQL Server**. Every specification, plan, task, and implementation phase MUST assume this stack without exception.
 
-### II. Laravel Ecosystem Standards
-Follow modern Laravel practices (Laravel 11 / PHP 8.3).
-- Use Artisan code generators (`php artisan make:*`) for creating components.
-- Enforce strict PHP type hints, explicit return declarations, and run Pint formatter (`vendor/bin/pint --format agent`) on code changes.
-- Links and navigation must use named routes via `route()`.
+### II. Database-First Architecture & In-Database Logic (NON-NEGOTIABLE)
+The database is the single source of truth and primary business logic engine.
+- Critical business workflows (e.g. approving requests, creating registrations, scheduling reviews, voiding registrations/reviews) MUST reside in triggers, stored procedures, and views inside the database.
+- Laravel Eloquent models MUST reflect database structures and call stored procedures/views for mutations; Eloquent models MUST NOT replace or bypass database-side logic.
 
-### III. Test-Driven & Feature Testing Priority
-Maintain continuous test coverage for critical business workflows.
-- Create feature tests for endpoints and services using `php artisan make:test`.
-- Use model factories for test setup rather than ad-hoc database mutations in tests.
+### III. Unified Database Naming Protocol
+All database objects must strictly adhere to the unified naming reference document:
+- **Tables**: Named as `<PREFIX>_<name>_TB` (e.g. `MR_PATIENT_TB`, `PER_EMPLOYEE_TB`, `WC_REGISTRATION_TB`).
+- **Columns**: Prefixed with `<short_prefix>_` (e.g. `MR_PAT_`, `PER_EMP_`, `WC_REG_`).
+- **Primary Keys**: Custom column named `CODE` with prefix (e.g. `MR_PAT_CODE`, `WC_REG_CODE`).
+- **Foreign Keys**: Column names ending with `_CD` (e.g. `WC_REG_PATIENT_CD`, `WC_REG_NURSE_CD`).
 
-### IV. Defensive Security & Data Integrity
-Healthcare and patient record integrity is critical.
-- Authorization checks must be enforced via policies and gates.
-- Inputs must be validated through Form Requests before mutating database state.
+### IV. First-Class Arabic & RTL Support
+Any user interface or text content MUST support Arabic as a first-class language.
+- Layouts must natively support Right-to-Left (RTL) directional rendering.
+- User-facing text, error messages, and clinical review interfaces must provide complete Arabic localization.
 
-## Tech Stack & Environment
-- **Framework**: Laravel 11 / PHP 8.3
-- **Database**: MySQL (`wccms`) - DB-First Pattern
-- **Styling & Assets**: Tailwind CSS & Vite
+### V. Actor vs. Data-Entry Separation
+Any feature or record involving clinical actions ("who performed a clinical action") MUST explicitly distinguish:
+- **Clinical Actor**: The actual employee performing the clinical task, referencing `PER_EMPLOYEE_TB` (e.g. `WC_REG_NURSE_CD`).
+- **Data-Entry User**: The system user logging into the system and recording the data, referencing `PER_USERS_TB` (e.g. `WC_REG_ENTRY_USER_CD`).
 
 ## Quality Gates & Workflow
-1. Code formatting check with Pint (`vendor/bin/pint --format agent`).
-2. Verification via PHPUnit feature tests (`php artisan test`).
-3. Spec-driven development using GitHub Spec Kit workflows (`.specify/`).
+1. Specification alignment with Database-First stored procedure calls and naming conventions.
+2. Verification via PHPUnit feature tests calling real/mocked procedure interfaces.
+3. Code style enforcement using Pint (`vendor/bin/pint --format agent`).
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-20
+## Governance
+This constitution supersedes all secondary development guidelines. Any changes to core database logic, architecture, or naming protocols require an amended constitution update and version bump.
 
+**Version**: 1.1.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-20
