@@ -1,9 +1,180 @@
-@import 'tailwindcss';
+/**
+ * ============================================================================
+ * WCCMS - Wound Care Clinic Management System
+ * Global Application Stylesheet (RTL Baseline & Self-Hosted Cairo Font)
+ * ============================================================================
+ */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+/* ----------------------------------------------------------------------------
+ * 1. Self-Hosted Cairo Font Face Rules
+ * ---------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/cairo/cairo-v28-arabic-regular.woff2') format('woff2');
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/cairo/cairo-v28-arabic-700.woff2') format('woff2');
+}
+
+/* ----------------------------------------------------------------------------
+ * 2. RTL Baseline & Font Family Reset
+ * ---------------------------------------------------------------------------- */
+:root {
+  --m8-font-family: 'Cairo', system-ui, -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif;
+  --m8-primary: #3e97ff;
+  --m8-primary-light: rgba(62, 151, 255, 0.1);
+  --m8-success: #50cd89;
+  --m8-success-light: rgba(80, 205, 137, 0.1);
+  --m8-success-light-text: #47be7d;
+  --m8-warning: #ffc700;
+  --m8-warning-light: rgba(255, 199, 0, 0.1);
+  --m8-warning-light-text: #d4a500;
+  --m8-danger: #f1416c;
+  --m8-danger-light: rgba(241, 65, 108, 0.1);
+  --m8-danger-light-text: #d9214e;
+  --m8-info: #7239ea;
+  --m8-info-light: rgba(114, 57, 234, 0.1);
+  --m8-info-light-text: #622bd7;
+  --m8-card-bg: #ffffff;
+  --m8-input-solid-bg: #f9f9f9;
+  --m8-border-color: #f1f1f4;
+  --m8-border-dashed: #e1e3ea;
+  --m8-text-main: #181c32;
+  --m8-text-subtitle: #5e6278;
+  --m8-text-muted: #a1a5b7;
+  --m8-radius-sm: 8px;
+  --m8-radius-md: 12px;
+  --m8-radius-lg: 16px;
+}
+
+body {
+  font-family: var(--m8-font-family);
+  direction: rtl;
+  text-align: right;
+  background-color: #f5f8fa;
+  color: var(--m8-text-main);
+}
+
+/* ----------------------------------------------------------------------------
+ * 3. Base Custom Styles from pre-views/custom.css
+ * ---------------------------------------------------------------------------- */
+.m8-stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding: 1.5rem 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.m8-stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  max-width: 220px;
+}
+
+.m8-stepper-line {
+  position: absolute;
+  top: 22px;
+  height: 3px;
+  background: var(--m8-border-color);
+  z-index: 0;
+  transition: background-color 0.5s ease;
+}
+
+.m8-stepper-item:not(:last-child) .m8-stepper-line {
+  left: 0;
+  right: 50%;
+  width: calc(100% - 22px);
+  transform: translateX(-50%);
+}
+
+.m8-stepper-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid var(--m8-border-color);
+  background-color: var(--m8-card-bg);
+  color: var(--m8-text-subtitle);
+  z-index: 1;
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.m8-stepper-label {
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-subtitle);
+  text-align: center;
+  transition: color 0.4s ease;
+}
+
+.m8-stepper-item.active .m8-stepper-icon {
+  background-color: var(--m8-primary);
+  border-color: var(--m8-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(62, 151, 255, 0.35);
+}
+
+.m8-stepper-item.completed .m8-stepper-icon {
+  background-color: var(--m8-success);
+  border-color: var(--m8-success);
+  color: #ffffff;
+}
+
+.m8-readonly-field {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px dashed var(--m8-border-dashed);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.65rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.m8-readonly-field .field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--m8-text-subtitle);
+}
+
+.m8-readonly-field .field-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+
+.form-control,
+.form-select {
+  font-size: 0.9rem !important;
+  padding-top: 0.52rem !important;
+  padding-bottom: 0.52rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px;
+}
+
+.btn {
+  font-size: 0.9rem !important;
+  padding-top: 0.46rem !important;
+  padding-bottom: 0.46rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px;
 }

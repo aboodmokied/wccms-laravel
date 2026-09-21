@@ -1,0 +1,692 @@
+/**
+ * ============================================================================
+ * WCCMS — Daily Review Page Styles
+ * Extends Metronic 8 Design System (RTL)
+ * ============================================================================
+ */
+
+/* Outcome Card Styling */
+.m8-outcome-card {
+  background-color: var(--m8-card-bg);
+  border: 1.5px solid var(--m8-border-color) !important;
+  border-radius: var(--m8-radius-md);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.m8-outcome-card:hover {
+  border-color: var(--m8-primary) !important;
+  box-shadow: 0 4px 16px rgba(62, 151, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.m8-outcome-card.selected {
+  border-color: var(--m8-primary) !important;
+  border-width: 2px !important;
+  background-color: var(--m8-primary-light);
+}
+
+/* Diagnosis Tabs */
+.diag-tab {
+  color: var(--m8-text-subtitle);
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0;
+  transition: all 0.2s ease;
+}
+
+.diag-tab:hover {
+  color: var(--m8-primary);
+}
+
+.diag-tab.active {
+  color: var(--m8-primary) !important;
+  border-bottom-color: var(--m8-primary) !important;
+  background: transparent !important;
+}
+
+/* Timeline Review Card Styling */
+.m8-review-card {
+  transition: all 0.2s ease;
+  border-color: var(--m8-border-color) !important;
+}
+
+.m8-review-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--m8-primary-light) !important;
+}
+
+.m8-review-card .transition-icon {
+  transition: transform 0.25s ease;
+}
+
+.m8-review-card .card-header[aria-expanded="true"] .transition-icon {
+  transform: rotate(180deg);
+}
+
+/* Timeline & Scheduled Reviews Table font sizes */
+.fs-8 { font-size: 0.75rem !important; }
+.fs-9 { font-size: 0.68rem !important; }
+
+/* Switch Toggle Customization */
+.form-check-input:checked {
+  background-color: var(--m8-primary);
+  border-color: var(--m8-primary);
+}
+
+/* Modal Accordion Item Customization */
+#modal-diagnoses-accordion .accordion-button:not(.collapsed) {
+  background-color: var(--m8-primary-light) !important;
+  color: var(--m8-primary) !important;
+  box-shadow: none;
+}
+/**
+ * ============================================================================
+ * WCCMS — Scheduled Reviews Page Styles (Page 5)
+ * Extends Metronic 8 Design System (Arabic RTL)
+ * ============================================================================
+ */
+
+/* ============================================================================
+   1. PAGE CONTAINER WIDE
+   ============================================================================ */
+.m8-page-container-wide {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ============================================================================
+   2. STAT CARDS
+   ============================================================================ */
+.m8-stat-card {
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.25rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s;
+  cursor: pointer;
+}
+
+.m8-stat-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.m8-stat-card.active-filter {
+  border-color: var(--m8-primary);
+  background-color: var(--m8-primary-light);
+  box-shadow: 0 4px 14px rgba(62, 151, 255, 0.2);
+}
+
+.m8-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.m8-stat-icon.icon-primary { background-color: var(--m8-primary-light); color: var(--m8-primary); }
+.m8-stat-icon.icon-info    { background-color: var(--m8-info-light);    color: var(--m8-info); }
+.m8-stat-icon.icon-danger  { background-color: var(--m8-danger-light);  color: var(--m8-danger); }
+.m8-stat-icon.icon-success { background-color: var(--m8-success-light); color: var(--m8-success); }
+
+.m8-stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--m8-text-main);
+  line-height: 1;
+}
+
+.m8-stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ============================================================================
+   3. SEARCH WRAPPER & QUICK TABS
+   ============================================================================ */
+.m8-search-wrapper {
+  position: relative;
+}
+
+.m8-search-wrapper .search-icon {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  color: var(--m8-text-muted);
+  font-size: 1rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.m8-search-wrapper .m8-search-input {
+  padding-right: 2.75rem;
+  background-color: var(--m8-input-solid-bg);
+  border: 1.5px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.m8-search-wrapper .m8-search-input:focus {
+  border-color: var(--m8-primary);
+  box-shadow: 0 0 0 3px rgba(62, 151, 255, 0.12);
+  background-color: var(--m8-card-bg);
+  outline: none;
+}
+
+/* Quick Filter Buttons/Tabs Above Table */
+.m8-quick-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--m8-border-color);
+}
+
+.m8-quick-tab {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-muted);
+  border: 1px solid var(--m8-border-color);
+  border-radius: 20px;
+  padding: 0.35rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.m8-quick-tab:hover {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+  border-color: var(--m8-primary);
+}
+
+.m8-quick-tab.active {
+  background-color: var(--m8-primary);
+  color: #ffffff;
+  border-color: var(--m8-primary);
+  box-shadow: 0 3px 10px rgba(62, 151, 255, 0.3);
+}
+
+.m8-quick-tab.active .badge-count {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* Today's Reviews Highlight Tab */
+.m8-quick-tab.tab-today {
+  border-color: rgba(255, 199, 0, 0.4);
+}
+
+.m8-quick-tab.tab-today.active {
+  background-color: #f6c000;
+  color: #181c32;
+  border-color: #f6c000;
+  box-shadow: 0 3px 10px rgba(246, 192, 0, 0.35);
+}
+
+/* Overdue Highlight Tab */
+.m8-quick-tab.tab-overdue.active {
+  background-color: var(--m8-danger);
+  color: #ffffff;
+  border-color: var(--m8-danger);
+  box-shadow: 0 3px 10px rgba(241, 65, 108, 0.35);
+}
+
+/* ============================================================================
+   4. TABLE STYLES & STATUS BADGES
+   ============================================================================ */
+.m8-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--m8-radius-md);
+}
+
+.m8-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.m8-table thead th {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-muted);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--m8-border-color);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.m8-table thead th.sch-sortable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.m8-table thead th.sch-sortable:hover {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+.m8-table tbody tr {
+  border-bottom: 1px solid var(--m8-border-color);
+  transition: background-color 0.15s ease;
+}
+
+.m8-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.m8-table tbody tr:hover {
+  background-color: var(--m8-input-solid-bg);
+}
+
+.m8-table td {
+  padding: 0.85rem 1rem;
+  color: var(--m8-text-main);
+  vertical-align: middle;
+}
+
+/* Patient Cell Styling */
+.sch-patient-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--m8-text-main);
+  display: block;
+}
+
+.sch-national-id {
+  font-size: 0.78rem;
+  color: var(--m8-text-muted);
+  font-family: 'Inter', sans-serif;
+  direction: ltr;
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.sch-date-text {
+  font-size: 0.84rem;
+  direction: ltr;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}
+
+/* Status Badges */
+.m8-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Status: Today (اليوم) */
+.m8-status-badge.badge-today {
+  background-color: #fff8dd;
+  color: #cd9000;
+  border: 1px solid #ffeaa7;
+}
+
+[data-bs-theme="dark"] .m8-status-badge.badge-today {
+  background-color: rgba(246, 192, 0, 0.18);
+  color: #ffc700;
+  border-color: rgba(246, 192, 0, 0.3);
+}
+
+/* Status: Scheduled (مجدول) */
+.m8-status-badge.badge-scheduled {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info-light-text);
+  border: 1px solid rgba(114, 57, 234, 0.15);
+}
+
+/* Status: Overdue (متأخر) */
+.m8-status-badge.badge-overdue {
+  background-color: var(--m8-danger-light);
+  color: var(--m8-danger-light-text);
+  border: 1px solid rgba(241, 65, 108, 0.2);
+}
+
+/* Status: Completed (مكتمل) */
+.m8-status-badge.badge-completed {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+  border: 1px solid rgba(80, 205, 137, 0.2);
+}
+
+/* Status: Cancelled (ملغى) */
+.m8-status-badge.badge-cancelled {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-subtitle);
+  border: 1px dashed var(--m8-border-dashed);
+}
+
+/* Action Buttons in Table */
+.btn-open-review {
+  background-color: var(--m8-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--m8-radius-sm);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-open-review:hover {
+  background-color: #2980d0;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(62, 151, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-view-details {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-main);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-view-details:hover {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+  border-color: var(--m8-primary);
+}
+
+/* ============================================================================
+   5. REVIEW MODAL STYLING
+   ============================================================================ */
+.m8-modal-header-compact {
+  background: linear-gradient(135deg, var(--m8-card-bg) 0%, var(--m8-input-solid-bg) 100%);
+  border-bottom: 1px solid var(--m8-border-color);
+  padding: 1.25rem 1.75rem;
+}
+
+/* Patient Summary Pill in Modal */
+.m8-patient-summary-box {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.15rem 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.m8-patient-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 16fr));
+  gap: 0.85rem 1.25rem;
+}
+
+.m8-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.m8-summary-item .item-label {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--m8-text-subtitle);
+  text-transform: uppercase;
+}
+
+.m8-summary-item .item-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--m8-text-main);
+}
+
+.m8-summary-item .item-value.ltr-val {
+  direction: ltr;
+  text-align: start;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Diagnosis Target Banner inside Modal */
+.m8-diag-target-banner {
+  background: linear-gradient(135deg, rgba(62, 151, 255, 0.08) 0%, rgba(114, 57, 234, 0.08) 100%);
+  border: 1.5px solid var(--m8-primary);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.85rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.m8-diag-target-title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--m8-primary);
+}
+
+.m8-diag-target-sub {
+  font-size: 0.84rem;
+  color: var(--m8-text-muted);
+}
+
+/* Read-Only History Section */
+.m8-history-read-card {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px dashed var(--m8-border-dashed);
+  border-radius: var(--m8-radius-md);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.m8-history-read-card .card-title-sm {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--m8-text-main);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m8-history-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 0.88rem;
+}
+
+[data-bs-theme="dark"] .m8-history-row {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.m8-history-row:last-child {
+  border-bottom: none;
+}
+
+.m8-history-label {
+  font-weight: 600;
+  color: var(--m8-text-muted);
+}
+
+.m8-history-val {
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+
+/* ============================================================================
+   6. OUTCOME CARDS IN MODAL
+   ============================================================================ */
+.m8-outcome-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.m8-outcome-card {
+  border: 2px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.1rem 1.3rem;
+  background-color: var(--m8-card-bg);
+  cursor: pointer;
+  transition: all 0.25 ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+}
+
+.m8-outcome-card:hover {
+  border-color: rgba(62, 151, 255, 0.5);
+  background-color: var(--m8-input-solid-bg);
+}
+
+.m8-outcome-card.selected {
+  border-color: var(--m8-primary);
+  background-color: var(--m8-primary-light);
+  box-shadow: 0 4px 16px rgba(62, 151, 255, 0.15);
+}
+
+/* Specific Outcome Hover/Selected Highlights */
+.m8-outcome-card.card-outcome-worsened.selected {
+  border-color: var(--m8-danger);
+  background-color: var(--m8-danger-light);
+  box-shadow: 0 4px 16px rgba(241, 65, 108, 0.15);
+}
+
+.m8-outcome-card.card-outcome-worsened.selected .outcome-title {
+  color: var(--m8-danger);
+}
+
+.m8-outcome-radio {
+  width: 20px;
+  height: 20px;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.m8-outcome-content {
+  flex-grow: 1;
+}
+
+.m8-outcome-title {
+  font-weight: 800;
+  font-size: 0.96rem;
+  color: var(--m8-text-main);
+  margin-bottom: 0.25rem;
+}
+
+.m8-outcome-desc {
+  font-size: 0.82rem;
+  color: var(--m8-text-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Doctor Transfer Notice Banner */
+.m8-doctor-transfer-notice {
+  background: linear-gradient(135deg, rgba(241, 65, 108, 0.1) 0%, rgba(241, 65, 108, 0.04) 100%);
+  border: 1.5px solid var(--m8-danger);
+  border-radius: var(--m8-radius-md);
+  padding: 1.15rem 1.3rem;
+  margin-top: 1.25rem;
+  animation: fadeSlideIn 0.3s ease-out;
+}
+
+.m8-doctor-transfer-notice .notice-title {
+  font-weight: 800;
+  font-size: 0.98rem;
+  color: var(--m8-danger);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.m8-doctor-transfer-notice .notice-steps {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Conditional Next Appointment Block */
+.m8-next-appointment-box {
+  background-color: var(--m8-input-solid-bg);
+  border: 1.5px solid var(--m8-primary);
+  border-radius: var(--m8-radius-md);
+  padding: 1.25rem 1.4rem;
+  margin-top: 1.25rem;
+  animation: fadeSlideIn 0.35s ease-out;
+}
+
+/* Sticky Modal Footer */
+.m8-modal-footer-sticky {
+  position: sticky;
+  bottom: 0;
+  background-color: var(--m8-card-bg);
+  border-top: 1px solid var(--m8-border-color);
+  padding: 1rem 1.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* ============================================================================
+   7. RESPONSIVE DESIGN
+   ============================================================================ */
+@media (max-width: 767.98px) {
+  .m8-patient-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .m8-history-row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  .m8-table {
+    font-size: 0.82rem;
+  }
+  .m8-table td, .m8-table th {
+    padding: 0.6rem 0.5rem;
+  }
+}

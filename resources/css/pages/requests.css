@@ -1,0 +1,1087 @@
+/**
+ * ============================================================================
+ * WCCMS — Requests Page Styles
+ * Extends Metronic 8 Design System
+ * ============================================================================
+ */
+
+/* ----------------------------------------------------------------------------
+ * 1. Statistics Cards
+ * ---------------------------------------------------------------------------- */
+.m8-stat-card {
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s;
+  cursor: default;
+}
+
+.m8-stat-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+  transform: translateY(-2px);
+}
+
+.m8-stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.m8-stat-icon.icon-warning {
+  background-color: var(--m8-warning-light);
+  color: var(--m8-warning);
+}
+
+.m8-stat-icon.icon-success {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success);
+}
+
+.m8-stat-icon.icon-danger {
+  background-color: var(--m8-danger-light);
+  color: var(--m8-danger);
+}
+
+.m8-stat-icon.icon-primary {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+.m8-stat-icon.icon-info {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info);
+}
+
+.m8-stat-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--m8-text-main);
+  line-height: 1;
+}
+
+.m8-stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-muted);
+  margin-top: 0.2rem;
+}
+
+/* ----------------------------------------------------------------------------
+ * 2. Requests Table
+ * ---------------------------------------------------------------------------- */
+.m8-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--m8-radius-md);
+}
+
+.m8-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.m8-table thead th {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-muted);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--m8-border-color);
+  white-space: nowrap;
+}
+
+.m8-table tbody tr {
+  border-bottom: 1px solid var(--m8-border-color);
+  transition: background-color 0.15s ease;
+}
+
+.m8-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.m8-table tbody tr:hover {
+  background-color: var(--m8-input-solid-bg);
+}
+
+.m8-table td {
+  padding: 0.85rem 1rem;
+  color: var(--m8-text-main);
+  vertical-align: middle;
+}
+
+.m8-table .req-id {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--m8-primary);
+  font-size: 0.85rem;
+  direction: ltr;
+}
+
+.m8-table .patient-name {
+  font-weight: 600;
+}
+
+.m8-table .ltr-cell {
+  direction: ltr;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: var(--m8-text-muted);
+}
+
+.m8-table .date-cell {
+  font-size: 0.82rem;
+  color: var(--m8-text-muted);
+  white-space: nowrap;
+  direction: ltr;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Empty table state */
+.m8-table-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--m8-text-subtitle);
+}
+
+/* ----------------------------------------------------------------------------
+ * 3. Status Badges
+ * ---------------------------------------------------------------------------- */
+.m8-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.m8-status-badge.status-pending {
+  background-color: var(--m8-warning-light);
+  color: var(--m8-warning-light-text);
+}
+
+.m8-status-badge.status-approved {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+}
+
+.m8-status-badge.status-rejected {
+  background-color: var(--m8-danger-light);
+  color: var(--m8-danger-light-text);
+}
+
+.m8-status-badge.status-cancelled {
+  background-color: var(--m8-dark-light);
+  color: var(--m8-text-muted);
+}
+
+.m8-status-badge.status-reg-pending {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info-light-text);
+}
+
+.m8-status-badge.status-registered {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+  border: 1.5px solid var(--m8-success);
+}
+
+/* ----------------------------------------------------------------------------
+ * 4. Action Buttons in Table & Workspace
+ * ---------------------------------------------------------------------------- */
+.m8-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.m8-table th,
+.m8-table td {
+  white-space: nowrap;
+}
+
+.m8-table td.text-end,
+.m8-table th.text-end {
+  min-width: 165px !important;
+  width: 165px !important;
+  white-space: nowrap !important;
+}
+
+.m8-table .btn-sm,
+.m8-table .btn,
+.btn-action {
+  white-space: nowrap !important;
+  flex-wrap: nowrap !important;
+  font-size: 0.82rem !important;
+  padding: 0.35rem 0.85rem !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  height: 32px !important;
+  line-height: 1 !important;
+  border-radius: var(--m8-radius-sm) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.m8-table .btn-sm *,
+.m8-table .btn *,
+.btn-action * {
+  white-space: nowrap !important;
+}
+
+.btn-action.action-view {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+.btn-action.action-view:hover {
+  background-color: var(--m8-primary);
+  color: #fff;
+}
+
+.btn-action.action-approve {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+}
+
+.btn-action.action-approve:hover {
+  background-color: var(--m8-success);
+  color: #fff;
+}
+
+.btn-action.action-reject {
+  background-color: var(--m8-danger-light);
+  color: var(--m8-danger);
+}
+
+.btn-action.action-reject:hover {
+  background-color: var(--m8-danger);
+  color: #fff;
+}
+
+.btn-action.action-complete {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info);
+}
+
+.btn-action.action-complete:hover {
+  background-color: var(--m8-info);
+  color: #fff;
+}
+
+/* ----------------------------------------------------------------------------
+ * 5. Filter Bar
+ * ---------------------------------------------------------------------------- */
+.m8-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--m8-border-color);
+  background-color: var(--m8-card-bg);
+}
+
+.m8-search-input {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-input-solid-bg);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.55rem 0.85rem 0.55rem 2.4rem;
+  font-size: 0.88rem;
+  color: var(--m8-text-main);
+  width: 240px;
+  transition: all 0.2s ease;
+  font-family: var(--m8-font-family);
+}
+
+.m8-search-input:focus {
+  outline: none;
+  border-color: var(--m8-primary);
+  background-color: var(--m8-input-solid-focus-bg);
+  box-shadow: 0 0 0 3px rgba(62, 151, 255, 0.12);
+}
+
+.m8-search-wrapper {
+  position: relative;
+}
+
+.m8-search-wrapper .search-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--m8-text-subtitle);
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+[dir="rtl"] .m8-search-input {
+  padding-right: 2.4rem;
+  padding-left: 0.85rem;
+}
+
+.m8-filter-select {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-input-solid-bg);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  color: var(--m8-text-main);
+  font-family: var(--m8-font-family);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.m8-filter-select:focus {
+  outline: none;
+  border-color: var(--m8-primary);
+}
+
+/* ----------------------------------------------------------------------------
+ * 6. Registration Form — Full-Screen Modal Stepper
+ * ---------------------------------------------------------------------------- */
+.reg-modal-dialog {
+  max-width: 860px;
+  width: 95vw;
+  margin: 1rem auto;
+}
+
+.reg-modal-body {
+  padding: 0;
+  display: flex;
+  min-height: 70vh;
+}
+
+/* Vertical stepper sidebar */
+.reg-stepper-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background-color: var(--m8-input-solid-bg);
+  border-left: 1px solid var(--m8-border-color);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+[dir="rtl"] .reg-stepper-sidebar {
+  border-left: none;
+  border-right: 1px solid var(--m8-border-color);
+}
+
+.reg-step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--m8-radius-sm);
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.reg-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid var(--m8-border-color);
+  color: var(--m8-text-subtitle);
+  background-color: var(--m8-card-bg);
+  transition: all 0.3s;
+}
+
+.reg-step-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-subtitle);
+  line-height: 1.2;
+}
+
+.reg-step-item.active .reg-step-num {
+  background-color: var(--m8-primary);
+  border-color: var(--m8-primary);
+  color: #fff;
+}
+
+.reg-step-item.active .reg-step-label {
+  color: var(--m8-primary);
+  font-weight: 700;
+}
+
+.reg-step-item.completed .reg-step-num {
+  background-color: var(--m8-success);
+  border-color: var(--m8-success);
+  color: #fff;
+}
+
+.reg-step-item.completed .reg-step-label {
+  color: var(--m8-success);
+}
+
+/* Step content area */
+.reg-step-content-area {
+  flex: 1;
+  padding: 1.75rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 130px);
+}
+
+/* Step panel */
+.reg-step-panel {
+  display: none;
+  animation: fadeSlideIn 0.35s ease;
+}
+
+.reg-step-panel.active {
+  display: block;
+}
+
+/* ----------------------------------------------------------------------------
+ * 7. Diagnosis Cards
+ * ---------------------------------------------------------------------------- */
+.diagnosis-card {
+  background-color: var(--m8-card-bg);
+  border: 1.5px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  position: relative;
+  animation: fadeSlideIn 0.3s ease;
+  transition: border-color 0.2s;
+}
+
+.diagnosis-card:hover {
+  border-color: var(--m8-primary);
+}
+
+.diagnosis-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--m8-border-color);
+}
+
+.diagnosis-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--m8-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-remove-diagnosis {
+  background: var(--m8-danger-light);
+  border: none;
+  color: var(--m8-danger);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.btn-remove-diagnosis:hover {
+  background: var(--m8-danger);
+  color: #fff;
+}
+
+.btn-add-diagnosis {
+  border: 1.5px dashed var(--m8-primary);
+  background: var(--m8-primary-light);
+  color: var(--m8-primary);
+  border-radius: var(--m8-radius-md);
+  padding: 0.85rem;
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  font-family: var(--m8-font-family);
+}
+
+.btn-add-diagnosis:hover {
+  background: var(--m8-primary);
+  color: #fff;
+}
+
+/* PMH Checkbox Cards */
+.pmh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.pmh-card {
+  border: 1.5px solid var(--m8-border-dashed);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  user-select: none;
+}
+
+.pmh-card input[type="checkbox"] {
+  display: none;
+}
+
+.pmh-card:hover {
+  border-color: var(--m8-primary);
+  background-color: var(--m8-primary-light);
+}
+
+.pmh-card.selected {
+  border-color: var(--m8-primary);
+  border-width: 2px;
+  background-color: var(--m8-primary-light);
+}
+
+.pmh-card .pmh-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid var(--m8-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  color: transparent;
+}
+
+.pmh-card.selected .pmh-check {
+  border-color: var(--m8-primary);
+  background-color: var(--m8-primary);
+  color: #fff;
+}
+
+.pmh-card .pmh-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+
+/* ----------------------------------------------------------------------------
+ * 8. Previous History Timeline
+ * ---------------------------------------------------------------------------- */
+.m8-history-timeline {
+  position: relative;
+  padding-right: 2rem;
+}
+
+[dir="rtl"] .m8-history-timeline {
+  padding-right: 2rem;
+  padding-left: 0;
+}
+
+.m8-history-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 10px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--m8-primary), var(--m8-border-color));
+  border-radius: 2px;
+}
+
+[dir="rtl"] .m8-history-timeline::before {
+  right: 10px;
+  left: auto;
+}
+
+.m8-tl-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.m8-tl-dot {
+  position: absolute;
+  right: -2rem;
+  top: 0.4rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--m8-primary);
+  border: 3px solid var(--m8-card-bg);
+  box-shadow: 0 0 0 2px var(--m8-primary-light);
+}
+
+[dir="rtl"] .m8-tl-dot {
+  right: -2rem;
+  left: auto;
+}
+
+.m8-tl-content {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  padding: 0.85rem 1rem;
+}
+
+.m8-tl-date {
+  font-size: 0.75rem;
+  color: var(--m8-text-subtitle);
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 0.3rem;
+  direction: ltr;
+  display: inline-block;
+}
+
+.m8-tl-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--m8-text-main);
+}
+
+.m8-tl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.m8-tl-tag {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------------------
+ * 9. Registration Form — Final Review Summary
+ * ---------------------------------------------------------------------------- */
+.reg-review-block {
+  background-color: var(--m8-input-solid-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.reg-review-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--m8-text-subtitle);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 0.3rem;
+}
+
+.reg-review-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+
+/* ----------------------------------------------------------------------------
+ * 10. Toast Notifications
+ * ---------------------------------------------------------------------------- */
+.m8-toast-container {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+[dir="rtl"] .m8-toast-container {
+  left: auto;
+  right: 1.25rem;
+}
+
+.m8-toast {
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 0.85rem 1.25rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 280px;
+  max-width: 380px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  pointer-events: all;
+  animation: toastIn 0.35s ease;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+.m8-toast.toast-success {
+  border-right: 4px solid var(--m8-success);
+}
+
+.m8-toast.toast-danger {
+  border-right: 4px solid var(--m8-danger);
+}
+
+.m8-toast.toast-warning {
+  border-right: 4px solid var(--m8-warning);
+}
+
+.m8-toast.toast-info {
+  border-right: 4px solid var(--m8-primary);
+}
+
+[dir="rtl"] .m8-toast.toast-success {
+  border-right: none;
+  border-left: 4px solid var(--m8-success);
+}
+
+[dir="rtl"] .m8-toast.toast-danger {
+  border-right: none;
+  border-left: 4px solid var(--m8-danger);
+}
+
+[dir="rtl"] .m8-toast.toast-warning {
+  border-right: none;
+  border-left: 4px solid var(--m8-warning);
+}
+
+[dir="rtl"] .m8-toast.toast-info {
+  border-right: none;
+  border-left: 4px solid var(--m8-primary);
+}
+
+.m8-toast-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.m8-toast.toast-success .m8-toast-icon {
+  color: var(--m8-success);
+}
+
+.m8-toast.toast-danger .m8-toast-icon {
+  color: var(--m8-danger);
+}
+
+.m8-toast.toast-warning .m8-toast-icon {
+  color: var(--m8-warning);
+}
+
+.m8-toast.toast-info .m8-toast-icon {
+  color: var(--m8-primary);
+}
+
+/* ----------------------------------------------------------------------------
+ * 11. Request Detail Offcanvas-style Modal
+ * ---------------------------------------------------------------------------- */
+.detail-modal-dialog {
+  max-width: 580px;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--m8-border-color);
+}
+
+.detail-field:last-child {
+  border-bottom: none;
+}
+
+.detail-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--m8-text-subtitle);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detail-field-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--m8-text-main);
+}
+
+/* ----------------------------------------------------------------------------
+ * 12. Registration Success State
+ * ---------------------------------------------------------------------------- */
+.reg-success-icon {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--m8-success) 0%, #1eb87a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  animation: successBounce 0.6s ease-out;
+}
+
+@keyframes successBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.reg-success-icon i {
+  font-size: 2.75rem;
+  color: #fff;
+}
+
+/* ----------------------------------------------------------------------------
+ * 13. Full-width page container override
+ * ---------------------------------------------------------------------------- */
+.m8-page-container-wide {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ----------------------------------------------------------------------------
+ * 14. Misc Utilities
+ * ---------------------------------------------------------------------------- */
+.text-ltr {
+  direction: ltr;
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--m8-border-color);
+  margin: 1.5rem 0;
+}
+
+/* Confirmation checkbox styling */
+.m8-confirm-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: var(--m8-warning-light);
+  border: 1px solid rgba(255, 199, 0, 0.25);
+  border-radius: var(--m8-radius-sm);
+  padding: 1rem 1.15rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.m8-confirm-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--m8-primary);
+  cursor: pointer;
+}
+
+.m8-confirm-checkbox .check-label {
+  font-weight: 600;
+  color: var(--m8-warning-light-text);
+  font-size: 0.9rem;
+}
+
+/* Reject reason textarea */
+.reject-reason-field {
+  display: none;
+}
+
+.reject-reason-field.show {
+  display: block;
+  animation: fadeSlideIn 0.25s ease;
+}
+
+/* Table pagination stub */
+.m8-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.5rem;
+  border-top: 1px solid var(--m8-border-color);
+  font-size: 0.82rem;
+  color: var(--m8-text-muted);
+}
+
+/* Source badge for hospital data */
+.m8-source-badge {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Assessment card hover effects */
+.m8-assessment-card {
+  transition: all 0.2s ease;
+}
+
+.m8-assessment-card:hover {
+  box-shadow: 0 4px 16px rgba(255, 193, 7, 0.2);
+}
+
+/* History accordion button */
+.m8-history-accordion .card-header button:focus {
+  box-shadow: none;
+}
+
+/* Sortable table header & pagination styles */
+.m8-table th.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.m8-table th.cursor-pointer:hover {
+  color: var(--m8-primary);
+}
+
+.pagination .page-link {
+  border-radius: var(--m8-radius-sm);
+  color: var(--m8-text-main);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--m8-primary);
+  border-color: var(--m8-primary);
+  color: #fff;
+}
+
+
+
+
+/* PMH (Past Medical History) selectable grid */
+.pmh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.pmh-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--m8-border-color, #e4e6ef);
+  border-radius: 0.6rem;
+  background-color: var(--m8-input-solid-bg, #f5f8fa);
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+  user-select: none;
+}
+
+.pmh-card:hover {
+  border-color: var(--m8-primary, #3e97ff);
+}
+
+.pmh-card.selected {
+  border-color: var(--m8-primary, #3e97ff);
+  background-color: rgba(62, 151, 255, 0.08);
+}
+
+.pmh-check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid var(--m8-border-color, #b5b5c3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.7rem;
+  background-color: transparent;
+}
+
+.pmh-card.selected .pmh-check {
+  background-color: var(--m8-primary, #3e97ff);
+  border-color: var(--m8-primary, #3e97ff);
+}
+
+.pmh-check i {
+  display: none;
+}
+
+.pmh-card.selected .pmh-check i {
+  display: block;
+}
+
+.pmh-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--m8-text-dark, #181c32);
+}

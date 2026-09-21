@@ -1,0 +1,495 @@
+/**
+ * ============================================================================
+ * WCCMS — Registered Patients Page Styles (Page 4)
+ * Extends Metronic 8 Design System (RTL)
+ * ============================================================================
+ */
+
+/* ============================================================================
+   1. SEARCH WRAPPER
+   ============================================================================ */
+.m8-search-wrapper {
+  position: relative;
+}
+
+.m8-search-wrapper .search-icon {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  color: var(--m8-text-muted);
+  font-size: 1rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.m8-search-wrapper .m8-search-input {
+  padding-right: 2.75rem;
+  background-color: var(--m8-input-solid-bg);
+  border: 1.5px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.m8-search-wrapper .m8-search-input:focus {
+  border-color: var(--m8-primary);
+  box-shadow: 0 0 0 3px rgba(62, 151, 255, 0.12);
+  background-color: var(--m8-card-bg);
+  outline: none;
+}
+
+/* ============================================================================
+   2. PAGE CONTAINER WIDE
+   ============================================================================ */
+.m8-page-container-wide {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ============================================================================
+   3. STAT CARDS
+   ============================================================================ */
+.m8-stat-card {
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+  border-radius: var(--m8-radius-md);
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s;
+  cursor: default;
+}
+
+.m8-stat-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.m8-stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.m8-stat-icon.icon-primary { background-color: var(--m8-primary-light); color: var(--m8-primary); }
+.m8-stat-icon.icon-success { background-color: var(--m8-success-light); color: var(--m8-success); }
+.m8-stat-icon.icon-warning { background-color: var(--m8-warning-light); color: var(--m8-warning); }
+.m8-stat-icon.icon-info    { background-color: var(--m8-info-light);    color: var(--m8-info); }
+.m8-stat-icon.icon-danger  { background-color: var(--m8-danger-light);  color: var(--m8-danger); }
+
+.m8-stat-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--m8-text-main);
+  line-height: 1;
+}
+
+.m8-stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--m8-text-muted);
+  margin-top: 0.2rem;
+}
+
+/* ============================================================================
+   4. TABLE STYLES
+   ============================================================================ */
+.m8-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--m8-radius-md);
+}
+
+.m8-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.m8-table thead th {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-muted);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--m8-border-color);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.m8-table thead th.rp-sortable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.m8-table thead th.rp-sortable:hover {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+.m8-table thead th.rp-sortable.sort-asc .sort-icon::before { content: "\F282"; }
+.m8-table thead th.rp-sortable.sort-desc .sort-icon::before { content: "\F286"; }
+
+.m8-table tbody tr {
+  border-bottom: 1px solid var(--m8-border-color);
+  transition: background-color 0.15s ease;
+}
+
+.m8-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.m8-table tbody tr:hover {
+  background-color: var(--m8-input-solid-bg);
+}
+
+.m8-table td {
+  padding: 0.85rem 1rem;
+  color: var(--m8-text-main);
+  vertical-align: middle;
+}
+
+/* ============================================================================
+   5. PATIENT CELL — CLICKABLE NAME LINK, AVATAR, INFO BUTTON
+   ============================================================================ */
+
+/* Clickable patient name link */
+.rp-patient-name-link {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--m8-text-main);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  display: block;
+}
+
+.rp-patient-name-link:hover,
+.rp-patient-name-link:focus {
+  color: var(--m8-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Clickable avatar link */
+.rp-avatar-link {
+  text-decoration: none;
+  display: inline-block;
+  border-radius: 10px;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.rp-avatar-link:hover {
+  box-shadow: 0 4px 12px rgba(62, 151, 255, 0.3);
+  transform: scale(1.06);
+}
+
+/* Avatar circle */
+.rp-patient-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3e97ff, #7239ea);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Info popover button */
+.rp-info-btn {
+  background: none;
+  border: none;
+  padding: 0.15rem 0.3rem;
+  border-radius: var(--m8-radius-sm);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.rp-info-btn:hover {
+  opacity: 1;
+  background-color: var(--m8-primary-light);
+}
+
+/* ============================================================================
+   5b. CLICKABLE TABLE ROW
+   ============================================================================ */
+.m8-table tbody tr.rp-row {
+  cursor: pointer;
+}
+
+.m8-table tbody tr.rp-row:hover {
+  background-color: var(--m8-primary-light) !important;
+}
+
+.m8-table tbody tr.rp-row:hover .rp-patient-name-link {
+  color: var(--m8-primary);
+}
+
+/* Prevent the action cell from looking double-active */
+.m8-table tbody tr.rp-row td:last-child {
+  cursor: default;
+}
+
+.rp-national-id {
+  font-size: 0.78rem;
+  color: var(--m8-text-muted);
+  font-family: 'Inter', sans-serif;
+  direction: ltr;
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.rp-hospital-id {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--m8-primary);
+  font-size: 0.85rem;
+  direction: ltr;
+  display: inline-block;
+}
+
+.rp-date-cell {
+  font-size: 0.82rem;
+  color: var(--m8-text-muted);
+  white-space: nowrap;
+  direction: ltr;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ============================================================================
+   5. OPERATIONAL INDICATOR BADGES
+   ============================================================================ */
+.rp-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rp-indicator.has-review-today {
+  background-color: var(--m8-success-light);
+  color: var(--m8-success-light-text);
+}
+
+.rp-indicator.has-schedule {
+  background-color: var(--m8-info-light);
+  color: var(--m8-info-light-text);
+}
+
+.rp-indicator.no-review {
+  background-color: var(--m8-input-solid-bg);
+  color: var(--m8-text-subtitle);
+  border: 1px dashed var(--m8-border-dashed);
+}
+
+.rp-diag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--m8-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+/* ============================================================================
+   6. EMPTY STATE
+   ============================================================================ */
+.rp-empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--m8-text-subtitle);
+  animation: fadeSlideIn 0.4s ease-out;
+}
+
+.rp-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--m8-input-solid-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2.2rem;
+  color: var(--m8-text-muted);
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================================
+   7. SKELETON LOADING ROWS
+   ============================================================================ */
+.rp-skeleton-row {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--m8-border-color);
+  align-items: center;
+}
+
+.rp-skeleton-cell {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--m8-border-color) 25%, var(--m8-input-solid-bg) 50%, var(--m8-border-color) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease infinite;
+}
+
+.rp-skeleton-cell.wide  { flex: 3; }
+.rp-skeleton-cell.mid   { flex: 2; }
+.rp-skeleton-cell.short { flex: 1; }
+
+@keyframes skeletonShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================================
+   8. PAGINATION
+   ============================================================================ */
+.pagination .page-link {
+  color: var(--m8-primary);
+  border-color: var(--m8-border-color);
+  background-color: var(--m8-card-bg);
+  font-size: 0.82rem;
+  transition: all 0.15s ease;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--m8-primary);
+  border-color: var(--m8-primary);
+  color: #fff;
+}
+
+.pagination .page-link:hover {
+  background-color: var(--m8-primary-light);
+  color: var(--m8-primary);
+}
+
+/* ============================================================================
+   9. ACTION BUTTON — PRIMARY OPEN CASE
+   ============================================================================ */
+.btn-open-case {
+  background-color: var(--m8-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--m8-radius-sm);
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-open-case:hover {
+  background-color: #2980d0;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(62, 151, 255, 0.3);
+}
+
+.btn-open-case:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   10. MISC UTILITIES
+   ============================================================================ */
+.fs-8  { font-size: 0.75rem !important; }
+.fs-9  { font-size: 0.68rem !important; }
+
+.cursor-pointer { cursor: pointer; }
+
+.rp-sort-active { color: var(--m8-primary) !important; }
+
+/* Responsive: on small screens collapse the table */
+@media (max-width: 767.98px) {
+  .m8-table {
+    font-size: 0.8rem;
+  }
+  .m8-table td,
+  .m8-table th {
+    padding: 0.65rem 0.6rem;
+  }
+}
+
+/* Dark mode fine-tuning */
+[data-bs-theme="dark"] .m8-stat-card {
+  background-color: var(--m8-card-bg);
+}
+
+[data-bs-theme="dark"] .rp-skeleton-cell {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+}
+
+/* Toast Notifications */
+.m8-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.m8-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--m8-radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  animation: toastIn 0.3s ease forwards;
+  pointer-events: all;
+  min-width: 260px;
+  max-width: 380px;
+  color: var(--m8-text-main);
+  background-color: var(--m8-card-bg);
+  border: 1px solid var(--m8-border-color);
+}
+
+.m8-toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+.toast-success .m8-toast-icon { color: var(--m8-success); }
+.toast-danger  .m8-toast-icon { color: var(--m8-danger); }
+.toast-warning .m8-toast-icon { color: var(--m8-warning); }
+.toast-info    .m8-toast-icon { color: var(--m8-info); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(10px); }
+}
