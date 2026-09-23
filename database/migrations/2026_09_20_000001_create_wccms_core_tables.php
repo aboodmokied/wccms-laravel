@@ -15,9 +15,9 @@ return new class extends Migration
         Schema::create('per_users_tb', function (Blueprint $table) {
             $table->char('PER_USER_CODE', 36)->primary();
             $table->string('PER_USER_USERNAME', 100)->unique();
-            $table->string('PER_USER_PASSWORD', 255);
-            $table->string('PER_USER_ROLE', 20); // NURSE, ADMIN
-            $table->smallInteger('PER_USER_IS_ACTIVE')->default(1);
+            $table->string('PER_USER_PASSWORD', 255)->nullable();
+            $table->string('PER_USER_ROLE', 20)->nullable(); // NURSE, ADMIN
+            $table->smallInteger('PER_USER_IS_ACTIVE')->default(0);
         });
 
         // 2. Employee Directory

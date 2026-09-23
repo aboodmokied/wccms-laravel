@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'hospital_auth' => [
+        'jwt_secret' => env('HOSPITAL_JWT_SECRET', 'secret-key-change-in-production'),
+        'login_url' => env('APP_HOSPITAL_LOGIN_URL', 'http://hospital.local/login'),
+    ],
+
 ];

@@ -17,6 +17,7 @@ Before your first `/specify`, lock these principles into the constitution since 
 - **Actor vs. data-entry separation:** Any feature involving "who performed a clinical action" must distinguish the actual employee (`PER_EMPLOYEE_TB`) from the user who entered the data (`PER_USERS_TB`).
 - **MySQL-first, Oracle-later:** Development happens against MySQL locally; the schema is designed to port cleanly (see Phase 1 and Phase 10). Use Laravel's fluent schema-builder migrations rather than raw SQL wherever possible. Triggers/stored procedures written in MySQL during development are executable specs of the logic — they get rewritten by hand in PL/SQL during the Oracle port, not auto-ported.
 - **Existing static UI assets are the design source of truth:** You already have hand-built HTML/CSS/JS pages for (some of) the product. These are not thrown away and rebuilt from scratch — they're converted into Blade views incrementally, phase by phase (see Phase 2).
+- **Authentication is externally delegated:** WCCMS does not implement its own login/credential storage. Identity is established by the hospital system. Provisioning policy is resolved: a first-time identity is auto-created in `PER_USERS_TB` with no role (`PER_USER_ROLE` = NULL) and zero access until an Admin explicitly assigns NURSE/ADMIN — onboarding convenience is subordinate to Actor vs. Data-Entry Separation (Principle above). The real transport mechanism (SSO/session/JWT/reverse-proxy header) is still pending confirmation from the hospital's technical team; identity resolution is built behind a swappable interface bound to a temporary mock driver in the meantime, so development is not blocked on that answer.
 
 ---
 
@@ -32,26 +33,31 @@ Before your first `/specify`, lock these principles into the constitution since 
   3. The unclear `VISIT_SERIAL` field on scheduled reviews.
   4. Whether to add a new `VOIDED` enum value, or reuse `CANCELLED`, for automatic invalidation on re-registration.
   5. A column tracking who recorded each diagnosis on `WC_REG_DIAGNOSIS_TB`.
+- **Amendment already applied:** `PER_USER_ROLE` was changed to nullable (with its CHECK constraint updated to allow NULL alongside `NURSE`/`ADMIN`), driven by the Phase 3 provisioning decision — a newly auto-provisioned identity has no role until an Admin assigns one. This is implemented in the current schema, not just planned.
 
 ---
 
 ## Phase 2 — UI Foundation: Static Pages → Blade
-**New phase, added because you already have hand-built HTML/CSS/JS pages (inside pre-views folder) that need to become the app's actual views.**
+**New phase, added because you already have hand-built HTML/CSS/JS pages that need to become the app's actual views.**
 
 - Set up Laravel's asset pipeline (Vite) to bundle the existing CSS/JS instead of linking them as static files.
 - Extract whatever is repeated across your existing pages (header, nav, footer, sidebar) into a shared Blade layout (`layouts/app.blade.php`) with `@section`/`@yield` or Blade components — done once here, not re-derived per phase.
 - Replace static `<link>`/`<script>` tags in the existing pages with `@vite(...)` directives pointing at the same CSS/JS files, unchanged in content.
-- **Inventory the existing pages and map each one to the phase that owns it** (e.g. login screen → Phase 3, request submission form → Phase 4, daily review screen → Phase 6). This phase only establishes the shared foundation (layout, asset pipeline, RTL handling); converting each page's markup into a real Blade view wired to routes/controllers/data happens inside the phase that owns that page's feature — not all at once here.
+- **Data ↔ schema consistency audit:** before converting any page, cross-reference every data field/label it displays against the Phase 1 DB schema (table + column + enum values). Produce a mapping document (e.g. `docs/ui-schema-mapping.md`) per page, and flag any field with no corresponding schema column as an open gap — this is documentation/audit only, not the actual data wiring (that still happens in the owning phase).
+- **Inventory the existing pages and map each one to the phase that owns it** (e.g. login screen → Phase 3, request submission form → Phase 4, daily review screen → Phase 6). This phase only establishes the shared foundation (layout, asset pipeline, RTL handling, schema audit); converting each page's markup into a real Blade view wired to routes/controllers/data happens inside the phase that owns that page's feature — not all at once here.
 - Solve Arabic/RTL layout handling once in the shared layout (ties to the RTL constitution principle), rather than per page later.
 
 ---
 
 ## Phase 3 — Auth & RBAC
-- User login (`PER_USERS_TB`) — Laravel Sanctum or Breeze depending on whether you need an API or a web UI.
-- Two roles: NURSE and ADMIN, enforced via middleware at the route level.
-- Link a user account to an employee record (`PER_EMP_USER_CD`) on first login or from the admin panel.
+**Revised: authentication is externally delegated to the hospital system (see the constitution note above) — this phase is narrower than a typical login feature, and its two open questions have been handled differently.**
+
+- No local login form, password storage, or hashing. WCCMS trusts an identity resolved through a swappable `IdentityResolverContract`-style interface, currently bound to a temporary mock driver for development.
+- **Resolved — provisioning:** a first-time resolved identity is auto-provisioned into `PER_USERS_TB` with no role (`PER_USER_ROLE` = NULL). Zero clinical access until an Admin explicitly assigns NURSE/ADMIN and links the identity to an employee profile in the same approval step. This was a deliberate choice to prioritize Actor vs. Data-Entry Separation over onboarding convenience.
+- **Still open — transport:** the real mechanism (SSO redirect, shared session cookie, signed JWT, or trusted reverse-proxy header) is pending confirmation from the hospital's IT team; this is explicitly not this project's decision to make unilaterally. Work is not blocked on it, since resolution happens behind a swappable interface — replacing the mock later means adding one new class and flipping a config value, with no change to RBAC, provisioning, or downstream logic.
+- Two WCCMS-local roles: NURSE and ADMIN, assigned by an Admin (not inferred from the hospital system), enforced via middleware at the route level.
 - Access policies: who can submit a request, who can approve/reject, who can enter clinical data.
-- If you have an existing static login/dashboard-shell page, convert it into a real Blade view here using the Phase 2 foundation.
+- If you have an existing static login/dashboard-shell page, repurpose it as the "resolving your session" / pending-approval / access-denied shell rather than a credential-entry form.
 
 ---
 

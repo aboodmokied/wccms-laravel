@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HospitalJwtPayload",
+  "type": "object",
+  "properties": {
+    "sub": {
+      "type": "string",
+      "description": "Hospital username identifier corresponding to PER_USER_USERNAME"
+    },
+    "iss": {
+      "type": "string",
+      "description": "Hospital auth service issuer string"
+    },
+    "iat": {
+      "type": "integer",
+      "description": "Issued-at timestamp (seconds)"
+    },
+    "exp": {
+      "type": "integer",
+      "description": "Expiration timestamp (seconds)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Optional Arabic full name provided by hospital system"
+    }
+  },
+  "required": ["sub", "exp"]
+}

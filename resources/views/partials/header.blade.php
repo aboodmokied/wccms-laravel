@@ -1,22 +1,31 @@
 <header class="m8-header bg-white border-bottom py-3 px-4 mb-4 d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center gap-3">
         <a href="{{ url('/dashboard') }}" class="text-decoration-none d-flex align-items-center gap-2">
-            <span class="fs-4 fw-bold text-primary">{{ __('navigation.brand') }}</span>
+            <span class="fs-4 fw-bold text-primary">{{ __('navigation.brand', [], 'ar') ?: 'نظام عيادة الجروح (WCCMS)' }}</span>
         </a>
-        <span class="text-muted small border-start ps-3 me-2">{{ __('navigation.subtitle') }}</span>
+        <span class="text-muted small border-start ps-3 me-2">نظام إدارة العيادة ورعاية الجروح</span>
     </div>
 
     <div class="d-flex align-items-center gap-3">
         <div class="text-end me-3">
-            <span class="d-block fw-bold small text-dark">أ. فاطمة الزهراني</span>
-            <span class="d-block text-muted x-small">{{ __('navigation.header.user_role') }}</span>
+            <span class="d-block fw-bold small text-dark">
+                {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم العيادة' }}
+            </span>
+            <span class="d-block text-muted x-small">
+                @if(auth()->user()?->PER_USER_ROLE === 'ADMIN')
+                    مسؤول النظام (Admin)
+                @elseif(auth()->user()?->PER_USER_ROLE === 'NURSE')
+                    ممرض جروح (Nurse)
+                @else
+                    قيد الاعتماد
+                @endif
+            </span>
         </div>
-        <button type="button" class="btn btn-sm btn-light-primary position-relative" title="{{ __('navigation.header.notifications') }}">
-            <i class="bi bi-bell"></i> {{ __('navigation.header.notifications') }}
-            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
-        </button>
-        <button type="button" class="btn btn-sm btn-light-danger" title="{{ __('navigation.header.logout') }}">
-            {{ __('navigation.header.logout') }}
-        </button>
+        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-light-danger" title="تسجيل الخروج">
+                تسجيل الخروج
+            </button>
+        </form>
     </div>
 </header>
