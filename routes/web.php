@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\RegistrationRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,10 +29,19 @@ Route::middleware(['hospital.jwt'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    Route::get('/requests', function () {
-        return view('requests.index');
-    })->name('requests.index');
+    // Registration Requests Routes
+    Route::get('/requests', [RegistrationRequestController::class, 'index'])->name('requests.index');
+    Route::get('/requests/my', [RegistrationRequestController::class, 'myRequests'])->name('requests.my');
+    Route::get('/requests/create', [RegistrationRequestController::class, 'create'])->name('requests.create');
+    Route::get('/requests/search-patient', [RegistrationRequestController::class, 'searchPatient'])->name('requests.search_patient');
+    Route::post('/requests', [RegistrationRequestController::class, 'store'])->name('requests.store');
+    Route::get('/requests/{requestModel}', [RegistrationRequestController::class, 'show'])->name('requests.show');
+    Route::post('/requests/{requestModel}/visit', [RegistrationRequestController::class, 'startVisit'])->name('requests.visit');
+    Route::post('/requests/{requestModel}/accept', [RegistrationRequestController::class, 'accept'])->name('requests.accept');
+    Route::post('/requests/{requestModel}/ineligible', [RegistrationRequestController::class, 'markIneligible'])->name('requests.ineligible');
+    Route::post('/requests/{requestModel}/cancel', [RegistrationRequestController::class, 'cancel'])->name('requests.cancel');
 
+    // Registrations Routes
     Route::get('/registrations', function () {
         return view('registrations.index');
     })->name('registrations.index');
@@ -40,6 +50,7 @@ Route::middleware(['hospital.jwt'])->group(function () {
         return view('registrations.create');
     })->name('registrations.create');
 
+    // Daily & Scheduled Reviews
     Route::get('/reviews/daily', function () {
         return view('reviews.daily');
     })->name('reviews.daily');

@@ -61,11 +61,67 @@ Before your first `/specify`, lock these principles into the constitution since 
 
 ---
 
-## Phase 4 — Registration Requests
+<!-- ## Phase 4 — Registration Requests
 - Form for a nurse to submit a patient registration request (including searching/syncing patient data from the hospital system).
 - Review flow: PENDING → APPROVED/REJECTED/CANCELLED, with rejection reason and notes.
 - On approval: a trigger automatically creates a `WC_REGISTRATION_TB` record (this is the core of the database-first architecture).
-- "My requests" view for nurses and "pending review" queue for supervisors — convert the matching existing static pages into Blade views wired to real data here.
+- "My requests" view for nurses and "pending review" queue for supervisors — convert the matching existing static pages into Blade views wired to real data here. -->
+
+## Phase 4 — Registration Requests
+
+- **Hospital ward nurse → Wound Care Clinic referral workflow.** A nurse in the patient's current hospital department searches for the patient by National ID or name using the hospital patient data.
+
+- The system displays the patient's current hospital admission information, including:
+  - Patient name and National ID
+  - Gender and date of birth
+  - Current department/ward
+  - Attending/supervising doctor
+  - Hospital admission date
+
+- The ward nurse submits a **Wound Care Clinic Registration Request** for the patient, including the reason for referral and optional notes.
+
+- The request is stored with status `PENDING` and records:
+  - The requesting hospital employee
+  - The authenticated data-entry user
+  - The patient
+  - The patient's current hospital admission
+  - The department/ward at the time of submission
+  - Request timestamp
+  - Patient snapshot information
+
+- The request appears in the **Wound Care Clinic incoming requests queue**.
+
+- A Wound Care Clinic nurse opens the request and visits the patient in the hospital department.
+
+- When the clinic nurse starts handling the request, its status changes from `PENDING` to `VISIT_IN_PROGRESS`, recording the clinic employee responsible for the visit.
+
+- During the patient visit, the Wound Care Clinic nurse completes the required initial registration information.
+
+- The clinic nurse can:
+  - Accept the patient for Wound Care Clinic registration, resulting in an `ACTIVE` registration.
+  - Mark the request as `NOT_ELIGIBLE`, recording the reason.
+
+- The request lifecycle is:
+
+```text
+PENDING
+   ↓
+VISIT_IN_PROGRESS
+   ├── ACCEPTED → ACTIVE REGISTRATION
+   └── NOT_ELIGIBLE
+```
+
+- A hospital ward nurse may cancel only their own request while it is still `PENDING`.
+
+- The system must prevent duplicate pending requests when the patient already has a pending request, and must prevent registration when the patient already has an active Wound Care Clinic registration.
+
+- Critical state transitions and duplicate-registration rules are enforced through database-side business logic in accordance with the project's Database-First Architecture.
+
+- The request and resulting registration must maintain the distinction between the **clinical employee who performed the action** and the **user who entered the data**.
+
+- Existing static pages related to request submission and request queues are converted into Blade views and integrated with the shared UI foundation.
+
+- Detailed clinical registration data such as diagnoses, wounds, procedures, past medical history, dressings, and medications remains part of **Phase 5 — Registration & Diagnosis**.
 
 ---
 

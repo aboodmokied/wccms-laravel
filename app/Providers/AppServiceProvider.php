@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\HospitalPatientSyncService;
+use App\Services\HospitalPatientSyncServiceInterface;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(HospitalPatientSyncServiceInterface::class, HospitalPatientSyncService::class);
     }
 
     /**
