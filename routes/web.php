@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\MockHospitalAuthController;
 use App\Http\Controllers\RegistrationRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,8 +12,17 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// Virtual Hospital SSO Routes (for local testing & dev)
+Route::get('/mock-hospital-auth', [MockHospitalAuthController::class, 'index'])->name('mock_hospital_auth.index');
+Route::post('/mock-hospital-auth/login', [MockHospitalAuthController::class, 'login'])->name('mock_hospital_auth.login');
+Route::post('/mock-hospital-auth/logout', [MockHospitalAuthController::class, 'logout'])->name('mock_hospital_auth.logout');
+
 Route::get('/login', function () {
-    $loginUrl = config('services.hospital_auth.login_url', 'http://hospital.local/login');
+    $loginUrl = config('services.hospital_auth.login_url', route('mock_hospital_auth.index'));
+
+    if (str_starts_with($loginUrl, '/') || str_contains($loginUrl, request()->getHost())) {
+        return redirect($loginUrl);
+    }
 
     return redirect()->away($loginUrl);
 })->name('login');

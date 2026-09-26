@@ -27,7 +27,10 @@ class HospitalJwtAuthMiddleware
             return $this->unauthenticatedResponse($request);
         }
 
-        $secret = config('services.hospital_auth.jwt_secret', 'secret-key-change-in-production');
+        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
+        if (strlen($secret) < 32) {
+            $secret = str_pad($secret, 32, '0');
+        }
 
         try {
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
@@ -97,7 +100,7 @@ class HospitalJwtAuthMiddleware
             ], 401);
         }
 
-        $loginUrl = config('services.hospital_auth.login_url', 'http://hospital.local/login');
+        $loginUrl = config('services.hospital_auth.login_url', '/mock-hospital-auth');
 
         return redirect()->away($loginUrl);
     }
@@ -114,7 +117,7 @@ class HospitalJwtAuthMiddleware
             ], 401);
         }
 
-        $loginUrl = config('services.hospital_auth.login_url', 'http://hospital.local/login');
+        $loginUrl = config('services.hospital_auth.login_url', '/mock-hospital-auth');
 
         return redirect()->away($loginUrl);
     }

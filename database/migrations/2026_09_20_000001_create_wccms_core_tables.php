@@ -196,6 +196,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
+
         Schema::dropIfExists('wc_daily_review_detail_tb');
         Schema::dropIfExists('wc_daily_review_tb');
         Schema::dropIfExists('wc_scheduled_review_tb');
@@ -212,5 +214,7 @@ return new class extends Migration
         Schema::dropIfExists('mr_patient_tb');
         Schema::dropIfExists('per_employee_tb');
         Schema::dropIfExists('per_users_tb');
+
+        Schema::enableForeignKeyConstraints();
     }
 };
