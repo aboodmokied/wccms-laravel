@@ -1,36 +1,107 @@
-<aside class="m8-sidebar bg-white border-end p-3 rounded-3 shadow-sm mb-4">
-    <div class="nav flex-column nav-pills gap-1">
-        <a href="{{ url('/dashboard') }}" class="nav-link {{ request()->is('dashboard') ? 'active' : '' }} d-flex align-items-center gap-2">
+<aside class="m8-sidebar" id="m8-sidebar">
+
+    {{-- Brand / Logo --}}
+    <a href="{{ route('dashboard') }}" class="m8-brand text-decoration-none">
+        <div class="m8-brand-icon">
+            <i class="bi bi-heart-pulse-fill text-white"></i>
+        </div>
+        <div class="d-flex flex-column">
+            <span class="m8-brand-title">WCCMS</span>
+            <span class="text-muted" style="font-size: 0.725rem;">عيادة العناية بالجروح</span>
+        </div>
+    </a>
+
+    {{-- Navigation Menu --}}
+    <div class="m8-menu-container">
+
+        <div class="m8-menu-section">القائمة الرئيسية</div>
+
+        <a href="{{ route('dashboard') }}"
+           class="m8-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i>
-            <span>{{ __('navigation.sidebar.dashboard') }}</span>
+            <span>لوحة التحكم</span>
         </a>
-        <a href="{{ url('/requests') }}" class="nav-link {{ request()->is('requests*') ? 'active' : '' }} d-flex align-items-center gap-2">
-            <i class="bi bi-file-earmark-plus"></i>
-            <span>{{ __('navigation.sidebar.requests') }}</span>
+
+        <a href="{{ route('requests.index') }}"
+           class="m8-nav-item {{ request()->routeIs('requests.index', 'requests.show') ? 'active' : '' }}">
+            <i class="bi bi-send-plus-fill"></i>
+            <span>طلبات الإحالة</span>
         </a>
-        <a href="{{ url('/registrations') }}" class="nav-link {{ request()->is('registrations') ? 'active' : '' }} d-flex align-items-center gap-2">
-            <i class="bi bi-people"></i>
-            <span>{{ __('navigation.sidebar.registrations') }}</span>
+
+        <a href="{{ route('requests.create') }}"
+           class="m8-nav-item {{ request()->routeIs('requests.create') ? 'active' : '' }}">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>إحالة جديدة</span>
         </a>
-        <a href="{{ url('/registrations/create') }}" class="nav-link {{ request()->is('registrations/create') ? 'active' : '' }} d-flex align-items-center gap-2 ps-4 text-secondary">
-            <i class="bi bi-person-plus"></i>
-            <span>{{ __('navigation.sidebar.complete_registration') }}</span>
+
+        <div class="m8-menu-section mt-3">السجلات السريرية</div>
+
+        <a href="{{ route('registrations.index') }}"
+           class="m8-nav-item {{ request()->routeIs('registrations.*') ? 'active' : '' }}">
+            <i class="bi bi-people-fill"></i>
+            <span>المرضى المسجلون</span>
         </a>
-        <a href="{{ url('/reviews/daily') }}" class="nav-link {{ request()->is('reviews/daily*') ? 'active' : '' }} d-flex align-items-center gap-2">
-            <i class="bi bi-clipboard2-pulse"></i>
-            <span>{{ __('navigation.sidebar.daily_review') }}</span>
+
+        <a href="{{ route('reviews.daily') }}"
+           class="m8-nav-item {{ request()->routeIs('reviews.daily') ? 'active' : '' }}">
+            <i class="bi bi-clipboard2-pulse-fill"></i>
+            <span>الزيارة اليومية</span>
         </a>
-        <a href="{{ url('/reviews/scheduled') }}" class="nav-link {{ request()->is('reviews/scheduled*') ? 'active' : '' }} d-flex align-items-center gap-2">
-            <i class="bi bi-calendar-check"></i>
-            <span>{{ __('navigation.sidebar.scheduled_reviews') }}</span>
+
+        <a href="{{ route('reviews.scheduled') }}"
+           class="m8-nav-item {{ request()->routeIs('reviews.scheduled') ? 'active' : '' }}">
+            <i class="bi bi-calendar-check-fill"></i>
+            <span>المواعيد</span>
         </a>
-        <a href="{{ url('/admin') }}" class="nav-link {{ request()->is('admin*') ? 'active' : '' }} d-flex align-items-center gap-2">
-            <i class="bi bi-gear"></i>
-            <span>{{ __('navigation.sidebar.admin') }}</span>
+
+        <div class="m8-menu-section mt-3">النظام</div>
+
+        <a href="{{ route('reports.history') }}"
+           class="m8-nav-item {{ request()->routeIs('reports.history') ? 'active' : '' }}">
+            <i class="bi bi-bar-chart-line-fill"></i>
+            <span>التقارير</span>
         </a>
-        <a href="{{ url('/reports/history') }}" class="nav-link {{ request()->is('reports/history*') ? 'active' : '' }} d-flex align-items-center gap-2">
-            <i class="bi bi-file-earmark-bar-graph"></i>
-            <span>{{ __('navigation.sidebar.patient_history') }}</span>
+
+        <a href="{{ route('requests.my') }}"
+           class="m8-nav-item {{ request()->routeIs('requests.my') ? 'active' : '' }}">
+            <i class="bi bi-person-lines-fill"></i>
+            <span>طلباتي</span>
         </a>
+
+        @if(auth()->user()?->PER_USER_ROLE === 'ADMIN')
+            <a href="{{ route('admin.index') }}"
+               class="m8-nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                <i class="bi bi-gear-fill"></i>
+                <span>الإدارة</span>
+            </a>
+        @endif
+
     </div>
+
+    {{-- Sidebar Footer: User Info + Logout --}}
+    <div class="m8-sidebar-footer">
+        <div class="m8-user-pill">
+            <div class="m8-user-avatar">
+                {{ mb_substr(auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
+            </div>
+            <div class="d-flex flex-column text-truncate flex-grow-1">
+                <span class="fw-bold text-white text-truncate" style="font-size: 0.82rem;">
+                    {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
+                </span>
+                <span class="text-muted" style="font-size: 0.725rem;">
+                    @if(auth()->user()?->PER_USER_ROLE === 'ADMIN') مسؤول النظام
+                    @elseif(auth()->user()?->PER_USER_ROLE === 'NURSE') ممرض جروح
+                    @else مستخدم @endif
+                </span>
+            </div>
+        </div>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="m8-logout-btn mt-2">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>تسجيل الخروج</span>
+            </button>
+        </form>
+    </div>
+
 </aside>

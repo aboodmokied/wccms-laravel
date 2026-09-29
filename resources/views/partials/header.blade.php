@@ -1,31 +1,80 @@
-<header class="m8-header bg-white border-bottom py-3 px-4 mb-4 d-flex align-items-center justify-content-between">
+<header class="m8-header">
+
+    {{-- LEFT: Mobile toggle + Page title/breadcrumb --}}
     <div class="d-flex align-items-center gap-3">
-        <a href="{{ url('/dashboard') }}" class="text-decoration-none d-flex align-items-center gap-2">
-            <span class="fs-4 fw-bold text-primary">{{ __('navigation.brand', [], 'ar') ?: 'نظام عيادة الجروح (WCCMS)' }}</span>
-        </a>
-        <span class="text-muted small border-start ps-3 me-2">نظام إدارة العيادة ورعاية الجروح</span>
+        <button id="m8-mobile-toggle" class="btn btn-sm btn-icon btn-light d-lg-none" type="button">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+        <div class="d-flex flex-column">
+            <span class="fw-bold" style="font-size:0.95rem;">@yield('page-title', 'مركـز العنايـة بالـجروح')</span>
+            <span class="text-muted" style="font-size: 0.75rem;">@yield('breadcrumb', 'WCCMS')</span>
+        </div>
     </div>
 
-    <div class="d-flex align-items-center gap-3">
-        <div class="text-end me-3">
-            <span class="d-block fw-bold small text-dark">
-                {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم العيادة' }}
-            </span>
-            <span class="d-block text-muted x-small">
-                @if(auth()->user()?->PER_USER_ROLE === 'ADMIN')
-                    مسؤول النظام (Admin)
-                @elseif(auth()->user()?->PER_USER_ROLE === 'NURSE')
-                    ممرض جروح (Nurse)
-                @else
-                    قيد الاعتماد
-                @endif
-            </span>
-        </div>
-        <form action="{{ route('logout') }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-sm btn-light-danger" title="تسجيل الخروج">
-                تسجيل الخروج
+    {{-- RIGHT: Date, quick actions, user --}}
+    <div class="d-flex align-items-center gap-2 gap-md-3">
+
+        {{-- Current Date --}}
+        <span class="m8-header-date d-none d-md-inline-block" id="m8-current-date"></span>
+
+        {{-- Quick new request --}}
+        <a href="{{ route('requests.create') }}" class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center gap-1">
+            <i class="bi bi-plus-lg"></i>
+            <span>طلب إحالة</span>
+        </a>
+
+        {{-- Notifications placeholder --}}
+        <button class="btn btn-sm btn-icon btn-light position-relative m8-notification-badge" type="button" title="الإشعارات">
+            <i class="bi bi-bell fs-5"></i>
+            <span class="badge-dot"></span>
+        </button>
+
+        {{-- User Profile (dropdown) --}}
+        <div class="dropdown">
+            <button class="m8-header-user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="d-flex flex-column text-end d-none d-md-flex">
+                    <span class="fw-semibold" style="font-size: 0.82rem;">
+                        {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
+                    </span>
+                    <span class="text-muted" style="font-size: 0.7rem;">
+                        @if(auth()->user()?->PER_USER_ROLE === 'ADMIN') مسؤول النظام
+                        @elseif(auth()->user()?->PER_USER_ROLE === 'NURSE') ممرض جروح
+                        @else مستخدم @endif
+                    </span>
+                </div>
+                <div class="m8-header-avatar">
+                    {{ mb_substr(auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
+                </div>
+                <i class="bi bi-chevron-down text-muted d-none d-md-inline" style="font-size: 0.65rem;"></i>
             </button>
-        </form>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-1 py-1" style="min-width: 220px;">
+                <li class="px-3 py-2 border-bottom bg-light">
+                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME }}</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">{{ auth()->user()?->PER_USER_USERNAME }}</div>
+                </li>
+                <li><a class="dropdown-item py-2" href="{{ route('requests.my') }}"><i class="bi bi-journal-text me-2 text-primary"></i>طلباتي</a></li>
+                <li><a class="dropdown-item py-2" href="{{ route('registrations.index') }}"><i class="bi bi-people me-2 text-success"></i>المسجلون</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="dropdown-item py-2 text-danger"><i class="bi bi-box-arrow-right me-2"></i>تسجيل الخروج</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+
     </div>
+
 </header>
+
+<script>
+    // Display current date in header
+    (function () {
+        const el = document.getElementById('m8-current-date');
+        if (el) {
+            const now = new Date();
+            el.textContent = now.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+    })();
+</script>
