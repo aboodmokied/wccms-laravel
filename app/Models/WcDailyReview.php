@@ -26,6 +26,7 @@ class WcDailyReview extends Model
         'WC_DREV_VISIT_DATE',
         'WC_DREV_NURSE_CD',
         'WC_DREV_ENTRY_USER_CD',
+        'WC_DREV_OVERALL_STATUS',
         'WC_DREV_GENERAL_NOTES',
     ];
 
@@ -51,6 +52,6 @@ class WcDailyReview extends Model
 
     public function details()
     {
-        return $this->hasMany(WcDailyReviewDetail::class, 'WC_DREVD_DAILY_REVIEW_CD', 'WC_DREV_CODE');
+        return $this->hasMany(WcDailyReviewDetail::class, 'WC_REVD_REVIEW_CD', 'WC_DREV_CODE');
     }
 }

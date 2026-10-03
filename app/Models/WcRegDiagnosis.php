@@ -24,6 +24,7 @@ class WcRegDiagnosis extends Model
         'WC_RDIAG_REGISTRATION_CD',
         'WC_RDIAG_DIAGNOSIS_CD',
         'WC_RDIAG_WOUND_TYPE_CD',
+        'WC_RDIAG_DESCRIPTION',
         'WC_RDIAG_CLINICAL_EMP_CD',
         'WC_RDIAG_ENTRY_USER_CD',
     ];
@@ -51,5 +52,25 @@ class WcRegDiagnosis extends Model
     public function entryUser()
     {
         return $this->belongsTo(PerUser::class, 'WC_RDIAG_ENTRY_USER_CD', 'PER_USER_CODE');
+    }
+
+    public function dailyReviewDetails()
+    {
+        return $this->hasMany(WcDailyReviewDetail::class, 'WC_DREVD_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE');
+    }
+
+    public function getLatestDetailAttribute(): ?WcDailyReviewDetail
+    {
+        if ($this->relationLoaded('dailyReviewDetails')) {
+            return $this->dailyReviewDetails
+                ->sortByDesc(fn ($detail) => $detail->dailyReview?->WC_DREV_VISIT_DATE)
+                ->first();
+        }
+
+        return $this->dailyReviewDetails()
+            ->whereHas('dailyReview')
+            ->get()
+            ->sortByDesc(fn ($detail) => $detail->dailyReview?->WC_DREV_VISIT_DATE)
+            ->first();
     }
 }

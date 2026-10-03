@@ -93,63 +93,154 @@
                     </div>
                 </div>
 
-                <!-- Workflow Actions for Clinic Nurses -->
-                <div class="card border-primary mb-3">
-                    <div class="card-header bg-primary text-white fw-bold">
-                        <i class="bi bi-gear-fill me-2"></i>إجراءات وتقييم عيادة العناية بالجروح
-                    </div>
-                    <div class="card-body">
-                        @if ($request->WC_REQ_STATUS === 'PENDING')
-                            <div class="alert alert-warning mb-3">
-                                <i class="bi bi-info-circle-fill me-2"></i>الطلب حالياً <strong>قيد الانتظار</strong>. يرجى اختيار ممرض العيادة وبدء زيارة المريض بالقسم.
+                <!-- Workflow Actions & Assessment Form for Clinic Nurses -->
+                @if (in_array($request->WC_REQ_STATUS, ['PENDING', 'VISIT_IN_PROGRESS']))
+                    <div class="card border-primary shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white py-3 fw-bold d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2 fs-6">
+                                <i class="bi bi-journal-medical fs-5"></i>
+                                <span>تقييم حالة الجرح وتوثيق البيانات والتشخيصات (Diagnoses)</span>
                             </div>
-                            <form action="{{ route('requests.visit', $request->WC_REQ_CODE) }}" method="POST" class="row g-3 align-items-end">
+                            <span class="badge bg-white text-primary">إدخال مباشر بالصفحة</span>
+                        </div>
+                        <div class="card-body p-4">
+                            <form action="{{ route('requests.accept', $request->WC_REQ_CODE) }}" method="POST" id="acceptRequestForm">
                                 @csrf
-                                <div class="col-md-8">
-                                    <label for="clinic_nurse_code" class="form-label fw-semibold">ممرض عيادة الجروح المكلف بالزيارة</label>
-                                    <select name="clinic_nurse_code" class="form-select" required>
-                                        <option value="">-- اختر ممرض العيادة --</option>
-                                        @foreach ($employees as $employee)
-                                            <option value="{{ $employee->PER_EMP_CODE }}">
-                                                {{ $employee->PER_EMP_FULL_NAME }} ({{ $employee->PER_EMP_JOB_TITLE ?? 'ممرض' }})
-                                            </option>
-                                        @endforeach
-                                    </select>
+
+                                <div class="alert alert-info border-0 shadow-sm mb-4">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    يرجى تحديد الممرض الذي أجرى الفحص، وقسم العيادة المستقبل، وتوثيق التشخيصات والجرح مباشرة. يمكنك إضافة أكثر من تشخيص للجرح بنفس الوقت.
                                 </div>
-                                <div class="col-md-4">
-                                    <button type="submit" class="btn btn-info text-white w-100 fw-bold">
-                                        <i class="bi bi-person-walking me-1"></i> بدء زيارة القسم
+
+                                <!-- Section 1: Staff & Clinic Info -->
+                                <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-person-badge-fill me-2"></i>معلومات التقييم السريري والممرض الفاحص
+                                </h6>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label for="clinic_nurse_code" class="form-label fw-bold text-dark">
+                                            الممرض الذي أجرى الفحص والتقييم <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="clinic_nurse_code" id="clinic_nurse_code" class="form-select form-select-lg border-primary-subtle" required>
+                                            <option value="">-- اختر الممرض الفاحص --</option>
+                                            @foreach ($employees as $emp)
+                                                <option value="{{ $emp->PER_EMP_CODE }}" {{ ($request->WC_REQ_REVIEWED_BY_CD == $emp->PER_EMP_CODE) ? 'selected' : '' }}>
+                                                    {{ $emp->PER_EMP_FULL_NAME }} ({{ $emp->PER_EMP_JOB_TITLE ?? 'ممرض' }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="department_code" class="form-label fw-bold text-dark">
+                                            قسم العيادة المستقبِل <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="department_code" id="department_code" class="form-select form-select-lg border-primary-subtle" required>
+                                            @foreach ($departments as $dept)
+                                                <option value="{{ $dept->WC_DEPT_CODE }}" {{ (old('department_code') == $dept->WC_DEPT_CODE || (!old('department_code') && \Illuminate\Support\Str::contains($dept->WC_DEPT_NAME, ['Wound Care', 'جروح']))) ? 'selected' : '' }}>
+                                                    {{ $dept->WC_DEPT_NAME }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label for="procedure_code" class="form-label fw-semibold">
+                                            الإجراء الطبي الأول المتبع (اختياري)
+                                        </label>
+                                        <select name="procedure_code" id="procedure_code" class="form-select">
+                                            <option value="">-- بدون تحديد إجراء طبي أول --</option>
+                                            @foreach ($procedures as $proc)
+                                                <option value="{{ $proc->WC_PROC_CODE }}">{{ $proc->WC_PROC_NAME }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label for="pmh_notes" class="form-label fw-semibold">
+                                            التاريخ المرضي والملاحظات السريرية للفحص
+                                        </label>
+                                        <textarea name="pmh_notes" id="pmh_notes" rows="3" class="form-control" placeholder="أدخل التاريخ المرضي السابق للمريض وملاحظات فحص الجرح السريري..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Section 2: Multiple Diagnoses Support -->
+                                <div class="card bg-light border-0 mb-4">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                            <h6 class="fw-bold text-primary mb-0">
+                                                <i class="bi bi-clipboard2-pulse-fill me-2"></i>
+                                                تشخيصات الجرح (Diagnoses) — إمكانية إضافة عدة تشخيصات
+                                            </h6>
+                                            <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="addDiagnosisRowBtn">
+                                                <i class="bi bi-plus-circle-fill me-1"></i> إضافة تشخيص آخر
+                                            </button>
+                                        </div>
+
+                                        <div id="diagnosesContainer">
+                                            <!-- Row 0 -->
+                                            <div class="row g-2 align-items-end diagnosis-row mb-3 pb-3 border-bottom border-secondary-subtle">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold small text-muted">نوع الجرح (Wound Type)</label>
+                                                    <select name="diagnoses[0][wound_type_code]" class="form-select">
+                                                        <option value="">-- اختر نوع الجرح --</option>
+                                                        @foreach ($woundTypes as $wt)
+                                                            <option value="{{ $wt->WC_WTYPE_CODE }}">{{ $wt->WC_WTYPE_NAME }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold small text-muted">التشخيص الطبي للجرح (Diagnosis)</label>
+                                                    <select name="diagnoses[0][diagnosis_code]" class="form-select">
+                                                        <option value="">-- اختر التشخيص الطبي --</option>
+                                                        @foreach ($diagnoses as $diag)
+                                                            <option value="{{ $diag->WC_DIAG_CODE }}">{{ $diag->WC_DIAG_NAME }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label fw-semibold small text-muted">العلاج الدوائي (Medication)</label>
+                                                    <select name="diagnoses[0][medication_code]" class="form-select">
+                                                        <option value="">-- اختر العلاج الدوائي --</option>
+                                                        @foreach ($medications as $med)
+                                                            <option value="{{ $med->WC_MED_CODE }}">{{ $med->WC_MED_NAME }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-1 text-end">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-diagnosis-btn" disabled title="حذف التشخيص">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                    <button type="submit" class="btn btn-success btn-lg px-4 fw-bold shadow-sm">
+                                        <i class="bi bi-check-circle-fill me-2"></i> قبول الطلب وإنشاء الملف الطبي مع التشخيصات
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-lg px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#ineligibleModal">
+                                        <i class="bi bi-x-circle-fill me-2"></i> عدم الأهلية للتحويل
                                     </button>
                                 </div>
                             </form>
-                        @elseif (in_array($request->WC_REQ_STATUS, ['PENDING', 'VISIT_IN_PROGRESS']))
-                            <div class="alert alert-info mb-3">
-                                <i class="bi bi-info-circle-fill me-2"></i>الزيارة <strong>قيد التنفيذ بالقسم</strong>. يمكنك قبول المريض وتنسيق التسجيل أو تسجيلة كغير مؤهل.
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <form action="{{ route('requests.accept', $request->WC_REQ_CODE) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold" onclick="return confirm('هل أنت تأكد من قبول المريض وإنشاء الملف الطبي بالعيادة؟')">
-                                            <i class="bi bi-check-circle-fill me-1"></i> قبول المريض وإنشاء التسجيل
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="col-md-6">
-                                    <button type="button" class="btn btn-outline-danger w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#ineligibleModal">
-                                        <i class="bi bi-x-circle-fill me-1"></i> عدم الأهلية لتسجيل العيادة
-                                    </button>
-                                </div>
-                            </div>
-                        @else
+                        </div>
+                    </div>
+                @else
+                    <div class="card border-secondary mb-4">
+                        <div class="card-body">
                             <div class="alert alert-secondary mb-0">
                                 <i class="bi bi-lock-fill me-2"></i>تم البت في هذا الطلب سابقاً وحالته الحالية هي: <strong><x-status-badge :status="$request->WC_REQ_STATUS" /></strong>.
                             </div>
-                        @endif
+                        </div>
                     </div>
-                </div>
+                @endif
 
-                <div class="d-flex justify-content-start">
+                <div class="d-flex justify-content-start mb-4">
                     <a href="{{ route('requests.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-right me-1"></i> العودة لقائمة الطلبات
                     </a>
@@ -184,3 +275,41 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('diagnosesContainer');
+    const addBtn = document.getElementById('addDiagnosisRowBtn');
+    let rowCount = 1;
+
+    if (addBtn && container) {
+        addBtn.addEventListener('click', function () {
+            const firstRow = container.querySelector('.diagnosis-row');
+            if (!firstRow) return;
+
+            const newRow = firstRow.cloneNode(true);
+
+            newRow.querySelectorAll('select').forEach(select => {
+                select.value = '';
+                const name = select.getAttribute('name');
+                if (name) {
+                    select.setAttribute('name', name.replace(/\[\d+\]/, '[' + rowCount + ']'));
+                }
+            });
+
+            const removeBtn = newRow.querySelector('.remove-diagnosis-btn');
+            if (removeBtn) {
+                removeBtn.removeAttribute('disabled');
+                removeBtn.addEventListener('click', function () {
+                    newRow.remove();
+                });
+            }
+
+            container.appendChild(newRow);
+            rowCount++;
+        });
+    }
+});
+</script>
+@endpush

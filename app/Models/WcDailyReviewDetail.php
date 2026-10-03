@@ -9,9 +9,9 @@ class WcDailyReviewDetail extends Model
 {
     use HasDbFirstAttributes;
 
-    protected $table = 'wc_daily_review_detail_tb';
+    protected $table = 'wc_review_detail_tb';
 
-    protected $primaryKey = 'WC_DREVD_CODE';
+    protected $primaryKey = 'WC_REVD_CODE';
 
     public $incrementing = false;
 
@@ -20,18 +20,21 @@ class WcDailyReviewDetail extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'WC_DREVD_CODE',
-        'WC_DREVD_DAILY_REVIEW_CD',
+        'WC_REVD_CODE',
+        'WC_REVD_REVIEW_CD',
+        'WC_REVD_REVIEW_TYPE',
         'WC_DREVD_REG_DIAGNOSIS_CD',
+        'WC_DREVD_WOUND_DESCRIPTION',
+        'WC_DREVD_WOUND_CHANGES',
         'WC_DREVD_DRESSING_CD',
         'WC_DREVD_MEDICATION_CD',
-        'WC_DREVD_OBSERVATION',
-        'WC_DREVD_OUTCOME_STATUS',
+        'WC_DREVD_STATUS',
+        'WC_DREVD_FOLLOW_UP_REQUIRED',
     ];
 
     public function dailyReview()
     {
-        return $this->belongsTo(WcDailyReview::class, 'WC_DREVD_DAILY_REVIEW_CD', 'WC_DREV_CODE');
+        return $this->belongsTo(WcDailyReview::class, 'WC_REVD_REVIEW_CD', 'WC_DREV_CODE');
     }
 
     public function regDiagnosis()
@@ -47,5 +50,21 @@ class WcDailyReviewDetail extends Model
     public function medication()
     {
         return $this->belongsTo(WcMedication::class, 'WC_DREVD_MEDICATION_CD', 'WC_MED_CODE');
+    }
+
+    /**
+     * Backward compatibility accessor for outcome status.
+     */
+    public function getWcDrevdOutcomeStatusAttribute(): ?string
+    {
+        return $this->attributes['WC_DREVD_STATUS'] ?? null;
+    }
+
+    /**
+     * Backward compatibility accessor for observation text.
+     */
+    public function getWcDrevdObservationAttribute(): ?string
+    {
+        return $this->attributes['WC_DREVD_WOUND_DESCRIPTION'] ?? null;
     }
 }

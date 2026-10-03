@@ -11,6 +11,7 @@ return [
     'sidebar' => [
         'dashboard' => 'الرئيسية (لوحة التحكم)',
         'requests' => 'طلبات التسجيل الجديدة',
+        'send_request' => 'إرسال طلب تسجيل جديد',
         'registrations' => 'المرضى المسجلون حالياً',
         'complete_registration' => 'إكمال تسجيل مريض جديد',
         'daily_review' => 'التقييم والزيارة اليومية',

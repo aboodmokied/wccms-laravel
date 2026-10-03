@@ -1,45 +1,126 @@
 @extends('layouts.app')
 
-@section('title', 'التقييم والزيارة اليومية')
-
-@push('styles')
-    @vite(['resources/css/pages/reviews.css'])
-@endpush
-
-@push('scripts')
-    @vite(['resources/js/pages/reviews.js'])
-@endpush
+@section('title', 'التقييم والزيارة اليومية للجروح - WCCMS')
 
 @section('content')
-<x-card title="استمارة التقييم والزيارة اليومية للجروح" icon="bi-clipboard2-pulse" subtitle="تسجيل قياسات أبعاد الجرح، كمية الإفرازات، درجة الألم، والضمادات المطبقة">
-    <form method="POST" action="{{ url('/reviews/daily') }}">
-        @csrf
-        <div class="row">
-            <div class="col-md-4">
-                <x-form-group label="طول الجرح (سم)" name="length_cm" type="number" required="true" />
-            </div>
-            <div class="col-md-4">
-                <x-form-group label="عرض الجرح (سم)" name="width_cm" type="number" required="true" />
-            </div>
-            <div class="col-md-4">
-                <x-form-group label="عمق الجرح (سم)" name="depth_cm" type="number" required="true" />
+<div class="container-fluid px-0">
+
+    <!-- BREADCRUMB & PAGE ACTION BAR -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('reviews.daily') }}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-2xs rounded-3">
+                <i class="bi bi-grid-fill"></i>
+                <span>جدول مراجعات اليوم</span>
+            </a>
+            <a href="{{ route('registrations.show', $registration->WC_REG_CODE) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-2xs rounded-3">
+                <i class="bi bi-arrow-right"></i>
+                <span>ملف التسجيل</span>
+            </a>
+            <div>
+                <h1 class="fw-bolder fs-3 mb-0 text-dark">التقييم والزيارة اليومية للجروح</h1>
+                <span class="text-muted fs-7">كود التسجيل: <code class="text-primary fw-bold">{{ $registration->WC_REG_CODE }}</code></span>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <x-form-group label="درجة الألم (0 - 10)" name="pain_score" type="number" required="true" />
-            </div>
-            <div class="col-md-6">
-                <x-form-group label="كمية الإفرازات" name="exudate_amount" required="true" />
+        <div class="d-flex align-items-center gap-2">
+            @if($registration->WC_REG_STATUS === 'ACTIVE')
+                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-4 py-2.5 rounded-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addDailyReviewModal">
+                    <i class="bi bi-plus-circle-fill fs-6"></i>
+                    <span>+ إضافة زيارة تقييم يومي</span>
+                </button>
+            @else
+                <button type="button" class="btn btn-secondary d-inline-flex align-items-center gap-2 shadow-sm px-4 py-2.5 rounded-3" disabled>
+                    <i class="bi bi-lock-fill fs-6"></i>
+                    <span>مُخرج (مغلق)</span>
+                </button>
+            @endif
+        </div>
+    </div>
+
+    <!-- DISCHARGED ALERT BANNER -->
+    @if($registration->WC_REG_STATUS === 'DISCHARGED')
+        <div class="alert alert-secondary d-flex align-items-center gap-3 shadow-2xs border-0 mb-4 p-3 rounded-3" role="alert">
+            <i class="bi bi-info-circle-fill fs-4 text-secondary"></i>
+            <div>
+                <strong class="d-block text-dark fs-7">تنبيه: ملف التسجيل مخرج (DISCHARGED)</strong>
+                <span class="fs-7 text-muted">تم تخريج هذا المريض من العيادة بتاريخ {{ \Carbon\Carbon::parse($registration->WC_REG_DISCHARGED_AT)->format('Y-m-d H:i') }}. السجلات والزيارات اليومية متاحة في وضع القراءة فقط لحفظ التوثيق التاريخي.</span>
             </div>
         </div>
+    @endif
 
-        <x-form-group label="ملاحظات التقييم التمريضي" name="notes" type="textarea" />
-
-        <div class="d-flex justify-content-end gap-2 mt-4">
-            <button type="submit" class="btn btn-primary px-4">{{ __('ui.buttons.save') }}</button>
+    <!-- FLASH MESSAGES -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-2xs border-0 mb-4 rounded-3" role="alert">
+            <i class="bi bi-check-circle-fill fs-5"></i>
+            <div>{{ session('success') }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
         </div>
-    </form>
-</x-card>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-2xs border-0 mb-4 rounded-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            <div>{{ session('error') }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+        </div>
+    @endif
+
+    <!-- 1. PATIENT SUMMARY BANNER -->
+    @include('reviews.partials.patient_summary')
+
+    <!-- 2. MAIN WORKSPACE NAVIGATION TABS -->
+    <div class="mb-4">
+        <ul class="nav nav-pills bg-white p-1.5 rounded-3 shadow-xs border gap-2" id="dailyWorkspaceTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold fs-7 px-4 py-2.5 rounded-2 d-flex align-items-center gap-2"
+                        id="timeline-tab"
+                        data-bs-toggle="pill"
+                        data-bs-target="#timeline-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="timeline-pane"
+                        aria-selected="true">
+                    <i class="bi bi-clock-history fs-6"></i>
+                    <span>سجل الزيارات والتقييمات اليومية</span>
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-0.5 fs-8">{{ $registration->dailyReviews->count() }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold fs-7 px-4 py-2.5 rounded-2 d-flex align-items-center gap-2"
+                        id="wounds-tab"
+                        data-bs-toggle="pill"
+                        data-bs-target="#wounds-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="wounds-pane"
+                        aria-selected="false">
+                    <i class="bi bi-bandaid fs-6"></i>
+                    <span>الجروح النشطة المسجلة</span>
+                    <span class="badge bg-secondary text-white rounded-pill px-2 py-0.5 fs-8">{{ $registration->diagnoses->count() }}</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- TAB PANES -->
+    <div class="tab-content" id="dailyWorkspaceTabContent">
+        <!-- PANE 1: DAILY REVIEWS HISTORY TIMELINE -->
+        <div class="tab-pane fade show active" id="timeline-pane" role="tabpanel" aria-labelledby="timeline-tab">
+            @include('reviews.partials.review_timeline')
+        </div>
+
+        <!-- PANE 2: ACTIVE WOUNDS OVERVIEW -->
+        <div class="tab-pane fade" id="wounds-pane" role="tabpanel" aria-labelledby="wounds-tab">
+            @include('reviews.partials.wound_tabs')
+        </div>
+    </div>
+
+</div>
+
+<!-- 3. MULTI-WOUND DAILY REVIEW MODAL (ACTIVE REGISTRATION ONLY) -->
+@if($registration->WC_REG_STATUS === 'ACTIVE')
+    @include('reviews.partials.daily_review_modal')
+@endif
+
 @endsection
+

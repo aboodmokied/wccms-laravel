@@ -17,6 +17,7 @@ use App\Models\WcRequestReg;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class DailyReviewModelTest extends TestCase
@@ -88,16 +89,19 @@ class DailyReviewModelTest extends TestCase
             'WC_DREV_VISIT_DATE' => now(),
             'WC_DREV_NURSE_CD' => $nurse->PER_EMP_CODE,
             'WC_DREV_ENTRY_USER_CD' => $user->PER_USER_CODE,
+            'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'Patient visited for follow-up review',
         ]);
 
         $detail = WcDailyReviewDetail::create([
-            'WC_DREVD_DAILY_REVIEW_CD' => $dailyReview->WC_DREV_CODE,
+            'WC_REVD_CODE' => (string) Str::uuid(),
+            'WC_REVD_REVIEW_CD' => $dailyReview->WC_DREV_CODE,
+            'WC_REVD_REVIEW_TYPE' => 'DAILY',
             'WC_DREVD_REG_DIAGNOSIS_CD' => $regDiag->WC_RDIAG_CODE,
             'WC_DREVD_DRESSING_CD' => $dressing->WC_DRESS_CODE,
             'WC_DREVD_MEDICATION_CD' => $med->WC_MED_CODE,
-            'WC_DREVD_OBSERVATION' => 'Granulation tissue forming well',
-            'WC_DREVD_OUTCOME_STATUS' => 'IMPROVED_FOLLOWUP',
+            'WC_DREVD_WOUND_DESCRIPTION' => 'Granulation tissue forming well',
+            'WC_DREVD_STATUS' => 'IMPROVED_FOLLOWUP',
         ]);
 
         // Complete appointment

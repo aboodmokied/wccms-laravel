@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MockHospitalAuthController;
+use App\Http\Controllers\DailyReviewController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RegistrationRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,19 +53,19 @@ Route::middleware(['hospital.jwt'])->group(function () {
     Route::post('/requests/{requestModel}/ineligible', [RegistrationRequestController::class, 'markIneligible'])->name('requests.ineligible');
     Route::post('/requests/{requestModel}/cancel', [RegistrationRequestController::class, 'cancel'])->name('requests.cancel');
 
-    // Registrations Routes
-    Route::get('/registrations', function () {
-        return view('registrations.index');
-    })->name('registrations.index');
+    // Registrations Routes (Phase 5 & 6)
+    Route::get('/registrations', [RegistrationController::class, 'index'])->name('registrations.index');
+    Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('registrations.show');
+    Route::put('/registrations/{registration}', [RegistrationController::class, 'update'])->name('registrations.update');
+    Route::post('/registrations/{registration}/diagnoses', [RegistrationController::class, 'storeDiagnosis'])->name('registrations.diagnoses.store');
+    Route::post('/registrations/{registration}/discharge', [RegistrationController::class, 'discharge'])->name('registrations.discharge');
 
-    Route::get('/registrations/create', function () {
-        return view('registrations.create');
-    })->name('registrations.create');
+    // Daily Review Routes (Phase 6)
+    Route::get('/registrations/{registration}/daily-reviews', [DailyReviewController::class, 'index'])->name('registrations.daily-reviews.index');
+    Route::post('/registrations/{registration}/daily-reviews', [DailyReviewController::class, 'store'])->name('registrations.daily-reviews.store');
 
     // Daily & Scheduled Reviews
-    Route::get('/reviews/daily', function () {
-        return view('reviews.daily');
-    })->name('reviews.daily');
+    Route::get('/reviews/daily', [DailyReviewController::class, 'dailyIndex'])->name('reviews.daily');
 
     Route::get('/reviews/scheduled', function () {
         return view('reviews.scheduled');

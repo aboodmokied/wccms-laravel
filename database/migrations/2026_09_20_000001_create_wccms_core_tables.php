@@ -14,18 +14,21 @@ return new class extends Migration
         // 1. User Accounts
         Schema::create('per_users_tb', function (Blueprint $table) {
             $table->char('PER_USER_CODE', 36)->primary();
+            $table->string('PER_USER_FULL_NAME', 255)->nullable();
             $table->string('PER_USER_USERNAME', 100)->unique();
+            $table->string('PER_USER_EMAIL', 255)->nullable();
             $table->string('PER_USER_PASSWORD', 255)->nullable();
             $table->string('PER_USER_ROLE', 20)->nullable(); // NURSE, ADMIN
-            $table->smallInteger('PER_USER_IS_ACTIVE')->default(0);
+            $table->smallInteger('PER_USER_IS_ACTIVE')->default(1);
         });
 
         // 2. Employee Directory
         Schema::create('per_employee_tb', function (Blueprint $table) {
             $table->char('PER_EMP_CODE', 36)->primary();
-            $table->string('PER_EMP_FULL_NAME', 150);
-            $table->string('PER_EMP_JOB_TITLE', 100)->nullable();
+            $table->string('PER_EMP_FULL_NAME', 255);
+            $table->string('PER_EMP_JOB_TITLE', 150)->nullable();
             $table->char('PER_EMP_USER_CD', 36)->nullable()->index();
+            $table->smallInteger('PER_EMP_IS_ACTIVE')->default(1);
 
             $table->foreign('PER_EMP_USER_CD')
                 ->references('PER_USER_CODE')
@@ -37,53 +40,58 @@ return new class extends Migration
         Schema::create('mr_patient_tb', function (Blueprint $table) {
             $table->char('MR_PAT_CODE', 36)->primary();
             $table->string('MR_PAT_ID_NO', 50)->unique();
-            $table->string('MR_PAT_FULL_NAME', 150);
+            $table->string('MR_PAT_HOSPITAL_PATIENT_ID', 100)->nullable();
+            $table->string('MR_PAT_NATIONAL_ID', 100)->nullable();
+            $table->string('MR_PAT_FULL_NAME', 255);
             $table->string('MR_PAT_PHONE', 30)->nullable();
             $table->string('MR_PAT_GENDER', 10);
             $table->date('MR_PAT_DOB')->nullable();
+            $table->string('MR_PAT_SUPERVISING_DOCTOR', 255)->nullable();
+            $table->string('MR_PAT_HOSPITAL_DEPARTMENT', 255)->nullable();
+            $table->date('MR_PAT_HOSPITAL_ADMISSION_DATE')->nullable();
             $table->dateTime('MR_PAT_LAST_SYNCED_AT')->nullable();
         });
 
         // 4. Master Reference Tables (7 tables)
         Schema::create('wc_department_tb', function (Blueprint $table) {
             $table->char('WC_DEPT_CODE', 36)->primary();
-            $table->string('WC_DEPT_NAME', 100);
+            $table->string('WC_DEPT_NAME', 255);
             $table->smallInteger('WC_DEPT_IS_ACTIVE')->default(1);
         });
 
         Schema::create('wc_pmh_tb', function (Blueprint $table) {
             $table->char('WC_PMH_CODE', 36)->primary();
-            $table->string('WC_PMH_NAME', 100);
+            $table->string('WC_PMH_NAME', 255);
             $table->smallInteger('WC_PMH_IS_ACTIVE')->default(1);
         });
 
         Schema::create('wc_diagnosis_tb', function (Blueprint $table) {
             $table->char('WC_DIAG_CODE', 36)->primary();
-            $table->string('WC_DIAG_NAME', 100);
+            $table->string('WC_DIAG_NAME', 255);
             $table->smallInteger('WC_DIAG_IS_ACTIVE')->default(1);
         });
 
         Schema::create('wc_wound_type_tb', function (Blueprint $table) {
             $table->char('WC_WTYPE_CODE', 36)->primary();
-            $table->string('WC_WTYPE_NAME', 100);
+            $table->string('WC_WTYPE_NAME', 255);
             $table->smallInteger('WC_WTYPE_IS_ACTIVE')->default(1);
         });
 
         Schema::create('wc_dressing_tb', function (Blueprint $table) {
             $table->char('WC_DRESS_CODE', 36)->primary();
-            $table->string('WC_DRESS_NAME', 100);
+            $table->string('WC_DRESS_NAME', 255);
             $table->smallInteger('WC_DRESS_IS_ACTIVE')->default(1);
         });
 
         Schema::create('wc_medication_tb', function (Blueprint $table) {
             $table->char('WC_MED_CODE', 36)->primary();
-            $table->string('WC_MED_NAME', 100);
+            $table->string('WC_MED_NAME', 255);
             $table->smallInteger('WC_MED_IS_ACTIVE')->default(1);
         });
 
         Schema::create('wc_procedure_tb', function (Blueprint $table) {
             $table->char('WC_PROC_CODE', 36)->primary();
-            $table->string('WC_PROC_NAME', 100);
+            $table->string('WC_PROC_NAME', 255);
             $table->smallInteger('WC_PROC_IS_ACTIVE')->default(1);
         });
 
@@ -98,8 +106,10 @@ return new class extends Migration
             $table->char('WC_REQ_ENTRY_USER_CD', 36)->index();
             $table->char('WC_REQ_REVIEWED_BY_CD', 36)->nullable()->index();
             $table->string('WC_REQ_STATUS', 20)->default('PENDING')->index();
+            $table->string('WC_REQ_REJECTION_REASON', 500)->nullable();
             $table->text('WC_REQ_NOTES')->nullable();
             $table->dateTime('WC_REQ_CREATED_AT');
+            $table->dateTime('WC_REQ_REVIEWED_ON')->nullable();
 
             $table->foreign('WC_REQ_PATIENT_CD')->references('MR_PAT_CODE')->on('mr_patient_tb');
             $table->foreign('WC_REQ_NURSE_CD')->references('PER_EMP_CODE')->on('per_employee_tb');
@@ -112,13 +122,17 @@ return new class extends Migration
             $table->char('WC_REG_CODE', 36)->primary();
             $table->char('WC_REG_REQUEST_CD', 36)->index();
             $table->char('WC_REG_PATIENT_CD', 36)->index();
-            $table->char('WC_REG_DEPARTMENT_CD', 36)->index();
+            $table->char('WC_REG_DEPARTMENT_CD', 36)->nullable()->index();
             $table->char('WC_REG_PROCEDURE_CD', 36)->nullable()->index();
+            $table->char('WC_REG_PROCEDURE_PERFORMED_BY_CD', 36)->nullable()->index();
+            $table->dateTime('WC_REG_PROCEDURE_PERFORMED_AT')->nullable();
             $table->text('WC_REG_PMH_NOTES')->nullable();
             $table->dateTime('WC_REG_DATE');
             $table->char('WC_REG_NURSE_CD', 36)->index();
             $table->char('WC_REG_ENTRY_USER_CD', 36)->index();
             $table->string('WC_REG_STATUS', 20)->default('ACTIVE')->index();
+            $table->date('WC_REG_DISCHARGE_DATE')->nullable();
+            $table->string('WC_REG_DISCHARGE_TYPE', 30)->nullable();
             $table->dateTime('WC_REG_DISCHARGED_AT')->nullable();
             $table->char('WC_REG_DISCHARGED_BY_EMP_CD', 36)->nullable()->index();
 
@@ -126,6 +140,7 @@ return new class extends Migration
             $table->foreign('WC_REG_PATIENT_CD')->references('MR_PAT_CODE')->on('mr_patient_tb');
             $table->foreign('WC_REG_DEPARTMENT_CD')->references('WC_DEPT_CODE')->on('wc_department_tb');
             $table->foreign('WC_REG_PROCEDURE_CD')->references('WC_PROC_CODE')->on('wc_procedure_tb');
+            $table->foreign('WC_REG_PROCEDURE_PERFORMED_BY_CD')->references('PER_EMP_CODE')->on('per_employee_tb');
             $table->foreign('WC_REG_NURSE_CD')->references('PER_EMP_CODE')->on('per_employee_tb');
             $table->foreign('WC_REG_ENTRY_USER_CD')->references('PER_USER_CODE')->on('per_users_tb');
             $table->foreign('WC_REG_DISCHARGED_BY_EMP_CD')->references('PER_EMP_CODE')->on('per_employee_tb');
@@ -137,8 +152,9 @@ return new class extends Migration
             $table->char('WC_RDIAG_REGISTRATION_CD', 36)->index();
             $table->char('WC_RDIAG_DIAGNOSIS_CD', 36)->index();
             $table->char('WC_RDIAG_WOUND_TYPE_CD', 36)->index();
-            $table->char('WC_RDIAG_CLINICAL_EMP_CD', 36)->index();
-            $table->char('WC_RDIAG_ENTRY_USER_CD', 36)->index();
+            $table->text('WC_RDIAG_DESCRIPTION')->nullable();
+            $table->char('WC_RDIAG_CLINICAL_EMP_CD', 36)->nullable()->index();
+            $table->char('WC_RDIAG_ENTRY_USER_CD', 36)->nullable()->index();
 
             $table->foreign('WC_RDIAG_REGISTRATION_CD')->references('WC_REG_CODE')->on('wc_registration_tb');
             $table->foreign('WC_RDIAG_DIAGNOSIS_CD')->references('WC_DIAG_CODE')->on('wc_diagnosis_tb');
@@ -151,11 +167,16 @@ return new class extends Migration
         Schema::create('wc_scheduled_review_tb', function (Blueprint $table) {
             $table->char('WC_SREV_CODE', 36)->primary();
             $table->char('WC_SREV_REGISTRATION_CD', 36)->index();
+            $table->char('WC_SREV_CREATED_BY_CD', 36)->nullable()->index();
             $table->dateTime('WC_SREV_SCHEDULED_DATE');
             $table->integer('WC_SREV_VISIT_SERIAL')->default(1);
-            $table->string('WC_SREV_STATUS', 20)->default('PENDING')->index(); // PENDING, COMPLETED, MISSED, CANCELLED, VOIDED
+            $table->string('WC_SREV_STATUS', 20)->default('PENDING')->index();
+            $table->text('WC_SREV_NOTES')->nullable();
+            $table->dateTime('WC_SREV_CREATED_ON')->nullable();
+            $table->dateTime('WC_SREV_COMPLETED_ON')->nullable();
 
             $table->foreign('WC_SREV_REGISTRATION_CD')->references('WC_REG_CODE')->on('wc_registration_tb');
+            $table->foreign('WC_SREV_CREATED_BY_CD')->references('PER_USER_CODE')->on('per_users_tb');
         });
 
         // 9. Daily Review Visit Header
@@ -166,6 +187,7 @@ return new class extends Migration
             $table->dateTime('WC_DREV_VISIT_DATE');
             $table->char('WC_DREV_NURSE_CD', 36)->index();
             $table->char('WC_DREV_ENTRY_USER_CD', 36)->index();
+            $table->string('WC_DREV_OVERALL_STATUS', 30)->index();
             $table->text('WC_DREV_GENERAL_NOTES')->nullable();
 
             $table->foreign('WC_DREV_REGISTRATION_CD')->references('WC_REG_CODE')->on('wc_registration_tb');
@@ -174,17 +196,20 @@ return new class extends Migration
             $table->foreign('WC_DREV_ENTRY_USER_CD')->references('PER_USER_CODE')->on('per_users_tb');
         });
 
-        // 10. Daily Review Detail
-        Schema::create('wc_daily_review_detail_tb', function (Blueprint $table) {
-            $table->char('WC_DREVD_CODE', 36)->primary();
-            $table->char('WC_DREVD_DAILY_REVIEW_CD', 36)->index();
+        // 10. Unified Review Detail Table
+        Schema::create('wc_review_detail_tb', function (Blueprint $table) {
+            $table->char('WC_REVD_CODE', 36)->primary();
+            $table->char('WC_REVD_REVIEW_CD', 36)->index();
+            $table->string('WC_REVD_REVIEW_TYPE', 20)->default('DAILY')->index();
             $table->char('WC_DREVD_REG_DIAGNOSIS_CD', 36)->index();
+            $table->text('WC_DREVD_WOUND_DESCRIPTION')->nullable();
+            $table->text('WC_DREVD_WOUND_CHANGES')->nullable();
             $table->char('WC_DREVD_DRESSING_CD', 36)->nullable()->index();
             $table->char('WC_DREVD_MEDICATION_CD', 36)->nullable()->index();
-            $table->text('WC_DREVD_OBSERVATION')->nullable();
-            $table->string('WC_DREVD_OUTCOME_STATUS', 30); // IMPROVED_DISCHARGE, IMPROVED_FOLLOWUP, WORSENED, DECEASED
+            $table->string('WC_DREVD_STATUS', 30)->index();
+            $table->boolean('WC_DREVD_FOLLOW_UP_REQUIRED')->default(false);
 
-            $table->foreign('WC_DREVD_DAILY_REVIEW_CD')->references('WC_DREV_CODE')->on('wc_daily_review_tb');
+            $table->foreign('WC_REVD_REVIEW_CD')->references('WC_DREV_CODE')->on('wc_daily_review_tb');
             $table->foreign('WC_DREVD_REG_DIAGNOSIS_CD')->references('WC_RDIAG_CODE')->on('wc_reg_diagnosis_tb');
             $table->foreign('WC_DREVD_DRESSING_CD')->references('WC_DRESS_CODE')->on('wc_dressing_tb');
             $table->foreign('WC_DREVD_MEDICATION_CD')->references('WC_MED_CODE')->on('wc_medication_tb');
@@ -198,6 +223,7 @@ return new class extends Migration
     {
         Schema::disableForeignKeyConstraints();
 
+        Schema::dropIfExists('wc_review_detail_tb');
         Schema::dropIfExists('wc_daily_review_detail_tb');
         Schema::dropIfExists('wc_daily_review_tb');
         Schema::dropIfExists('wc_scheduled_review_tb');
