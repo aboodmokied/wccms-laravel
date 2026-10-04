@@ -1,6 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DiagnosisController;
+use App\Http\Controllers\Admin\DressingController;
+use App\Http\Controllers\Admin\MedicationController;
+use App\Http\Controllers\Admin\PmhController;
+use App\Http\Controllers\Admin\ProcedureController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WoundTypeController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MockHospitalAuthController;
 use App\Http\Controllers\DailyReviewController;
@@ -85,5 +92,41 @@ Route::middleware(['hospital.jwt'])->group(function () {
 
         Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
         Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+
+        // Master Data Administration Routes
+        Route::get('/admin/departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
+        Route::post('/admin/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
+        Route::put('/admin/departments/{department}', [DepartmentController::class, 'update'])->name('admin.departments.update');
+        Route::patch('/admin/departments/{department}/toggle', [DepartmentController::class, 'toggleActive'])->name('admin.departments.toggle');
+
+        Route::get('/admin/pmh', [PmhController::class, 'index'])->name('admin.pmh.index');
+        Route::post('/admin/pmh', [PmhController::class, 'store'])->name('admin.pmh.store');
+        Route::put('/admin/pmh/{pmh}', [PmhController::class, 'update'])->name('admin.pmh.update');
+        Route::patch('/admin/pmh/{pmh}/toggle', [PmhController::class, 'toggleActive'])->name('admin.pmh.toggle');
+
+        Route::get('/admin/diagnoses', [DiagnosisController::class, 'index'])->name('admin.diagnoses.index');
+        Route::post('/admin/diagnoses', [DiagnosisController::class, 'store'])->name('admin.diagnoses.store');
+        Route::put('/admin/diagnoses/{diagnosis}', [DiagnosisController::class, 'update'])->name('admin.diagnoses.update');
+        Route::patch('/admin/diagnoses/{diagnosis}/toggle', [DiagnosisController::class, 'toggleActive'])->name('admin.diagnoses.toggle');
+
+        Route::get('/admin/wound-types', [WoundTypeController::class, 'index'])->name('admin.wound_types.index');
+        Route::post('/admin/wound-types', [WoundTypeController::class, 'store'])->name('admin.wound_types.store');
+        Route::put('/admin/wound-types/{woundType}', [WoundTypeController::class, 'update'])->name('admin.wound_types.update');
+        Route::patch('/admin/wound-types/{woundType}/toggle', [WoundTypeController::class, 'toggleActive'])->name('admin.wound_types.toggle');
+
+        Route::get('/admin/dressings', [DressingController::class, 'index'])->name('admin.dressings.index');
+        Route::post('/admin/dressings', [DressingController::class, 'store'])->name('admin.dressings.store');
+        Route::put('/admin/dressings/{dressing}', [DressingController::class, 'update'])->name('admin.dressings.update');
+        Route::patch('/admin/dressings/{dressing}/toggle', [DressingController::class, 'toggleActive'])->name('admin.dressings.toggle');
+
+        Route::get('/admin/medications', [MedicationController::class, 'index'])->name('admin.medications.index');
+        Route::post('/admin/medications', [MedicationController::class, 'store'])->name('admin.medications.store');
+        Route::put('/admin/medications/{medication}', [MedicationController::class, 'update'])->name('admin.medications.update');
+        Route::patch('/admin/medications/{medication}/toggle', [MedicationController::class, 'toggleActive'])->name('admin.medications.toggle');
+
+        Route::get('/admin/procedures', [ProcedureController::class, 'index'])->name('admin.procedures.index');
+        Route::post('/admin/procedures', [ProcedureController::class, 'store'])->name('admin.procedures.store');
+        Route::put('/admin/procedures/{procedure}', [ProcedureController::class, 'update'])->name('admin.procedures.update');
+        Route::patch('/admin/procedures/{procedure}/toggle', [ProcedureController::class, 'toggleActive'])->name('admin.procedures.toggle');
     });
 });
