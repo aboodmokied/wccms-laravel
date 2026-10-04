@@ -11,8 +11,10 @@ use App\Http\Controllers\Admin\WoundTypeController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MockHospitalAuthController;
 use App\Http\Controllers\DailyReviewController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RegistrationRequestController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduledReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,13 +43,9 @@ Route::post('/logout', LogoutController::class)->name('logout');
 
 Route::middleware(['hospital.jwt'])->group(function () {
 
-    Route::get('/', function () {
-        return view('dashboard');
-    });
+    Route::get('/', [DashboardController::class, 'index']);
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Registration Requests Routes
     Route::get('/requests', [RegistrationRequestController::class, 'index'])->name('requests.index');
@@ -80,9 +78,8 @@ Route::middleware(['hospital.jwt'])->group(function () {
     Route::put('/reviews/scheduled/{scheduledReview}/reschedule', [ScheduledReviewController::class, 'reschedule'])->name('reviews.scheduled.reschedule');
     Route::post('/reviews/scheduled/{scheduledReview}/cancel', [ScheduledReviewController::class, 'cancel'])->name('reviews.scheduled.cancel');
 
-    Route::get('/reports/history', function () {
-        return view('reports.history');
-    })->name('reports.history');
+    Route::get('/reports/history', [ReportController::class, 'history'])->name('reports.history');
+    Route::get('/reports/history/{patient}/export', [ReportController::class, 'exportCsv'])->name('reports.history.export');
 
     // Admin-Only Routes
     Route::middleware(['role:ADMIN'])->group(function () {
