@@ -49,9 +49,9 @@
         </a>
 
         <a href="{{ route('reviews.scheduled') }}"
-           class="m8-nav-item {{ request()->routeIs('reviews.scheduled') ? 'active' : '' }}">
+           class="m8-nav-item {{ request()->routeIs('reviews.scheduled*') ? 'active' : '' }}">
             <i class="bi bi-calendar-check-fill"></i>
-            <span>المواعيد</span>
+            <span>المراجعات المجدولة</span>
         </a>
 
         <div class="m8-menu-section mt-3">النظام</div>

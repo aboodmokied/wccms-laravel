@@ -22,14 +22,23 @@ class WcScheduledReview extends Model
     protected $fillable = [
         'WC_SREV_CODE',
         'WC_SREV_REGISTRATION_CD',
+        'WC_SREV_CREATED_BY_CD',
         'WC_SREV_SCHEDULED_DATE',
         'WC_SREV_VISIT_SERIAL',
         'WC_SREV_STATUS',
+        'WC_SREV_NOTES',
+        'WC_SREV_CREATED_ON',
+        'WC_SREV_COMPLETED_ON',
     ];
 
     public function registration()
     {
         return $this->belongsTo(WcRegistration::class, 'WC_SREV_REGISTRATION_CD', 'WC_REG_CODE');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(PerUser::class, 'WC_SREV_CREATED_BY_CD', 'PER_USER_CODE');
     }
 
     public function dailyReview()

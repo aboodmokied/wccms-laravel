@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\MockHospitalAuthController;
 use App\Http\Controllers\DailyReviewController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RegistrationRequestController;
+use App\Http\Controllers\ScheduledReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,9 +68,10 @@ Route::middleware(['hospital.jwt'])->group(function () {
     // Daily & Scheduled Reviews
     Route::get('/reviews/daily', [DailyReviewController::class, 'dailyIndex'])->name('reviews.daily');
 
-    Route::get('/reviews/scheduled', function () {
-        return view('reviews.scheduled');
-    })->name('reviews.scheduled');
+    Route::get('/reviews/scheduled', [ScheduledReviewController::class, 'index'])->name('reviews.scheduled');
+    Route::post('/reviews/scheduled/{scheduledReview}/fulfill', [ScheduledReviewController::class, 'startFulfillment'])->name('reviews.scheduled.fulfill');
+    Route::put('/reviews/scheduled/{scheduledReview}/reschedule', [ScheduledReviewController::class, 'reschedule'])->name('reviews.scheduled.reschedule');
+    Route::post('/reviews/scheduled/{scheduledReview}/cancel', [ScheduledReviewController::class, 'cancel'])->name('reviews.scheduled.cancel');
 
     Route::get('/reports/history', function () {
         return view('reports.history');

@@ -27,6 +27,7 @@ class StoreDailyReviewRequest extends FormRequest
             'overall_status' => ['required', 'string', 'in:IMPROVED_DISCHARGE,IMPROVED_SCHEDULED,WORSENED_STAY,DEATH'],
             'general_notes' => ['nullable', 'string'],
             'scheduled_date' => ['nullable', 'date'],
+            'scheduled_review_code' => ['nullable', 'string', 'size:36', 'exists:wc_scheduled_review_tb,WC_SREV_CODE'],
             'details' => ['required', 'array', 'min:1'],
             'details.*.diagnosis_code' => ['required', 'string', 'size:36', 'exists:wc_reg_diagnosis_tb,WC_RDIAG_CODE'],
             'details.*.dressing_code' => ['nullable', 'string', 'size:36', 'exists:wc_dressing_tb,WC_DRESS_CODE'],

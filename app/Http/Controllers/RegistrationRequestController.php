@@ -18,6 +18,7 @@ use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
 use App\Services\HospitalPatientSyncServiceInterface;
+use App\Services\ScheduledReviewService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -255,6 +256,12 @@ class RegistrationRequestController extends Controller
                     ]);
                 }
             }
+
+            // Clean up any old pending scheduled reviews from patient's previous registrations
+            app(ScheduledReviewService::class)->deletePendingForPreviousRegistrations(
+                $requestModel->WC_REQ_PATIENT_CD,
+                $reg->WC_REG_CODE
+            );
 
             return $reg;
         });

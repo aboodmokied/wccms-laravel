@@ -104,6 +104,11 @@ class DailyReviewController extends Controller
 
         $todayDate = now()->toDateString();
 
+        $scheduledReviewCode = request('scheduled_review') ?? request('scheduled_review_code');
+        $scheduledReview = $scheduledReviewCode
+            ? WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)->where('WC_SREV_STATUS', 'PENDING')->first()
+            : null;
+
         $isReviewedToday = $registration->dailyReviews
             ->filter(function ($review) use ($todayDate) {
                 return Carbon::parse($review->WC_DREV_VISIT_DATE)->toDateString() === $todayDate;
@@ -116,6 +121,7 @@ class DailyReviewController extends Controller
             'dressings' => $dressings,
             'medications' => $medications,
             'isReviewedToday' => $isReviewedToday,
+            'scheduledReview' => $scheduledReview,
         ]);
     }
 
@@ -198,6 +204,24 @@ class DailyReviewController extends Controller
                 $dailyReview->update([
                     'WC_DREV_SCHEDULED_REVIEW_CD' => $scheduledReview->WC_SREV_CODE,
                 ]);
+            }
+
+            // 5. Fulfill existing pending scheduled review if fulfillment was triggered
+            $scheduledReviewCode = $request->input('scheduled_review_code') ?? $request->input('scheduled_review');
+            if ($scheduledReviewCode) {
+                $pendingScheduledReview = WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)
+                    ->where('WC_SREV_STATUS', 'PENDING')
+                    ->first();
+
+                if ($pendingScheduledReview) {
+                    $pendingScheduledReview->update([
+                        'WC_SREV_STATUS' => 'COMPLETED',
+                        'WC_SREV_COMPLETED_ON' => now(),
+                    ]);
+                    $dailyReview->update([
+                        'WC_DREV_SCHEDULED_REVIEW_CD' => $pendingScheduledReview->WC_SREV_CODE,
+                    ]);
+                }
             }
         });
 
