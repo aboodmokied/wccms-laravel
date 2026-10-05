@@ -243,16 +243,18 @@ class RegistrationRequestController extends Controller
                     'WC_DREV_VISIT_DATE' => now(),
                     'WC_DREV_NURSE_CD' => $clinicNurseCode,
                     'WC_DREV_ENTRY_USER_CD' => $userCode,
+                    'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
                     'WC_DREV_GENERAL_NOTES' => 'توثيق العلاج الدوائي الأولي عند قبول المريض',
                 ]);
 
                 foreach ($medicationEntries as $entry) {
                     WcDailyReviewDetail::create([
-                        'WC_DREVD_CODE' => (string) Str::uuid(),
-                        'WC_DREVD_DAILY_REVIEW_CD' => $dailyReview->WC_DREV_CODE,
+                        'WC_REVD_CODE' => (string) Str::uuid(),
+                        'WC_REVD_REVIEW_CD' => $dailyReview->WC_DREV_CODE,
+                        'WC_REVD_REVIEW_TYPE' => 'DAILY',
                         'WC_DREVD_REG_DIAGNOSIS_CD' => $entry['diag']->WC_RDIAG_CODE,
                         'WC_DREVD_MEDICATION_CD' => $entry['med_code'],
-                        'WC_DREVD_OUTCOME_STATUS' => 'IMPROVED_FOLLOWUP',
+                        'WC_DREVD_STATUS' => 'WORSENED',
                     ]);
                 }
             }

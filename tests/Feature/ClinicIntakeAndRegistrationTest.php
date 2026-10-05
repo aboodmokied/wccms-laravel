@@ -7,6 +7,7 @@ use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
+use App\Models\WcMedication;
 use App\Models\WcProcedure;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
@@ -254,6 +255,61 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         $this->assertDatabaseHas('wc_request_reg_tb', [
             'WC_REQ_CODE' => $req->WC_REQ_CODE,
             'WC_REQ_STATUS' => 'NOT_ELIGIBLE',
+        ]);
+    }
+
+    public function test_clinic_nurse_can_accept_referral_with_initial_medication_creates_daily_review(): void
+    {
+        $token = $this->generateJwt('clinic_nurse_1');
+
+        $woundType = WcWoundType::create([
+            'WC_WTYPE_CODE' => (string) Str::uuid(),
+            'WC_WTYPE_NAME' => 'جرح سكري',
+            'WC_WTYPE_IS_ACTIVE' => 1,
+        ]);
+
+        $diagnosis = WcDiagnosis::create([
+            'WC_DIAG_CODE' => (string) Str::uuid(),
+            'WC_DIAG_NAME' => 'قدم سكرية',
+            'WC_DIAG_IS_ACTIVE' => 1,
+        ]);
+
+        $medication = WcMedication::create([
+            'WC_MED_CODE' => (string) Str::uuid(),
+            'WC_MED_NAME' => 'مضاد حيوي عريض الطيف',
+            'WC_MED_IS_ACTIVE' => 1,
+        ]);
+
+        $req = WcRequestReg::create([
+            'WC_REQ_CODE' => (string) Str::uuid(),
+            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
+            'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
+            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
+            'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
+            'WC_REQ_REVIEWED_BY_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_CREATED_AT' => now(),
+        ]);
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->post(route('requests.accept', $req->WC_REQ_CODE), [
+                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+                'department_code' => $this->department->WC_DEPT_CODE,
+                'wound_type_code' => $woundType->WC_WTYPE_CODE,
+                'diagnosis_code' => $diagnosis->WC_DIAG_CODE,
+                'medication_code' => $medication->WC_MED_CODE,
+            ]);
+
+        $response->assertStatus(302);
+        $response->assertRedirect(route('registrations.index'));
+
+        $registration = WcRegistration::where('WC_REG_REQUEST_CD', $req->WC_REQ_CODE)->first();
+        $this->assertNotNull($registration);
+
+        $this->assertDatabaseHas('wc_daily_review_tb', [
+            'WC_DREV_REGISTRATION_CD' => $registration->WC_REG_CODE,
+            'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
         ]);
     }
 }
