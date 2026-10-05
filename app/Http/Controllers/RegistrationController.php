@@ -30,8 +30,16 @@ class RegistrationController extends Controller
             $status = 'ACTIVE';
         }
 
-        $query = WcRegistration::with(['patient', 'department', 'procedure', 'nurse', 'dischargingNurse'])
-            ->where('WC_REG_STATUS', $status);
+        $query = WcRegistration::with([
+            'patient',
+            'department',
+            'procedure',
+            'nurse',
+            'dischargingNurse',
+            'dailyReviews' => function ($q) {
+                $q->orderBy('WC_DREV_VISIT_DATE', 'desc');
+            },
+        ])->where('WC_REG_STATUS', $status);
 
         if ($search = trim($request->input('search'))) {
             $query->whereHas('patient', function ($q) use ($search) {
@@ -63,6 +71,7 @@ class RegistrationController extends Controller
             'diagnoses.woundType',
             'diagnoses.diagnosis',
             'diagnoses.clinicalEmployee',
+            'dailyReviews.nurse',
         ])->findOrFail($id);
 
         $procedures = WcProcedure::where('WC_PROC_IS_ACTIVE', 1)->get();

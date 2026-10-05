@@ -16,6 +16,7 @@ use App\Models\WcProcedure;
 use App\Models\WcRegDiagnosis;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
+use App\Models\WcWoundPhoto;
 use App\Models\WcWoundType;
 use App\Services\HospitalPatientSyncServiceInterface;
 use App\Services\ScheduledReviewService;
@@ -177,7 +178,7 @@ class RegistrationRequestController extends Controller
 
         $userCode = Auth::user()?->PER_USER_CODE;
 
-        $registration = DB::transaction(function () use ($requestModel, $clinicNurseCode, $departmentCode, $validated, $userCode) {
+        $registration = DB::transaction(function () use ($request, $requestModel, $clinicNurseCode, $departmentCode, $validated, $userCode) {
             $requestModel->update([
                 'WC_REQ_STATUS' => 'ACCEPTED',
                 'WC_REQ_REVIEWED_BY_CD' => $clinicNurseCode,
@@ -199,7 +200,7 @@ class RegistrationRequestController extends Controller
             $medicationEntries = [];
 
             if (! empty($validated['diagnoses']) && is_array($validated['diagnoses'])) {
-                foreach ($validated['diagnoses'] as $diagItem) {
+                foreach ($validated['diagnoses'] as $index => $diagItem) {
                     if (! empty($diagItem['wound_type_code']) && ! empty($diagItem['diagnosis_code'])) {
                         $regDiag = WcRegDiagnosis::create([
                             'WC_RDIAG_CODE' => (string) Str::uuid(),
@@ -209,6 +210,26 @@ class RegistrationRequestController extends Controller
                             'WC_RDIAG_CLINICAL_EMP_CD' => $clinicNurseCode,
                             'WC_RDIAG_ENTRY_USER_CD' => $userCode,
                         ]);
+
+                        $photos = $request->file("diagnoses.{$index}.wound_photos");
+                        if (! empty($photos) && is_array($photos)) {
+                            foreach ($photos as $photoFile) {
+                                if ($photoFile && $photoFile->isValid()) {
+                                    $path = $photoFile->store('wound_photos/'.date('Y/m'), 'public');
+                                    WcWoundPhoto::create([
+                                        'WC_PHOTO_CODE' => (string) Str::uuid(),
+                                        'WC_PHOTO_REG_DIAGNOSIS_CD' => $regDiag->WC_RDIAG_CODE,
+                                        'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => null,
+                                        'WC_PHOTO_STAGE' => 'INITIAL',
+                                        'WC_PHOTO_PATH' => $path,
+                                        'WC_PHOTO_CAPTION' => 'صورة أوليّة للجرح عند قبول التسجيل',
+                                        'WC_PHOTO_TAKEN_AT' => now(),
+                                        'WC_PHOTO_NURSE_CD' => $clinicNurseCode,
+                                        'WC_PHOTO_ENTRY_USER_CD' => $userCode,
+                                    ]);
+                                }
+                            }
+                        }
 
                         if (! empty($diagItem['medication_code'])) {
                             $medicationEntries[] = [
@@ -227,6 +248,26 @@ class RegistrationRequestController extends Controller
                     'WC_RDIAG_CLINICAL_EMP_CD' => $clinicNurseCode,
                     'WC_RDIAG_ENTRY_USER_CD' => $userCode,
                 ]);
+
+                $photos = $request->file('wound_photos');
+                if (! empty($photos) && is_array($photos)) {
+                    foreach ($photos as $photoFile) {
+                        if ($photoFile && $photoFile->isValid()) {
+                            $path = $photoFile->store('wound_photos/'.date('Y/m'), 'public');
+                            WcWoundPhoto::create([
+                                'WC_PHOTO_CODE' => (string) Str::uuid(),
+                                'WC_PHOTO_REG_DIAGNOSIS_CD' => $regDiag->WC_RDIAG_CODE,
+                                'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => null,
+                                'WC_PHOTO_STAGE' => 'INITIAL',
+                                'WC_PHOTO_PATH' => $path,
+                                'WC_PHOTO_CAPTION' => 'صورة أوليّة للجرح عند قبول التسجيل',
+                                'WC_PHOTO_TAKEN_AT' => now(),
+                                'WC_PHOTO_NURSE_CD' => $clinicNurseCode,
+                                'WC_PHOTO_ENTRY_USER_CD' => $userCode,
+                            ]);
+                        }
+                    }
+                }
 
                 if (! empty($validated['medication_code'])) {
                     $medicationEntries[] = [

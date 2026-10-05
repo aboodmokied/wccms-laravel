@@ -34,6 +34,8 @@ class StoreDailyReviewRequest extends FormRequest
             'details.*.medication_code' => ['nullable', 'string', 'size:36', 'exists:wc_medication_tb,WC_MED_CODE'],
             'details.*.observation' => ['nullable', 'string'],
             'details.*.outcome_status' => ['required', 'string', 'in:IMPROVED_DISCHARGE,IMPROVED_FOLLOWUP,WORSENED,DECEASED'],
+            'details.*.wound_photos' => ['nullable', 'array'],
+            'details.*.wound_photos.*' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ];
     }
 
@@ -53,6 +55,8 @@ class StoreDailyReviewRequest extends FormRequest
             'details.*.medication_code' => 'العلاج الموضعي',
             'details.*.observation' => 'الملاحظة السريرية',
             'details.*.outcome_status' => 'تقييم حالة الجرح',
+            'details.*.wound_photos' => 'صور الجرح المرفقة',
+            'details.*.wound_photos.*' => 'صورة المراجعة للجرح',
         ];
     }
 }

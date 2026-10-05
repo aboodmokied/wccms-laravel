@@ -18,7 +18,7 @@
                 <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="إغلاق"></button>
             </div>
             
-            <form action="{{ route('registrations.daily-reviews.store', $registration->WC_REG_CODE) }}" method="POST">
+            <form action="{{ route('registrations.daily-reviews.store', $registration->WC_REG_CODE) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body p-4 bg-light-subtle">
                     
@@ -202,6 +202,12 @@
                                             <div class="col-12">
                                                 <label class="form-label fw-bold fs-8 text-secondary mb-1">الملاحظة السريرية للجرح</label>
                                                 <input type="text" name="details[{{ $idx }}][observation]" class="form-control fs-7 bg-white" placeholder="أدخل أي ملاحظات حول حجم الجرح، إفرازاته، أو الأنسجة...">
+                                            </div>
+
+                                            <!-- Wound Photos -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold fs-8 text-secondary mb-1"><i class="bi bi-camera-fill me-1 text-primary"></i>صورة متابعة مراجعة الجرح (اختياري — يمكن إرفاق صور متعددة)</label>
+                                                <input type="file" name="details[{{ $idx }}][wound_photos][]" class="form-control fs-7 bg-white" accept="image/jpeg,image/jpg,image/png,image/webp" multiple>
                                             </div>
                                         </div>
                                     </div>

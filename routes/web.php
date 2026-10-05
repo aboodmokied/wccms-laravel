@@ -16,6 +16,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RegistrationRequestController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduledReviewController;
+use App\Http\Controllers\WoundPhotoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -77,6 +78,8 @@ Route::middleware(['hospital.jwt'])->group(function () {
     Route::post('/reviews/scheduled/{scheduledReview}/fulfill', [ScheduledReviewController::class, 'startFulfillment'])->name('reviews.scheduled.fulfill');
     Route::put('/reviews/scheduled/{scheduledReview}/reschedule', [ScheduledReviewController::class, 'reschedule'])->name('reviews.scheduled.reschedule');
     Route::post('/reviews/scheduled/{scheduledReview}/cancel', [ScheduledReviewController::class, 'cancel'])->name('reviews.scheduled.cancel');
+
+    Route::get('/wound-photos/{photo}', [WoundPhotoController::class, 'show'])->name('wound_photos.show');
 
     Route::get('/reports/history', [ReportController::class, 'history'])->name('reports.history');
     Route::get('/reports/history/{patient}/export', [ReportController::class, 'exportCsv'])->name('reports.history.export');

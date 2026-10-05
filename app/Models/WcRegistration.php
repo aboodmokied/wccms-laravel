@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasDbFirstAttributes;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class WcRegistration extends Model
@@ -82,5 +83,46 @@ class WcRegistration extends Model
     public function scheduledReviews()
     {
         return $this->hasMany(WcScheduledReview::class, 'WC_SREV_REGISTRATION_CD', 'WC_REG_CODE');
+    }
+
+    /**
+     * Check if patient has been reviewed today.
+     */
+    public function isReviewedToday(): bool
+    {
+        if ($this->relationLoaded('dailyReviews')) {
+            return $this->dailyReviews->contains(function ($rev) {
+                return Carbon::parse($rev->WC_DREV_VISIT_DATE)->isToday();
+            });
+        }
+
+        return $this->dailyReviews()
+            ->whereDate('WC_DREV_VISIT_DATE', now()->toDateString())
+            ->exists();
+    }
+
+    /**
+     * Accessor for is_reviewed_today.
+     */
+    public function getIsReviewedTodayAttribute(): bool
+    {
+        return $this->isReviewedToday();
+    }
+
+    /**
+     * Get today's review instance if exists.
+     */
+    public function getTodayReviewAttribute()
+    {
+        if ($this->relationLoaded('dailyReviews')) {
+            return $this->dailyReviews->first(function ($rev) {
+                return Carbon::parse($rev->WC_DREV_VISIT_DATE)->isToday();
+            });
+        }
+
+        return $this->dailyReviews()
+            ->whereDate('WC_DREV_VISIT_DATE', now()->toDateString())
+            ->latest('WC_DREV_VISIT_DATE')
+            ->first();
     }
 }

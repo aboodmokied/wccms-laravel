@@ -10,6 +10,7 @@ use App\Models\WcDressing;
 use App\Models\WcMedication;
 use App\Models\WcRegistration;
 use App\Models\WcScheduledReview;
+use App\Models\WcWoundPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -163,8 +164,8 @@ class DailyReviewController extends Controller
             ]);
 
             // 2. Create detail records for each active wound
-            foreach ($request->validated('details') as $detail) {
-                WcDailyReviewDetail::create([
+            foreach ($request->validated('details') as $index => $detail) {
+                $reviewDetail = WcDailyReviewDetail::create([
                     'WC_REVD_CODE' => (string) Str::uuid(),
                     'WC_REVD_REVIEW_CD' => $dailyReview->WC_DREV_CODE,
                     'WC_REVD_REVIEW_TYPE' => 'DAILY',
@@ -174,6 +175,26 @@ class DailyReviewController extends Controller
                     'WC_DREVD_WOUND_DESCRIPTION' => $detail['observation'] ?? null,
                     'WC_DREVD_STATUS' => $detail['outcome_status'],
                 ]);
+
+                $photos = $request->file("details.{$index}.wound_photos");
+                if (! empty($photos) && is_array($photos)) {
+                    foreach ($photos as $photoFile) {
+                        if ($photoFile && $photoFile->isValid()) {
+                            $path = $photoFile->store('wound_photos/'.date('Y/m'), 'public');
+                            WcWoundPhoto::create([
+                                'WC_PHOTO_CODE' => (string) Str::uuid(),
+                                'WC_PHOTO_REG_DIAGNOSIS_CD' => $detail['diagnosis_code'],
+                                'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => $reviewDetail->WC_REVD_CODE,
+                                'WC_PHOTO_STAGE' => 'REVIEW',
+                                'WC_PHOTO_PATH' => $path,
+                                'WC_PHOTO_CAPTION' => 'صورة متابعة مراجعة الجرح',
+                                'WC_PHOTO_TAKEN_AT' => now(),
+                                'WC_PHOTO_NURSE_CD' => $nurseCode,
+                                'WC_PHOTO_ENTRY_USER_CD' => $entryUserCode,
+                            ]);
+                        }
+                    }
+                }
             }
 
             // 3. Discharge registration if overall status is IMPROVED_DISCHARGE or IMPROVED_SCHEDULED

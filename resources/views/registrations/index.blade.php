@@ -77,6 +77,7 @@
                         <th>تاريخ التسجيل</th>
                         <th>الممرض المسجل</th>
                         <th>حالة التسجيل</th>
+                        <th>مراجعة اليوم</th>
                         <th class="text-center">الإجراء</th>
                     </tr>
                 </thead>
@@ -111,6 +112,17 @@
                                     <span class="badge bg-secondary px-3 py-2 fs-7">مُخرج (Discharged)</span>
                                 @endif
                             </td>
+                            <td>
+                                @if($reg->is_reviewed_today)
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 fs-7 rounded-pill">
+                                        <i class="bi bi-check-circle-fill me-1"></i>تمت المراجعة
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 fs-7 rounded-pill">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>لم يُراجع اليوم
+                                    </span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 <a href="{{ route('registrations.show', $reg->WC_REG_CODE) }}" class="btn btn-sm btn-light-primary px-3">
                                     <i class="bi bi-folder2-open me-1"></i> فتح الحالة
@@ -119,7 +131,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                     <p class="fw-bold fs-5 mb-1">لا توجد سجلات مرضى بهذه المعايير</p>

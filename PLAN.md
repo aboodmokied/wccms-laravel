@@ -128,6 +128,7 @@ VISIT_IN_PROGRESS
 ## Phase 5 — Registration & Diagnosis
 - View/edit the registration record: department, registration date, associated procedure, past medical history.
 - Add one or more diagnoses/wounds per registration (wound type, initial dressing and medication).
+- **Initial Wound Photo Documentation:** Capture/upload a baseline photo of the wound at initial diagnosis registration.
 - Discharge flow: manual (by a nurse) or automatic (from the hospital system), recording who executed it.
 - Convert the matching existing static pages here.
 
@@ -136,6 +137,7 @@ VISIT_IN_PROGRESS
 ## Phase 6 — Daily Review
 - "Today's follow-up visit" screen per registration: shows all of that registration's diagnoses/wounds at once (the visit header).
 - For each wound: update description, observed changes, new dressing/medication, status assessment (improved+discharge / improved+follow-up / worsened / deceased), and whether it needs further follow-up.
+- **Follow-up Wound Photo Documentation:** Capture/upload a progress photo of the wound at every daily review visit.
 - When "improved+discharge" is assessed at the registration level: a trigger automatically creates a scheduled review appointment (empty, awaiting the visit).
 - Convert the matching existing static pages here.
 
@@ -164,7 +166,15 @@ VISIT_IN_PROGRESS
 
 ---
 
-## Phase 10 — Oracle Port
+## Phase 10 — Wound Photo Documentation
+- Capture/upload initial baseline wound photos during first diagnosis registration (`WC_PHOTO_STAGE = 'INITIAL'`).
+- Capture/upload follow-up wound photos during every daily review visit (`WC_PHOTO_STAGE = 'REVIEW'`).
+- Store images in `storage/app/public/wound_photos` and track metadata in `WC_WOUND_PHOTO_TB`.
+- Interactive visual timeline and gallery component in registration details view for side-by-side photo comparison of wound healing progress over time.
+
+---
+
+## Phase 11 — Oracle Port
 - Convert the migrations from MySQL (the local prototype) to real PL/SQL on Oracle.
 - Write all the triggers mentioned above (request approval → create registration, improved+discharge → scheduled appointment, new registration → void old appointments) as real PL/SQL.
 - Reconfigure Laravel to connect to Oracle (`yajra/laravel-oci8`) instead of MySQL.
@@ -172,7 +182,7 @@ VISIT_IN_PROGRESS
 
 ---
 
-## Phase 11 (optional) — Hospital System Integration
+## Phase 12 (optional) — Hospital System Integration
 - Periodic or on-demand sync of patient data from the external hospital system (`MR_PAT_LAST_SYNCED_AT`).
 - Receive an automatic discharge notification (`HOSPITAL_AUTO`) from the hospital system to update registration status.
 
@@ -185,9 +195,9 @@ Phase 1 (DB) → Phase 2 (UI Foundation) → Phase 3 (Auth) → Phase 4 (Request
                                                                                      ↓
                                                      Phase 6 (Daily Review) → Phase 7 (Scheduled Review)
                                                                                      ↓
-                                               Phase 8 (Master Data)   Phase 9 (Reports)
+                                               Phase 8 (Master Data)   Phase 9 (Reports)   Phase 10 (Photos)
                                                                                      ↓
-                                                      Phase 10 (Oracle Port) → Phase 11 (Hospital Integration)
+                                                      Phase 11 (Oracle Port) → Phase 12 (Hospital Integration)
 ```
 
-Phase 8 and Phase 9 can run in parallel with the rest of the work once Phase 2 is done, since they don't depend on the clinical workflow itself, but they still need the shared Blade layout from Phase 2 first.
+Phase 8, Phase 9, and Phase 10 can run in parallel with the rest of the clinical workflow once Phase 2 is done.

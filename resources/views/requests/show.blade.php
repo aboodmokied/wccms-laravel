@@ -104,12 +104,12 @@
                             <span class="badge bg-white text-primary">إدخال مباشر بالصفحة</span>
                         </div>
                         <div class="card-body p-4">
-                            <form action="{{ route('requests.accept', $request->WC_REQ_CODE) }}" method="POST" id="acceptRequestForm">
+                            <form action="{{ route('requests.accept', $request->WC_REQ_CODE) }}" method="POST" id="acceptRequestForm" enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="alert alert-info border-0 shadow-sm mb-4">
                                     <i class="bi bi-info-circle-fill me-2"></i>
-                                    يرجى تحديد الممرض الذي أجرى الفحص، وقسم العيادة المستقبل، وتوثيق التشخيصات والجرح مباشرة. يمكنك إضافة أكثر من تشخيص للجرح بنفس الوقت.
+                                    يرجى تحديد الممرض الذي أجرى الفحص، وقسم العيادة المستقبل، وتوثيق التشخيصات والجرح مباشرة. يمكنك إضافة أكثر من تشخيص للجرح وإرفاق صور مبدئية للجرح.
                                 </div>
 
                                 <!-- Section 1: Staff & Clinic Info -->
@@ -212,6 +212,10 @@
                                                     <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-diagnosis-btn" disabled title="حذف التشخيص">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
+                                                </div>
+                                                <div class="col-md-12 mt-2">
+                                                    <label class="form-label fw-semibold small text-muted"><i class="bi bi-camera-fill me-1 text-primary"></i>صورة مبدئية للجرح (اختياري — يمكن اختيار صور متعددة)</label>
+                                                    <input type="file" name="diagnoses[0][wound_photos][]" class="form-control form-control-sm" accept="image/jpeg,image/jpg,image/png,image/webp" multiple>
                                                 </div>
                                             </div>
                                         </div>

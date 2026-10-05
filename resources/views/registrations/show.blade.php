@@ -23,6 +23,19 @@
                 <i class="bi bi-clipboard2-pulse"></i>
                 <span>المراجعات اليومية</span>
             </a>
+
+            @if($registration->is_reviewed_today)
+                <span class="badge bg-success text-white border border-success-subtle px-3 py-2 fs-7 rounded-pill shadow-xs d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>تمت مراجعته اليوم</span>
+                </span>
+            @else
+                <span class="badge bg-warning text-dark border border-warning-subtle px-3 py-2 fs-7 rounded-pill shadow-xs d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>لم تُجرَ مراجعة اليوم</span>
+                </span>
+            @endif
+
             @if($registration->WC_REG_STATUS === 'ACTIVE')
                 <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7 me-1 rounded-pill">
                     <i class="bi bi-circle-fill me-1 fs-8"></i>تسجيل نشط (ACTIVE)
@@ -74,6 +87,15 @@
                         <span class="badge bg-primary text-white px-2.5 py-1 fs-8 rounded-pill">
                             <i class="bi bi-card-text me-1"></i>{{ $registration->patient?->MR_PAT_ID_NO }}
                         </span>
+                        @if($registration->is_reviewed_today)
+                            <span class="badge bg-success text-white px-2.5 py-1 fs-8 rounded-pill">
+                                <i class="bi bi-calendar-check me-1"></i>تمت مراجعته اليوم
+                            </span>
+                        @else
+                            <span class="badge bg-warning text-dark px-2.5 py-1 fs-8 rounded-pill">
+                                <i class="bi bi-clock-history me-1"></i>لم يراجع اليوم
+                            </span>
+                        @endif
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-3 text-muted fs-7">
                         <span><i class="bi bi-gender-ambiguous me-1 text-primary"></i>الجنس: <strong>{{ $registration->patient?->MR_PAT_GENDER === 'MALE' ? 'ذكر' : 'أنثى' }}</strong></span>
@@ -81,10 +103,31 @@
                         <span><i class="bi bi-calendar3 me-1 text-primary"></i>تاريخ التسجيل: <strong>{{ \Carbon\Carbon::parse($registration->WC_REG_DATE)->format('Y-m-d H:i') }}</strong></span>
                         <span>&bull;</span>
                         <span><i class="bi bi-hospital me-1 text-primary"></i>القسم: <strong>{{ $registration->department?->WC_DEPT_NAME ?? 'عيادة الجروح' }}</strong></span>
+                        <span>&bull;</span>
+                        <span>
+                            <i class="bi bi-calendar2-pulse me-1 text-primary"></i>حالة اليوم:
+                            @if($registration->is_reviewed_today)
+                                <strong class="text-success"><i class="bi bi-check-circle-fill me-1"></i>تمت المراجعة ({{ \Carbon\Carbon::parse($registration->today_review?->WC_DREV_VISIT_DATE)->format('H:i') }})</strong>
+                            @else
+                                <strong class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>لم تتم المراجعة بعد</strong>
+                            @endif
+                        </span>
                     </div>
                 </div>
                 <div class="col-12 col-md-auto text-md-end">
                     <div class="d-flex flex-row flex-md-column gap-2">
+                        <div class="bg-white rounded-3 p-2 px-3 border shadow-xs text-center">
+                            <span class="d-block text-muted fs-8">مراجعة اليوم</span>
+                            @if($registration->is_reviewed_today)
+                                <span class="fw-bolder fs-6 text-success d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-check-circle-fill"></i> تم التقييم
+                                </span>
+                            @else
+                                <span class="fw-bolder fs-6 text-warning d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-exclamation-circle"></i> غير مراجع
+                                </span>
+                            @endif
+                        </div>
                         <div class="bg-white rounded-3 p-2 px-3 border shadow-xs text-center">
                             <span class="d-block text-muted fs-8">تشخيصات الجروح</span>
                             <span class="fw-bolder fs-5 text-primary">{{ $registration->diagnoses->count() }}</span>
@@ -94,6 +137,9 @@
             </div>
         </div>
     </div>
+
+    <!-- WOUND PHOTO PROGRESSION TIMELINE & GALLERY (PHASE 10) -->
+    @include('registrations.partials.wound_photo_timeline')
 
     <!-- MAIN TWO-COLUMN CONTENT LAYOUT -->
     <div class="row g-4">

@@ -34,6 +34,10 @@ class AcceptRegistrationRequest extends FormRequest
             'diagnoses.*.wound_type_code' => ['nullable', 'string', 'size:36', 'exists:wc_wound_type_tb,WC_WTYPE_CODE'],
             'diagnoses.*.diagnosis_code' => ['nullable', 'string', 'size:36', 'exists:wc_diagnosis_tb,WC_DIAG_CODE'],
             'diagnoses.*.medication_code' => ['nullable', 'string', 'size:36', 'exists:wc_medication_tb,WC_MED_CODE'],
+            'wound_photos' => ['nullable', 'array'],
+            'wound_photos.*' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'diagnoses.*.wound_photos' => ['nullable', 'array'],
+            'diagnoses.*.wound_photos.*' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ];
     }
 
@@ -54,6 +58,10 @@ class AcceptRegistrationRequest extends FormRequest
             'diagnoses.*.wound_type_code' => 'نوع الجرح الفرعي',
             'diagnoses.*.diagnosis_code' => 'التشخيص الطبي الفرعي',
             'diagnoses.*.medication_code' => 'العلاج الدوائي الفرعي',
+            'wound_photos' => 'صور الجرح الأولي',
+            'wound_photos.*' => 'صورة الجرح الأولي',
+            'diagnoses.*.wound_photos' => 'صور الجرح الفرعي',
+            'diagnoses.*.wound_photos.*' => 'صورة الجرح الفرعي',
         ];
     }
 }
