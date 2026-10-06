@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MockHospitalAuthController;
 use App\Http\Controllers\DailyReviewController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PatientMedicalRecordController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RegistrationRequestController;
 use App\Http\Controllers\ReportController;
@@ -61,6 +62,7 @@ Route::middleware(['hospital.jwt'])->group(function () {
     Route::post('/requests/{requestModel}/cancel', [RegistrationRequestController::class, 'cancel'])->name('requests.cancel');
 
     // Registrations Routes (Phase 5 & 6)
+    Route::get('/patient/medical-record', [PatientMedicalRecordController::class, 'index'])->name('patients.medical_record');
     Route::get('/registrations', [RegistrationController::class, 'index'])->name('registrations.index');
     Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('registrations.show');
     Route::put('/registrations/{registration}', [RegistrationController::class, 'update'])->name('registrations.update');

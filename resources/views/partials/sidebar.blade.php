@@ -42,6 +42,12 @@
             <span>المرضى المسجلون</span>
         </a>
 
+        <a href="{{ route('patients.medical_record') }}"
+           class="m8-nav-item {{ request()->routeIs('patients.medical_record') ? 'active' : '' }}">
+            <i class="bi bi-file-earmark-medical-fill"></i>
+            <span>السجل الطبي للمريض</span>
+        </a>
+
         <a href="{{ route('reviews.daily') }}"
            class="m8-nav-item {{ request()->routeIs('reviews.daily') ? 'active' : '' }}">
             <i class="bi bi-clipboard2-pulse-fill"></i>

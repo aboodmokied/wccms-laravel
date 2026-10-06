@@ -2,13 +2,13 @@
     <div class="card-body p-4">
         <div class="row align-items-center g-3">
             <div class="col-auto">
-                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-3 shadow-2xs border border-primary-subtle" style="width: 64px; height: 64px;">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-5 shadow-2xs border border-primary-subtle" style="width: 44px; height: 44px;">
                     <i class="bi bi-person-fill"></i>
                 </div>
             </div>
             <div class="col-12 col-md">
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                    <h2 class="fw-bolder fs-4 mb-0 text-dark">{{ $registration->patient?->MR_PAT_FULL_NAME }}</h2>
+                    <h2 class="fw-bold fs-5 mb-0 text-dark">{{ $registration->patient?->MR_PAT_FULL_NAME }}</h2>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fs-8 rounded-pill">
                         <i class="bi bi-card-text me-1"></i>رقم الهوية: {{ $registration->patient?->MR_PAT_ID_NO }}
                     </span>

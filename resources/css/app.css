@@ -171,20 +171,127 @@ body {
 
 .form-control,
 .form-select {
-  font-size: 0.9rem !important;
-  padding-top: 0.52rem !important;
-  padding-bottom: 0.52rem !important;
-  line-height: 1.5 !important;
-  min-height: 38px;
+  font-size: 0.8125rem !important;
+  padding: 0.35rem 0.65rem !important;
+  line-height: 1.4 !important;
+  min-height: 34px !important;
+  border-radius: 6px !important;
+}
+
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.75rem !important;
+  padding: 0.22rem 0.5rem !important;
+  min-height: 28px !important;
+}
+
+.form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: var(--m8-text-main);
 }
 
 .btn {
-  font-size: 0.9rem !important;
-  padding-top: 0.46rem !important;
-  padding-bottom: 0.46rem !important;
-  line-height: 1.5 !important;
-  min-height: 38px;
+  font-size: 0.8125rem !important;
+  padding: 0.35rem 0.75rem !important;
+  line-height: 1.4 !important;
+  min-height: 32px !important;
+  border-radius: 6px !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
 }
+
+.btn-sm {
+  font-size: 0.75rem !important;
+  padding: 0.22rem 0.55rem !important;
+  min-height: 28px !important;
+  border-radius: 5px !important;
+}
+
+.btn-lg {
+  font-size: 0.875rem !important;
+  padding: 0.45rem 1rem !important;
+  min-height: 36px !important;
+  border-radius: 8px !important;
+}
+
+.btn i,
+.btn .bi {
+  font-size: 0.875rem !important;
+  line-height: 1;
+}
+
+.btn-sm i,
+.btn-sm .bi {
+  font-size: 0.8rem !important;
+}
+
+.btn-lg i,
+.btn-lg .bi {
+  font-size: 1rem !important;
+}
+
+/* Card Header & Compact Density */
+.card-header {
+  padding: 0.65rem 1rem !important;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--m8-border-color);
+}
+
+.card-title {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+}
+
+.card-body {
+  padding: 1rem !important;
+}
+
+/* Table Sizing Scale */
+.table {
+  font-size: 0.8125rem !important;
+}
+
+.table th {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  color: var(--m8-text-subtitle);
+  padding: 0.55rem 0.75rem !important;
+  background-color: #fafafa;
+}
+
+.table td {
+  padding: 0.55rem 0.75rem !important;
+  vertical-align: middle;
+}
+
+/* Compact Badges */
+.badge {
+  font-size: 0.72rem !important;
+  padding: 0.25rem 0.55rem !important;
+  font-weight: 600 !important;
+  border-radius: 4px;
+}
+
+.badge-sm {
+  font-size: 0.68rem !important;
+  padding: 0.18rem 0.4rem !important;
+}
+
+/* Controlled Font Size Scale Utilities for Icons */
+.fs-1 { font-size: 1.5rem !important; }
+.fs-2 { font-size: 1.3rem !important; }
+.fs-3 { font-size: 1.15rem !important; }
+.fs-4 { font-size: 1rem !important; }
+.fs-5 { font-size: 0.9rem !important; }
+.fs-6 { font-size: 0.82rem !important; }
+.fs-7 { font-size: 0.76rem !important; }
+.fs-8 { font-size: 0.7rem !important; }
 
 /* ----------------------------------------------------------------------------
  * 4. Metronic 8 Layout: Fixed Sidebar

@@ -10,7 +10,11 @@
                     </div>
                     <div>
                         <h5 class="modal-title fw-bolder fs-6 mb-0 text-white" id="addDailyReviewModalLabel">
-                            توثيق التقييم والزيارة اليومية للجروح
+                            @if(isset($scheduledReview) && $scheduledReview)
+                                <i class="bi bi-calendar-check me-1"></i>توثيق الموعد المجدول (#{{ $scheduledReview->WC_SREV_VISIT_SERIAL }})
+                            @else
+                                توثيق التقييم والزيارة اليومية للجروح
+                            @endif
                         </h5>
                         <span class="fs-8 text-white-50">تاريخ اليوم: {{ now()->format('Y-m-d') }}</span>
                     </div>
@@ -20,6 +24,11 @@
             
             <form action="{{ route('registrations.daily-reviews.store', $registration->WC_REG_CODE) }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                @if(isset($scheduledReview) && $scheduledReview)
+                    <input type="hidden" name="scheduled_review" value="{{ $scheduledReview->WC_SREV_CODE }}">
+                @elseif(request('scheduled_review'))
+                    <input type="hidden" name="scheduled_review" value="{{ request('scheduled_review') }}">
+                @endif
                 <div class="modal-body p-4 bg-light-subtle">
                     
                     <!-- SECTION 1: ATTENDING NURSE & DATA-ENTRY AUDIT -->
@@ -62,65 +71,129 @@
                             </h6>
                             
                             <div class="row g-3">
-                                <!-- Option 1: WORSENED_STAY (Default active care) -->
-                                <div class="col-12 col-md-6 col-lg-3">
-                                    <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-primary-subtle">
-                                        <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
-                                            <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_worsened_stay" value="WORSENED_STAY" checked>
-                                            <div>
-                                                <span class="fw-bold text-dark d-block fs-7 mb-1">
-                                                    <i class="bi bi-arrow-repeat text-warning me-1"></i>استمرار المتابعة
-                                                </span>
-                                                <small class="text-muted d-block fs-8 lh-sm">استمرار العلاج والتقييم اليومي في العيادة.</small>
+                                @if(isset($scheduledReview) && $scheduledReview)
+                                    <!-- SCHEDULED REVIEW OUTCOME CHOICES -->
+                                    <!-- 1. IMPROVED_SCHEDULED -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-info-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_scheduled" value="IMPROVED_SCHEDULED" checked>
+                                                <div>
+                                                    <span class="fw-bold text-info d-block fs-7 mb-1">
+                                                        <i class="bi bi-calendar-check-fill text-info me-1"></i>تحسن وحجز مراجعة جديدة
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">تحسن الحالة وحجز موعد مراجعة قادم للمتابعة.</small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </label>
-                                </div>
+                                        </label>
+                                    </div>
 
-                                <!-- Option 2: IMPROVED_DISCHARGE -->
-                                <div class="col-12 col-md-6 col-lg-3">
-                                    <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all">
-                                        <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
-                                            <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_discharge" value="IMPROVED_DISCHARGE">
-                                            <div>
-                                                <span class="fw-bold text-success d-block fs-7 mb-1">
-                                                    <i class="bi bi-check-circle-fill text-success me-1"></i>شفاء وتخريج نهائي
-                                                </span>
-                                                <small class="text-muted d-block fs-8 lh-sm">اكتمل التئام الجروح وإغلاق ملف التسجيل.</small>
+                                    <!-- 2. IMPROVED_DISCHARGE -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-success-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_discharge" value="IMPROVED_DISCHARGE">
+                                                <div>
+                                                    <span class="fw-bold text-success d-block fs-7 mb-1">
+                                                        <i class="bi bi-check-circle-fill text-success me-1"></i>تحسن بدون مراجعة جديدة
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">اكتمل الشفاء والتئام الجروح بدون حاجة لمراجعة قادمة.</small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </label>
-                                </div>
+                                        </label>
+                                    </div>
 
-                                <!-- Option 3: IMPROVED_SCHEDULED -->
-                                <div class="col-12 col-md-6 col-lg-3">
-                                    <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all">
-                                        <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
-                                            <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_scheduled" value="IMPROVED_SCHEDULED">
-                                            <div>
-                                                <span class="fw-bold text-info d-block fs-7 mb-1">
-                                                    <i class="bi bi-calendar-check-fill text-info me-1"></i>تخريج وموعد مراجعة
-                                                </span>
-                                                <small class="text-muted d-block fs-8 lh-sm">تخريج المريض وتحديد موعد مراجعة قادم.</small>
+                                    <!-- 3. WORSENED_SCHEDULED -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-warning-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_worsened_scheduled" value="WORSENED_SCHEDULED">
+                                                <div>
+                                                    <span class="fw-bold text-warning-emphasis d-block fs-7 mb-1">
+                                                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>تدهور مع مراجعة جديدة
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">تدهور أو زيادة إفرازات وحجز موعد مراجعة جديد.</small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </label>
-                                </div>
+                                        </label>
+                                    </div>
 
-                                <!-- Option 4: DEATH -->
-                                <div class="col-12 col-md-6 col-lg-3">
-                                    <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all">
-                                        <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
-                                            <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_death" value="DEATH">
-                                            <div>
-                                                <span class="fw-bold text-secondary d-block fs-7 mb-1">
-                                                    <i class="bi bi-x-circle-fill text-dark me-1"></i>حالة وفاة
-                                                </span>
-                                                <small class="text-muted d-block fs-8 lh-sm">توثيق وفاة المريض وإغلاق الملف.</small>
+                                    <!-- 4. WORSENED_ADMISSION -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-danger-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_worsened_admission" value="WORSENED_ADMISSION">
+                                                <div>
+                                                    <span class="fw-bold text-danger d-block fs-7 mb-1">
+                                                        <i class="bi bi-hospital-fill text-danger me-1"></i>تدهور مع تسجيل دخول للمستشفى
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">تدهور حاد يستدعي تنويم وإدخال المريض للمستشفى.</small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </label>
-                                </div>
+                                        </label>
+                                    </div>
+                                @else
+                                    <!-- DAILY REVIEW OUTCOME CHOICES -->
+                                    <!-- 1. IMPROVED_STAY -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-success-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_stay" value="IMPROVED_STAY" checked>
+                                                <div>
+                                                    <span class="fw-bold text-success d-block fs-7 mb-1">
+                                                        <i class="bi bi-graph-up-arrow text-success me-1"></i>تحسن مع استمرار
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">تحسن حالة الجرح مع استمرار المتابعة والزيارات اليومية.</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- 2. WORSENED_STAY -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-warning-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_worsened_stay" value="WORSENED_STAY">
+                                                <div>
+                                                    <span class="fw-bold text-warning-emphasis d-block fs-7 mb-1">
+                                                        <i class="bi bi-arrow-repeat text-warning me-1"></i>تدهور (مستمر بالعلاج)
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">تدهور الجرح مع استمرار الزيارات والتعديل العلاجي.</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- 3. IMPROVED_SCHEDULED (Discharge with scheduled review) -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-info-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_scheduled" value="IMPROVED_SCHEDULED">
+                                                <div>
+                                                    <span class="fw-bold text-info d-block fs-7 mb-1">
+                                                        <i class="bi bi-calendar-check-fill text-info me-1"></i>خروج مع مراجعة مجدولة
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">تخريج المريض وحجز موعد مراجعة مجدولة دائماً.</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- 4. IMPROVED_DISCHARGE -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <label class="outcome-card border rounded-3 p-3 bg-white h-100 d-block cursor-pointer transition-all border-secondary-subtle">
+                                            <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
+                                                <input class="form-check-input mt-1" type="radio" name="overall_status" id="overall_improved_discharge" value="IMPROVED_DISCHARGE">
+                                                <div>
+                                                    <span class="fw-bold text-dark d-block fs-7 mb-1">
+                                                        <i class="bi bi-check-circle-fill text-dark me-1"></i>شفاء وتخريج نهائي
+                                                    </span>
+                                                    <small class="text-muted d-block fs-8 lh-sm">التئام كامل للجرح وإغلاق نهائي بدون مراجعة.</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                @endif
                             </div>
 
                             <!-- Scheduled Date Picker (Shown when IMPROVED_SCHEDULED selected) -->
@@ -262,7 +335,7 @@
 
         function toggleScheduledDate() {
             const selected = document.querySelector('input[name="overall_status"]:checked');
-            if (selected && selected.value === 'IMPROVED_SCHEDULED') {
+            if (selected && (selected.value === 'IMPROVED_SCHEDULED' || selected.value === 'WORSENED_SCHEDULED')) {
                 scheduledContainer.classList.remove('d-none');
             } else {
                 scheduledContainer.classList.add('d-none');

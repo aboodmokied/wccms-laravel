@@ -17,23 +17,47 @@
                         <span class="badge bg-primary text-white px-3 py-1.5 fs-8 fw-bold rounded-pill">
                             زيارة #{{ $registration->dailyReviews->count() - $reviewIndex }}
                         </span>
+
+                        {{-- Distinguish Daily Review vs Scheduled Review --}}
+                        @if($review->WC_DREV_SCHEDULED_REVIEW_CD || $review->scheduledReview)
+                            <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1.5 fs-8 rounded-pill fw-bold">
+                                <i class="bi bi-calendar-check-fill me-1"></i>مراجعة مجدولة
+                            </span>
+                        @else
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fs-8 rounded-pill fw-bold">
+                                <i class="bi bi-sun-fill me-1"></i>مراجعة يومية
+                            </span>
+                        @endif
+
                         <span class="fw-bold text-dark fs-7">
                             <i class="bi bi-calendar3 me-1 text-primary"></i>{{ \Carbon\Carbon::parse($review->WC_DREV_VISIT_DATE)->format('Y-m-d H:i') }}
                         </span>
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         <!-- Overall Status Badge -->
-                        @if($review->WC_DREV_OVERALL_STATUS === 'IMPROVED_DISCHARGE')
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fs-8 rounded-pill">
-                                <i class="bi bi-check-circle-fill me-1"></i>شفاء وتخريج نهائي
-                            </span>
-                        @elseif($review->WC_DREV_OVERALL_STATUS === 'IMPROVED_SCHEDULED')
+                        @if($review->WC_DREV_OVERALL_STATUS === 'IMPROVED_SCHEDULED')
                             <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1.5 fs-8 rounded-pill">
-                                <i class="bi bi-calendar-check-fill me-1"></i>تخريج وموعد مجدول
+                                <i class="bi bi-calendar-check-fill me-1"></i>تحسن وحجز مراجعة جديدة
+                            </span>
+                        @elseif($review->WC_DREV_OVERALL_STATUS === 'IMPROVED_DISCHARGE')
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fs-8 rounded-pill">
+                                <i class="bi bi-check-circle-fill me-1"></i>تحسن بدون مراجعة جديدة
+                            </span>
+                        @elseif($review->WC_DREV_OVERALL_STATUS === 'WORSENED_SCHEDULED')
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1.5 fs-8 rounded-pill">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>تدهور مع مراجعة جديدة
+                            </span>
+                        @elseif($review->WC_DREV_OVERALL_STATUS === 'WORSENED_ADMISSION')
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1.5 fs-8 rounded-pill">
+                                <i class="bi bi-hospital-fill me-1"></i>تدهور مع تسجيل دخول للمستشفى
+                            </span>
+                        @elseif($review->WC_DREV_OVERALL_STATUS === 'IMPROVED_STAY')
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fs-8 rounded-pill">
+                                <i class="bi bi-graph-up-arrow me-1"></i>تحسن مع استمرار
                             </span>
                         @elseif($review->WC_DREV_OVERALL_STATUS === 'WORSENED_STAY')
-                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1.5 fs-8 rounded-pill">
-                                <i class="bi bi-arrow-repeat me-1"></i>استمرار المتابعة
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1.5 fs-8 rounded-pill">
+                                <i class="bi bi-arrow-repeat me-1"></i>تدهور (مستمر بالعلاج)
                             </span>
                         @elseif($review->WC_DREV_OVERALL_STATUS === 'DEATH')
                             <span class="badge bg-secondary text-white px-3 py-1.5 fs-8 rounded-pill">

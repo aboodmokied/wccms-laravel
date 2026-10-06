@@ -24,16 +24,10 @@
             <div class="row g-3 align-items-center">
                 <!-- Status Tabs -->
                 <div class="col-12 col-md-6">
-                    <div class="btn-group w-100 w-sm-auto" role="group">
-                        <a href="{{ route('registrations.index', ['status' => 'ACTIVE', 'search' => $searchQuery]) }}"
-                           class="btn {{ $currentStatus === 'ACTIVE' ? 'btn-success fw-bold' : 'btn-outline-secondary' }} px-4">
-                            <i class="bi bi-check-circle-fill me-1"></i> الحالات النشطة
-                        </a>
-                        <a href="{{ route('registrations.index', ['status' => 'DISCHARGED', 'search' => $searchQuery]) }}"
-                           class="btn {{ $currentStatus === 'DISCHARGED' ? 'btn-dark fw-bold' : 'btn-outline-secondary' }} px-4">
-                            <i class="bi bi-box-arrow-right me-1"></i> الحالات المخرجة
-                        </a>
-                    </div>
+                    <a href="{{ route('registrations.index', ['status' => 'ACTIVE', 'search' => $searchQuery]) }}"
+                       class="btn {{ $currentStatus === 'ACTIVE' ? 'btn-success fw-bold' : 'btn-outline-secondary' }} px-4">
+                        <i class="bi bi-check-circle-fill me-1"></i> الحالات النشطة
+                    </a>
                 </div>
 
                 <!-- Search Input Form -->

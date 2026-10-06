@@ -80,7 +80,7 @@
                                                         <button type="button" class="btn btn-outline-primary btn-sm w-100 fs-8 d-flex align-items-center justify-content-center gap-1"
                                                                 onclick="openPhotoModal('{{ route('wound_photos.show', $photo->WC_PHOTO_CODE) }}', '{{ route('wound_photos.show', $initialPhoto->WC_PHOTO_CODE) }}', '{{ \Carbon\Carbon::parse($photo->WC_PHOTO_TAKEN_AT)->format('Y-m-d H:i') }}', '{{ $photo->WC_PHOTO_STAGE }}')">
                                                             <i class="bi bi-eye-fill"></i>
-                                                            <span>مقاينة ومقارنة</span>
+                                                            <span>معاينة ومقارنة</span>
                                                         </button>
                                                     </div>
                                                 </div>

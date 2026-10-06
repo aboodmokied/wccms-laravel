@@ -24,7 +24,7 @@ class StoreDailyReviewRequest extends FormRequest
     {
         return [
             'nurse_code' => ['required', 'string', 'size:36', 'exists:per_employee_tb,PER_EMP_CODE'],
-            'overall_status' => ['required', 'string', 'in:IMPROVED_DISCHARGE,IMPROVED_SCHEDULED,WORSENED_STAY,DEATH'],
+            'overall_status' => ['required', 'string', 'in:IMPROVED_DISCHARGE,IMPROVED_SCHEDULED,IMPROVED_STAY,WORSENED_SCHEDULED,WORSENED_ADMISSION,WORSENED_STAY,DEATH'],
             'general_notes' => ['nullable', 'string'],
             'scheduled_date' => ['nullable', 'date'],
             'scheduled_review_code' => ['nullable', 'string', 'size:36', 'exists:wc_scheduled_review_tb,WC_SREV_CODE'],

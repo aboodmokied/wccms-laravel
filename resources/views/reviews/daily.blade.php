@@ -17,25 +17,43 @@
                 <span>ملف التسجيل</span>
             </a>
             <div>
-                <h1 class="fw-bolder fs-3 mb-0 text-dark">التقييم والزيارة اليومية للجروح</h1>
+                <h1 class="fw-bold fs-5 mb-0 text-dark">التقييم والزيارة اليومية للجروح</h1>
                 <span class="text-muted fs-7">كود التسجيل: <code class="text-primary fw-bold">{{ $registration->WC_REG_CODE }}</code></span>
             </div>
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            @if($registration->WC_REG_STATUS === 'ACTIVE')
-                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm px-4 py-2.5 rounded-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addDailyReviewModal">
-                    <i class="bi bi-plus-circle-fill fs-6"></i>
-                    <span>+ إضافة زيارة تقييم يومي</span>
+            @if($registration->WC_REG_STATUS === 'ACTIVE' || (isset($scheduledReview) && $scheduledReview))
+                <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2 fw-bold" data-bs-toggle="modal" data-bs-target="#addDailyReviewModal">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>{{ isset($scheduledReview) && $scheduledReview ? 'توثيق الموعد المجدول' : '+ إضافة زيارة تقييم يومي' }}</span>
                 </button>
             @else
-                <button type="button" class="btn btn-secondary d-inline-flex align-items-center gap-2 shadow-sm px-4 py-2.5 rounded-3" disabled>
-                    <i class="bi bi-lock-fill fs-6"></i>
+                <button type="button" class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2" disabled>
+                    <i class="bi bi-lock-fill"></i>
                     <span>مُخرج (مغلق)</span>
                 </button>
             @endif
         </div>
     </div>
+
+    <!-- SCHEDULED REVIEW FULFILLMENT BANNER -->
+    @if(isset($scheduledReview) && $scheduledReview)
+        <div class="alert alert-info d-flex align-items-center justify-content-between gap-3 shadow-2xs border border-info-subtle mb-4 p-3 rounded-3" role="alert">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-calendar-check-fill fs-3 text-info"></i>
+                <div>
+                    <strong class="d-block text-dark fs-7">جاري توثيق موعد مراجعة مجدولة (زيارة رقم #{{ $scheduledReview->WC_SREV_VISIT_SERIAL }})</strong>
+                    <span class="fs-7 text-muted">تاريخ الموعد المجدول: {{ \Carbon\Carbon::parse($scheduledReview->WC_SREV_SCHEDULED_DATE)->format('Y-m-d') }}</span>
+                </div>
+            </div>
+            @if($registration->WC_REG_STATUS === 'ACTIVE')
+                <button type="button" class="btn btn-info btn-sm px-3 fw-bold text-white shadow-2xs" data-bs-toggle="modal" data-bs-target="#addDailyReviewModal">
+                    <i class="bi bi-clipboard-check me-1"></i>توثيق الموعد الآن
+                </button>
+            @endif
+        </div>
+    @endif
 
     <!-- DISCHARGED ALERT BANNER -->
     @if($registration->WC_REG_STATUS === 'DISCHARGED')
@@ -117,8 +135,8 @@
 
 </div>
 
-<!-- 3. MULTI-WOUND DAILY REVIEW MODAL (ACTIVE REGISTRATION ONLY) -->
-@if($registration->WC_REG_STATUS === 'ACTIVE')
+<!-- 3. MULTI-WOUND DAILY REVIEW MODAL (ACTIVE REGISTRATION OR SCHEDULED REVIEW FULFILLMENT) -->
+@if($registration->WC_REG_STATUS === 'ACTIVE' || (isset($scheduledReview) && $scheduledReview))
     @include('reviews.partials.daily_review_modal')
 @endif
 

@@ -25,7 +25,7 @@
                 <div class="card bg-light border-0 mb-4">
                     <div class="card-body">
                         <h6 class="fw-bold mb-3"><i class="bi bi-search me-2 text-primary"></i>1. البحث عن المريض (رقم الهوية الوطنية / الاسم)</h6>
-                        <div class="input-group input-group-lg">
+                        <div class="input-group">
                             <input type="text" id="patientSearchQuery" class="form-control" placeholder="أدخل رقم الهوية أو اسم المريض هنا..." aria-label="البحث عن مريض">
                             <button class="btn btn-primary px-4" type="button" id="btnSearchPatient">
                                 <i class="bi bi-search me-1"></i> بحث وتسجيل
@@ -115,7 +115,7 @@
                             <a href="{{ route('requests.my') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-right me-1"></i> إلغاء ورجوع
                             </a>
-                            <button type="submit" class="btn btn-success px-4 btn-lg" id="btnSubmitReferral">
+                            <button type="submit" class="btn btn-success px-4" id="btnSubmitReferral">
                                 <i class="bi bi-check-circle-fill me-1"></i> إرسال طلب التحويل للعيادة
                             </button>
                         </div>

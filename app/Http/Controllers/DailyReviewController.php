@@ -133,12 +133,21 @@ class DailyReviewController extends Controller
     {
         $registration = WcRegistration::with('diagnoses')->findOrFail($registrationId);
 
-        if ($registration->WC_REG_STATUS === 'DISCHARGED') {
+        $scheduledReviewCode = $request->input('scheduled_review_code') ?? $request->input('scheduled_review');
+        $isFulfillingScheduled = false;
+
+        if ($scheduledReviewCode) {
+            $isFulfillingScheduled = WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)
+                ->where('WC_SREV_STATUS', 'PENDING')
+                ->exists();
+        }
+
+        if ($registration->WC_REG_STATUS === 'DISCHARGED' && ! $isFulfillingScheduled) {
             if ($request->wantsJson()) {
-                return response()->json(['message' => 'لا يمكن إضافة تقييم يومي جديد لمريض مخرج'], 403);
+                return response()->json(['message' => 'لا يمكن إضافة تقييم يومي جديد لمريض مخرج بدون موعد مجدول'], 403);
             }
 
-            return redirect()->back()->with('error', 'لا يمكن إضافة تقييم يومي جديد لمريض مخرج');
+            return redirect()->back()->with('error', 'لا يمكن إضافة تقييم يومي جديد لمريض مخرج بدون موعد مجدول');
         }
 
         if ($registration->diagnoses->count() === 0) {
@@ -197,8 +206,8 @@ class DailyReviewController extends Controller
                 }
             }
 
-            // 3. Discharge registration if overall status is IMPROVED_DISCHARGE or IMPROVED_SCHEDULED
-            if (in_array($overallStatus, ['IMPROVED_DISCHARGE', 'IMPROVED_SCHEDULED'])) {
+            // 3. Discharge registration if overall status is final discharge or hospital admission
+            if (in_array($overallStatus, ['IMPROVED_DISCHARGE', 'IMPROVED_SCHEDULED', 'WORSENED_ADMISSION'])) {
                 $registration->update([
                     'WC_REG_STATUS' => 'DISCHARGED',
                     'WC_REG_DISCHARGED_AT' => now(),
@@ -206,15 +215,15 @@ class DailyReviewController extends Controller
                 ]);
             }
 
-            // 4. Create pending scheduled review appointment if overall status is IMPROVED_SCHEDULED
-            if ($overallStatus === 'IMPROVED_SCHEDULED') {
+            // 4. Create pending scheduled review appointment if overall status requires booking a new review
+            if (in_array($overallStatus, ['IMPROVED_SCHEDULED', 'WORSENED_SCHEDULED'])) {
                 $scheduledDate = $request->validated('scheduled_date')
                     ? Carbon::parse($request->validated('scheduled_date'))
                     : now()->addDays(7);
 
                 $visitSerial = WcScheduledReview::where('WC_SREV_REGISTRATION_CD', $registration->WC_REG_CODE)->count() + 1;
 
-                $scheduledReview = WcScheduledReview::create([
+                $newScheduledReview = WcScheduledReview::create([
                     'WC_SREV_CODE' => (string) Str::uuid(),
                     'WC_SREV_REGISTRATION_CD' => $registration->WC_REG_CODE,
                     'WC_SREV_SCHEDULED_DATE' => $scheduledDate,
@@ -222,9 +231,11 @@ class DailyReviewController extends Controller
                     'WC_SREV_STATUS' => 'PENDING',
                 ]);
 
-                $dailyReview->update([
-                    'WC_DREV_SCHEDULED_REVIEW_CD' => $scheduledReview->WC_SREV_CODE,
-                ]);
+                if (! $dailyReview->WC_DREV_SCHEDULED_REVIEW_CD) {
+                    $dailyReview->update([
+                        'WC_DREV_SCHEDULED_REVIEW_CD' => $newScheduledReview->WC_SREV_CODE,
+                    ]);
+                }
             }
 
             // 5. Fulfill existing pending scheduled review if fulfillment was triggered
