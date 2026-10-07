@@ -24,10 +24,10 @@
 
         <div class="d-flex align-items-center gap-2">
             @if($registration->WC_REG_STATUS === 'ACTIVE' || (isset($scheduledReview) && $scheduledReview))
-                <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2 fw-bold" data-bs-toggle="modal" data-bs-target="#addDailyReviewModal">
+                <a href="{{ route('registrations.daily-reviews.create', ['registration' => $registration->WC_REG_CODE, 'scheduled_review' => isset($scheduledReview) ? $scheduledReview->WC_SREV_CODE : null]) }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2 fw-bold">
                     <i class="bi bi-plus-circle-fill"></i>
                     <span>{{ isset($scheduledReview) && $scheduledReview ? 'توثيق الموعد المجدول' : '+ إضافة زيارة تقييم يومي' }}</span>
-                </button>
+                </a>
             @else
                 <button type="button" class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2" disabled>
                     <i class="bi bi-lock-fill"></i>
@@ -48,9 +48,9 @@
                 </div>
             </div>
             @if($registration->WC_REG_STATUS === 'ACTIVE')
-                <button type="button" class="btn btn-info btn-sm px-3 fw-bold text-white shadow-2xs" data-bs-toggle="modal" data-bs-target="#addDailyReviewModal">
+                <a href="{{ route('registrations.daily-reviews.create', ['registration' => $registration->WC_REG_CODE, 'scheduled_review' => $scheduledReview->WC_SREV_CODE]) }}" class="btn btn-info btn-sm px-3 fw-bold text-white shadow-2xs">
                     <i class="bi bi-clipboard-check me-1"></i>توثيق الموعد الآن
-                </button>
+                </a>
             @endif
         </div>
     @endif
@@ -135,10 +135,7 @@
 
 </div>
 
-<!-- 3. MULTI-WOUND DAILY REVIEW MODAL (ACTIVE REGISTRATION OR SCHEDULED REVIEW FULFILLMENT) -->
-@if($registration->WC_REG_STATUS === 'ACTIVE' || (isset($scheduledReview) && $scheduledReview))
-    @include('reviews.partials.daily_review_modal')
-@endif
+
 
 @endsection
 

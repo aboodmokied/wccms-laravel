@@ -223,7 +223,7 @@ class ScheduledReviewTest extends TestCase
             ['hospital_token' => $this->jwtToken]
         );
 
-        $response->assertRedirect(route('registrations.daily-reviews.index', [
+        $response->assertRedirect(route('registrations.daily-reviews.create', [
             'registration' => $this->registration->WC_REG_CODE,
             'scheduled_review' => $scheduledReview->WC_SREV_CODE,
         ]));

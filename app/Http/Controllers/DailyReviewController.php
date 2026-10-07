@@ -20,9 +20,9 @@ use Illuminate\Support\Str;
 class DailyReviewController extends Controller
 {
     /**
-     * Render the main Daily Reviews index page for all patients needing a review today.
+     * Render the pending Daily Reviews index page for patients needing a review today.
      */
-    public function dailyIndex(Request $request)
+    public function pendingIndex(Request $request)
     {
         $todayDate = now()->toDateString();
         $search = $request->input('search');
@@ -34,9 +34,6 @@ class DailyReviewController extends Controller
                 'nurse',
                 'diagnoses.woundType',
                 'diagnoses.diagnosis',
-                'dailyReviews' => function ($query) {
-                    $query->orderBy('WC_DREV_VISIT_DATE', 'desc');
-                },
             ]);
 
         if ($search) {
@@ -46,26 +43,87 @@ class DailyReviewController extends Controller
             });
         }
 
-        // Active registrations needing daily review TODAY (no review logged today)
-        $pendingTodayRegistrations = (clone $baseQuery)
+        $pendingRegistrations = $baseQuery
             ->whereDoesntHave('dailyReviews', function ($query) use ($todayDate) {
                 $query->whereDate('WC_DREV_VISIT_DATE', $todayDate);
             })
             ->orderBy('WC_REG_DATE', 'desc')
             ->get();
 
-        // Active registrations already reviewed TODAY
-        $completedTodayRegistrations = (clone $baseQuery)
+        return view('reviews.daily_pending', [
+            'registrations' => $pendingRegistrations,
+            'search' => $search,
+        ]);
+    }
+
+    /**
+     * Render the completed Daily Reviews index page for patients reviewed today.
+     */
+    public function completedIndex(Request $request)
+    {
+        $todayDate = now()->toDateString();
+        $search = $request->input('search');
+
+        $baseQuery = WcRegistration::where('WC_REG_STATUS', 'ACTIVE')
+            ->with([
+                'patient',
+                'department',
+                'nurse',
+                'diagnoses.woundType',
+                'diagnoses.diagnosis',
+                'dailyReviews' => function ($query) use ($todayDate) {
+                    $query->whereDate('WC_DREV_VISIT_DATE', $todayDate)->orderBy('WC_DREV_VISIT_DATE', 'desc');
+                },
+                'dailyReviews.nurse',
+            ]);
+
+        if ($search) {
+            $baseQuery->whereHas('patient', function ($q) use ($search) {
+                $q->where('MR_PAT_FULL_NAME', 'like', "%{$search}%")
+                    ->orWhere('MR_PAT_ID_NO', 'like', "%{$search}%");
+            });
+        }
+
+        $completedRegistrations = $baseQuery
             ->whereHas('dailyReviews', function ($query) use ($todayDate) {
                 $query->whereDate('WC_DREV_VISIT_DATE', $todayDate);
             })
             ->orderBy('WC_REG_DATE', 'desc')
             ->get();
 
-        return view('reviews.daily_index', [
-            'pendingTodayRegistrations' => $pendingTodayRegistrations,
-            'completedTodayRegistrations' => $completedTodayRegistrations,
+        return view('reviews.daily_completed', [
+            'registrations' => $completedRegistrations,
             'search' => $search,
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new daily review (Full Page instead of Modal).
+     */
+    public function create(string $registrationId)
+    {
+        $registration = WcRegistration::with([
+            'patient',
+            'department',
+            'diagnoses.woundType',
+            'diagnoses.diagnosis',
+        ])->findOrFail($registrationId);
+
+        $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
+        $dressings = WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->orderBy('WC_DRESS_NAME')->get();
+        $medications = WcMedication::where('WC_MED_IS_ACTIVE', 1)->orderBy('WC_MED_NAME')->get();
+
+        $scheduledReviewCode = request('scheduled_review');
+        $scheduledReview = $scheduledReviewCode
+            ? WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)->where('WC_SREV_STATUS', 'PENDING')->first()
+            : null;
+
+        return view('reviews.daily_create', [
+            'registration' => $registration,
+            'employees' => $employees,
+            'dressings' => $dressings,
+            'medications' => $medications,
+            'scheduledReview' => $scheduledReview,
         ]);
     }
 

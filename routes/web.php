@@ -62,7 +62,9 @@ Route::middleware(['hospital.jwt'])->group(function () {
     Route::post('/requests/{requestModel}/cancel', [RegistrationRequestController::class, 'cancel'])->name('requests.cancel');
 
     // Registrations Routes (Phase 5 & 6)
-    Route::get('/patient/medical-record', [PatientMedicalRecordController::class, 'index'])->name('patients.medical_record');
+    // Patients (Medical Records)
+    Route::get('/patients', [PatientMedicalRecordController::class, 'index'])->name('patients.index');
+    Route::get('/patients/{patient}', [PatientMedicalRecordController::class, 'show'])->name('patients.show');
     Route::get('/registrations', [RegistrationController::class, 'index'])->name('registrations.index');
     Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('registrations.show');
     Route::put('/registrations/{registration}', [RegistrationController::class, 'update'])->name('registrations.update');
@@ -70,11 +72,17 @@ Route::middleware(['hospital.jwt'])->group(function () {
     Route::post('/registrations/{registration}/discharge', [RegistrationController::class, 'discharge'])->name('registrations.discharge');
 
     // Daily Review Routes (Phase 6)
+    // Daily Review Routes (Workspace & Forms)
     Route::get('/registrations/{registration}/daily-reviews', [DailyReviewController::class, 'index'])->name('registrations.daily-reviews.index');
+    Route::get('/registrations/{registration}/daily-reviews/create', [DailyReviewController::class, 'create'])->name('registrations.daily-reviews.create');
     Route::post('/registrations/{registration}/daily-reviews', [DailyReviewController::class, 'store'])->name('registrations.daily-reviews.store');
 
     // Daily & Scheduled Reviews
-    Route::get('/reviews/daily', [DailyReviewController::class, 'dailyIndex'])->name('reviews.daily');
+    Route::get('/reviews/daily', function () {
+        return redirect()->route('reviews.daily.pending');
+    })->name('reviews.daily');
+    Route::get('/reviews/daily/pending', [DailyReviewController::class, 'pendingIndex'])->name('reviews.daily.pending');
+    Route::get('/reviews/daily/completed', [DailyReviewController::class, 'completedIndex'])->name('reviews.daily.completed');
 
     Route::get('/reviews/scheduled', [ScheduledReviewController::class, 'index'])->name('reviews.scheduled');
     Route::post('/reviews/scheduled/{scheduledReview}/fulfill', [ScheduledReviewController::class, 'startFulfillment'])->name('reviews.scheduled.fulfill');

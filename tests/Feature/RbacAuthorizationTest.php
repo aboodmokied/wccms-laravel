@@ -109,7 +109,7 @@ class RbacAuthorizationTest extends TestCase
             ->assertStatus(200);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
-            ->get('/reviews/daily')
+            ->get('/reviews/daily/pending')
             ->assertOk();
     }
 }
