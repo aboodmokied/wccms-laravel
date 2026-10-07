@@ -2,12 +2,11 @@
 
     {{-- LEFT: Mobile toggle + Page title/breadcrumb --}}
     <div class="d-flex align-items-center gap-3">
-        <button id="m8-mobile-toggle" class="btn btn-sm btn-icon btn-light d-lg-none" type="button">
+        <button id="m8-mobile-toggle" class="btn btn-sm btn-icon btn-light d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#m8-sidebar" aria-controls="m8-sidebar" aria-label="فتح القائمة الرئيسية">
             <i class="bi bi-list fs-3"></i>
         </button>
         <div class="d-flex flex-column">
-            <span class="fw-bold" style="font-size:0.95rem;">@yield('page-title', 'مركـز العنايـة بالـجروح')</span>
-            <span class="text-muted" style="font-size: 0.75rem;">@yield('breadcrumb', 'WCCMS')</span>
+            <span class="fw-bold" style="font-size:0.95rem;">@yield('page-title', 'عيادة العناية بالجروح')</span>
         </div>
     </div>
 
@@ -18,20 +17,14 @@
         <span class="m8-header-date d-none d-md-inline-block" id="m8-current-date"></span>
 
         {{-- Quick new request --}}
-        <a href="{{ route('requests.create') }}" class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center gap-1">
+        <a href="{{ route('requests.create') }}" class="btn btn-sm btn-primary align-items-center gap-1">
             <i class="bi bi-plus-lg"></i>
-            <span>طلب إحالة</span>
+            <span>إحالة جديدة</span>
         </a>
-
-        {{-- Notifications placeholder --}}
-        <button class="btn btn-sm btn-icon btn-light position-relative m8-notification-badge" type="button" title="الإشعارات">
-            <i class="bi bi-bell fs-5"></i>
-            <span class="badge-dot"></span>
-        </button>
 
         {{-- User Profile (dropdown) --}}
         <div class="dropdown">
-            <button class="m8-header-user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="m8-header-user" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="قائمة الحساب">
                 <div class="d-flex flex-column text-end d-none d-md-flex">
                     <span class="fw-semibold" style="font-size: 0.82rem;">
                         {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}

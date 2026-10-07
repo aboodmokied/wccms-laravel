@@ -11,11 +11,14 @@ use App\Models\WcMedication;
 use App\Models\WcRegistration;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundPhoto;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class DailyReviewController extends Controller
 {
@@ -100,94 +103,47 @@ class DailyReviewController extends Controller
     /**
      * Show the form for creating a new daily review (Full Page instead of Modal).
      */
-    public function create(string $registrationId)
+    public function create(string $registrationId): View|RedirectResponse
     {
-        $registration = WcRegistration::with([
-            'patient',
-            'department',
-            'diagnoses.woundType',
-            'diagnoses.diagnosis',
-        ])->findOrFail($registrationId);
+        $registration = WcRegistration::findOrFail($registrationId);
 
-        $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
-        $dressings = WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->orderBy('WC_DRESS_NAME')->get();
-        $medications = WcMedication::where('WC_MED_IS_ACTIVE', 1)->orderBy('WC_MED_NAME')->get();
+        if ($registration->WC_REG_STATUS !== 'ACTIVE') {
+            return redirect()->route('reviews.daily.pending')
+                ->with('error', 'لا يمكن إضافة مراجعة يومية لمريض مخرج');
+        }
 
-        $scheduledReviewCode = request('scheduled_review');
-        $scheduledReview = $scheduledReviewCode
-            ? WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)->where('WC_SREV_STATUS', 'PENDING')->first()
-            : null;
-
-        return view('reviews.daily_create', [
-            'registration' => $registration,
-            'employees' => $employees,
-            'dressings' => $dressings,
-            'medications' => $medications,
-            'scheduledReview' => $scheduledReview,
-        ]);
+        return view('reviews.daily_create', $this->reviewFormData($registration));
     }
 
     /**
-     * Render the daily review workspace view for a specific registration.
+     * Show the form for documenting a pending scheduled review.
      */
-    public function index(string $registrationId)
+    public function createScheduled(WcScheduledReview $scheduledReview): View|RedirectResponse
     {
-        $registration = WcRegistration::with([
-            'patient',
-            'department',
-            'procedure',
-            'nurse',
-            'dischargingNurse',
-            'diagnoses.woundType',
-            'diagnoses.diagnosis',
-            'diagnoses.clinicalEmployee',
-            'diagnoses.entryUser',
-            'diagnoses.dailyReviewDetails.dressing',
-            'diagnoses.dailyReviewDetails.medication',
-            'diagnoses.dailyReviewDetails.dailyReview',
-            'dailyReviews' => function ($query) {
-                $query->orderBy('WC_DREV_VISIT_DATE', 'desc');
-            },
-            'dailyReviews.nurse',
-            'dailyReviews.entryUser',
-            'dailyReviews.scheduledReview',
-            'dailyReviews.details.regDiagnosis.diagnosis',
-            'dailyReviews.details.regDiagnosis.woundType',
-            'dailyReviews.details.dressing',
-            'dailyReviews.details.medication',
-        ])->findOrFail($registrationId);
+        if ($scheduledReview->WC_SREV_STATUS !== 'PENDING') {
+            return redirect()->route('reviews.scheduled')
+                ->with('error', 'لا يمكن توثيق موعد تم إنجازه أو إلغاؤه');
+        }
 
-        $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
-        $dressings = WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->orderBy('WC_DRESS_NAME')->get();
-        $medications = WcMedication::where('WC_MED_IS_ACTIVE', 1)->orderBy('WC_MED_NAME')->get();
+        $registration = WcRegistration::findOrFail($scheduledReview->WC_SREV_REGISTRATION_CD);
 
-        $todayDate = now()->toDateString();
+        return view('reviews.daily_create', $this->reviewFormData($registration, $scheduledReview));
+    }
 
-        $scheduledReviewCode = request('scheduled_review') ?? request('scheduled_review_code');
-        $scheduledReview = $scheduledReviewCode
-            ? WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)->where('WC_SREV_STATUS', 'PENDING')->first()
-            : null;
+    /**
+     * Redirect the retired review workspace to the patient's health history.
+     */
+    public function historyRedirect(string $registrationId): RedirectResponse
+    {
+        $registration = WcRegistration::findOrFail($registrationId);
 
-        $isReviewedToday = $registration->dailyReviews
-            ->filter(function ($review) use ($todayDate) {
-                return Carbon::parse($review->WC_DREV_VISIT_DATE)->toDateString() === $todayDate;
-            })
-            ->isNotEmpty();
-
-        return view('reviews.daily', [
-            'registration' => $registration,
-            'employees' => $employees,
-            'dressings' => $dressings,
-            'medications' => $medications,
-            'isReviewedToday' => $isReviewedToday,
-            'scheduledReview' => $scheduledReview,
-        ]);
+        return redirect()->route('patients.show', $registration->WC_REG_PATIENT_CD);
     }
 
     /**
      * Store today's multi-wound daily review visit.
      */
-    public function store(StoreDailyReviewRequest $request, string $registrationId)
+    public function store(StoreDailyReviewRequest $request, string $registrationId): RedirectResponse
     {
         $registration = WcRegistration::with('diagnoses')->findOrFail($registrationId);
 
@@ -196,6 +152,7 @@ class DailyReviewController extends Controller
 
         if ($scheduledReviewCode) {
             $isFulfillingScheduled = WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)
+                ->where('WC_SREV_REGISTRATION_CD', $registration->WC_REG_CODE)
                 ->where('WC_SREV_STATUS', 'PENDING')
                 ->exists();
         }
@@ -300,6 +257,7 @@ class DailyReviewController extends Controller
             $scheduledReviewCode = $request->input('scheduled_review_code') ?? $request->input('scheduled_review');
             if ($scheduledReviewCode) {
                 $pendingScheduledReview = WcScheduledReview::where('WC_SREV_CODE', $scheduledReviewCode)
+                    ->where('WC_SREV_REGISTRATION_CD', $registration->WC_REG_CODE)
                     ->where('WC_SREV_STATUS', 'PENDING')
                     ->first();
 
@@ -315,6 +273,52 @@ class DailyReviewController extends Controller
             }
         });
 
-        return redirect()->back()->with('success', 'تم تسجيل التقييم والزيارة اليومية بنجاح');
+        $redirectRoute = $isFulfillingScheduled ? 'reviews.scheduled' : 'reviews.daily.pending';
+
+        return redirect()->route($redirectRoute)->with('success', 'تم تسجيل التقييم والزيارة بنجاح');
+    }
+
+    /**
+     * Store a review from the scheduled review entry page.
+     */
+    public function storeScheduled(StoreDailyReviewRequest $request, WcScheduledReview $scheduledReview): RedirectResponse
+    {
+        if ($scheduledReview->WC_SREV_STATUS !== 'PENDING') {
+            return redirect()->route('reviews.scheduled')
+                ->with('error', 'لا يمكن توثيق موعد تم إنجازه أو إلغاؤه');
+        }
+
+        $request->merge(['scheduled_review_code' => $scheduledReview->WC_SREV_CODE]);
+
+        return $this->store($request, $scheduledReview->WC_SREV_REGISTRATION_CD);
+    }
+
+    /**
+     * Build the data required by both daily and scheduled review forms.
+     *
+     * @return array{
+     *     registration: WcRegistration,
+     *     employees: Collection<int, PerEmployee>,
+     *     dressings: Collection<int, WcDressing>,
+     *     medications: Collection<int, WcMedication>,
+     *     scheduledReview: WcScheduledReview|null
+     * }
+     */
+    private function reviewFormData(WcRegistration $registration, ?WcScheduledReview $scheduledReview = null): array
+    {
+        $registration->load([
+            'patient',
+            'department',
+            'diagnoses.woundType',
+            'diagnoses.diagnosis',
+        ]);
+
+        return [
+            'registration' => $registration,
+            'employees' => PerEmployee::orderBy('PER_EMP_FULL_NAME')->get(),
+            'dressings' => WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->orderBy('WC_DRESS_NAME')->get(),
+            'medications' => WcMedication::where('WC_MED_IS_ACTIVE', 1)->orderBy('WC_MED_NAME')->get(),
+            'scheduledReview' => $scheduledReview,
+        ];
     }
 }

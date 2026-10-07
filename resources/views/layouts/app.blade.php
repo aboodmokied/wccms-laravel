@@ -16,6 +16,7 @@
     @stack('styles')
 </head>
 <body>
+    <a href="#main-content" class="wccms-skip-link">انتقل إلى محتوى الصفحة</a>
 
     {{-- ================================================================
          METRONIC 8 LAYOUT: Fixed Sidebar + Main Wrapper
@@ -31,7 +32,7 @@
         @include('partials.header')
 
         {{-- PAGE CONTENT --}}
-        <main class="flex-grow-1 p-4 p-md-4">
+        <main id="main-content" class="wccms-content flex-grow-1" tabindex="-1">
             @yield('content')
         </main>
 
@@ -42,25 +43,6 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Mobile sidebar toggle -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const toggle = document.getElementById('m8-mobile-toggle');
-            const sidebar = document.getElementById('m8-sidebar');
-            if (toggle && sidebar) {
-                toggle.addEventListener('click', function () {
-                    sidebar.classList.toggle('m8-sidebar-open');
-                });
-                // Close on outside click
-                document.addEventListener('click', function (e) {
-                    if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                        sidebar.classList.remove('m8-sidebar-open');
-                    }
-                });
-            }
-        });
-    </script>
 
     <!-- Page-Specific Script Stacks -->
     @stack('scripts')

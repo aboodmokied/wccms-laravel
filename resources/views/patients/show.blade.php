@@ -56,9 +56,9 @@
                             </div>
                             
                             @if($reg->WC_REG_STATUS === 'ACTIVE')
-                                <a href="{{ route('registrations.daily-reviews.index', $reg->WC_REG_CODE) }}" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
+                                <a href="{{ route('reviews.daily.create', $reg->WC_REG_CODE) }}" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
                                     <i class="bi bi-plus-circle"></i>
-                                    <span>إضافة مراجعة جديدة</span>
+                                    <span>إدخال مراجعة يومية</span>
                                 </a>
                             @endif
                         </div>

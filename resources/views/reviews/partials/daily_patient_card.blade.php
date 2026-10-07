@@ -77,14 +77,14 @@
             <!-- Card Footer Action -->
             <div class="pt-3 border-top mt-2">
                 @if($isPending)
-                    <a href="{{ route('registrations.daily-reviews.index', $reg->WC_REG_CODE) }}" class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-bold shadow-2xs">
+                    <a href="{{ route('reviews.daily.create', $reg->WC_REG_CODE) }}" class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-bold shadow-2xs">
                         <i class="bi bi-plus-circle-fill"></i>
-                        <span>إجراء التقييم والزيارة اليومية</span>
+                        <span>إدخال مراجعة اليوم</span>
                     </a>
                 @else
-                    <a href="{{ route('registrations.daily-reviews.index', $reg->WC_REG_CODE) }}" class="btn btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fs-7">
+                    <a href="{{ route('patients.show', $reg->WC_REG_PATIENT_CD) }}" class="btn btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fs-7">
                         <i class="bi bi-eye"></i>
-                        <span>عرض سجل التقييمات الكامل</span>
+                        <span>عرض التاريخ الصحي</span>
                     </a>
                 @endif
             </div>

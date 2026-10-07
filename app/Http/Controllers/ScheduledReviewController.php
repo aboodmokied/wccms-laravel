@@ -31,10 +31,7 @@ class ScheduledReviewController extends Controller
             return redirect()->back()->with('error', 'لا يمكن بدء مراجعة لموعد غير قائم (تم إنجازه أو إلغاؤه)');
         }
 
-        return redirect()->route('registrations.daily-reviews.create', [
-            'registration' => $scheduledReview->WC_SREV_REGISTRATION_CD,
-            'scheduled_review' => $scheduledReview->WC_SREV_CODE,
-        ]);
+        return redirect()->route('reviews.scheduled.create', $scheduledReview);
     }
 
     /**

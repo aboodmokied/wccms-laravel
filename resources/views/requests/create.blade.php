@@ -1,12 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'تقديم طلب تحويل مريض للعيادة')
+@section('title', 'إحالة جديدة')
 
 @section('content')
 <div class="container-fluid py-3">
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <x-card title="طلب تحويل مريض من القسم إلى عيادة العناية بالجروح" icon="bi-person-plus-fill" subtitle="البحث عن المريض وإدخال بيانات الإحالة الطبية">
+            <h1 class="wccms-page-heading mb-1">إحالة جديدة</h1>
+            <p class="text-muted mb-4">ابحث عن المريض أولاً، ثم أدخل بيانات الإحالة وأرسلها.</p>
+            <x-card>
 
                 @if ($errors->any())
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -24,11 +26,11 @@
                 <!-- 1. Patient Search Section -->
                 <div class="card bg-light border-0 mb-4">
                     <div class="card-body">
-                        <h6 class="fw-bold mb-3"><i class="bi bi-search me-2 text-primary"></i>1. البحث عن المريض (رقم الهوية الوطنية / الاسم)</h6>
+                        <h2 class="fs-5 fw-bold mb-3">1. اختيار المريض</h2>
                         <div class="input-group">
                             <input type="text" id="patientSearchQuery" class="form-control" placeholder="أدخل رقم الهوية أو اسم المريض هنا..." aria-label="البحث عن مريض">
                             <button class="btn btn-primary px-4" type="button" id="btnSearchPatient">
-                                <i class="bi bi-search me-1"></i> بحث وتسجيل
+                                <i class="bi bi-search me-1"></i>بحث
                             </button>
                         </div>
                         <div id="searchSpinner" class="text-center py-3 d-none">
@@ -53,7 +55,7 @@
 
                         <div class="card border-primary border-opacity-25 shadow-sm mb-4">
                             <div class="card-header bg-primary bg-opacity-10 text-primary fw-bold">
-                                <i class="bi bi-person-vcard me-2"></i>بيانات المريض والمعلومات الفندقية للقبول الحالي
+                                <i class="bi bi-person-vcard me-2"></i>بيانات المريض والقبول الحالي
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
@@ -86,7 +88,7 @@
                         </div>
 
                         <!-- 3. Referral Details -->
-                        <h6 class="fw-bold mb-3"><i class="bi bi-file-medical me-2 text-primary"></i>2. تفاصيل الإحالة والممرض المسؤول</h6>
+                        <h2 class="fs-5 fw-bold mb-3">2. بيانات الإحالة</h2>
 
                         <div class="mb-3">
                             <label for="attending_nurse_code" class="form-label fw-semibold">الممرض المحول / مسؤول القسم <span class="text-danger">*</span></label>
@@ -111,12 +113,12 @@
                             @enderror
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center">
                             <a href="{{ route('requests.my') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-right me-1"></i> إلغاء ورجوع
+                                <i class="bi bi-arrow-right me-1"></i>رجوع
                             </a>
-                            <button type="submit" class="btn btn-success px-4" id="btnSubmitReferral">
-                                <i class="bi bi-check-circle-fill me-1"></i> إرسال طلب التحويل للعيادة
+                            <button type="submit" class="btn btn-primary px-4" id="btnSubmitReferral">
+                                <i class="bi bi-check-circle-fill me-1"></i>إرسال الإحالة
                             </button>
                         </div>
                     </div>

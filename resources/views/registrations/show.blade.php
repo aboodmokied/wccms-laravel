@@ -19,9 +19,15 @@
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('registrations.daily-reviews.index', $registration->WC_REG_CODE) }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2">
-                <i class="bi bi-clipboard2-pulse"></i>
-                <span>المراجعات اليومية</span>
+            @if($registration->WC_REG_STATUS === 'ACTIVE')
+                <a href="{{ route('reviews.daily.create', $registration->WC_REG_CODE) }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-2">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                    <span>إدخال مراجعة يومية</span>
+                </a>
+            @endif
+            <a href="{{ route('patients.show', $registration->WC_REG_PATIENT_CD) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 px-3 rounded-2">
+                <i class="bi bi-clock-history"></i>
+                <span>التاريخ الصحي</span>
             </a>
 
             @if($registration->is_reviewed_today)

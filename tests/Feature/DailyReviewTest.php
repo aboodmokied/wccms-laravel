@@ -131,11 +131,23 @@ class DailyReviewTest extends TestCase
         ], $secret, 'HS256');
     }
 
-    /**
-     * US1: Daily review workspace renders for an active registration with patient summary,
-     * wound tabs, and history timeline.
-     */
-    public function test_daily_review_workspace_renders_for_active_registration(): void
+    public function test_daily_review_entry_form_opens_directly_for_active_registration(): void
+    {
+        $response = $this->call(
+            'GET',
+            "/reviews/daily/{$this->registration->WC_REG_CODE}/create",
+            [],
+            ['hospital_token' => $this->jwtToken]
+        );
+
+        $response->assertOk();
+        $response->assertViewIs('reviews.daily_create');
+        $response->assertSee('إدخال مراجعة يومية');
+        $response->assertSee('أحمد محمود علي');
+        $response->assertSee('عرض التاريخ الصحي');
+    }
+
+    public function test_retired_daily_review_workspace_redirects_to_patient_health_history(): void
     {
         $response = $this->call(
             'GET',
@@ -144,11 +156,7 @@ class DailyReviewTest extends TestCase
             ['hospital_token' => $this->jwtToken]
         );
 
-        $response->assertOk();
-        $response->assertViewIs('reviews.daily');
-        $response->assertSee('التقييم والزيارة اليومية للجروح');
-        $response->assertSee('أحمد محمود علي');
-        $response->assertSee('إضافة مراجعة يومية');
+        $response->assertRedirect(route('patients.show', $this->registration->WC_REG_PATIENT_CD));
     }
 
     /**
@@ -315,10 +323,7 @@ class DailyReviewTest extends TestCase
         ]);
     }
 
-    /**
-     * US4: Discharged registration workspace hides the add button and shows status banner.
-     */
-    public function test_discharged_registration_workspace_shows_lock_banner(): void
+    public function test_discharged_registration_cannot_open_daily_review_entry_form(): void
     {
         $this->registration->update([
             'WC_REG_STATUS' => 'DISCHARGED',
@@ -328,15 +333,13 @@ class DailyReviewTest extends TestCase
 
         $response = $this->call(
             'GET',
-            "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
+            "/reviews/daily/{$this->registration->WC_REG_CODE}/create",
             [],
             ['hospital_token' => $this->jwtToken]
         );
 
-        $response->assertOk();
-        $response->assertSee('مُخرج (مغلق)');
-        $response->assertSee('ملف التسجيل مخرج');
-        $response->assertDontSee('data-bs-target="#addDailyReviewModal"');
+        $response->assertRedirect(route('reviews.daily.pending'));
+        $response->assertSessionHas('error', 'لا يمكن إضافة مراجعة يومية لمريض مخرج');
     }
 
     /**

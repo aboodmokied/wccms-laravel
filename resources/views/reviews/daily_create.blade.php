@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'إضافة تقييم يومي للجروح - WCCMS')
+@section('title', $scheduledReview ? 'توثيق مراجعة مجدولة' : 'إدخال مراجعة يومية')
 
 @section('content')
 <div class="container-fluid px-0">
@@ -8,21 +8,25 @@
     <!-- PAGE HEADER BAR -->
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('registrations.daily-reviews.index', $registration->WC_REG_CODE) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-2xs rounded-3">
+            <a href="{{ $scheduledReview ? route('reviews.scheduled') : route('reviews.daily.pending') }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-2xs rounded-3">
                 <i class="bi bi-arrow-right"></i>
-                <span>العودة للزيارات</span>
+                <span>{{ $scheduledReview ? 'العودة إلى المواعيد' : 'العودة إلى مراجعات اليوم' }}</span>
             </a>
             <div>
                 <h1 class="fw-bold fs-4 mb-0 text-dark">
-                    @if(isset($scheduledReview) && $scheduledReview)
-                        <i class="bi bi-calendar-check me-1 text-primary"></i>توثيق الموعد المجدول (#{{ $scheduledReview->WC_SREV_VISIT_SERIAL }})
+                    @if($scheduledReview)
+                        <i class="bi bi-calendar-check me-1 text-primary"></i>توثيق مراجعة مجدولة (#{{ $scheduledReview->WC_SREV_VISIT_SERIAL }})
                     @else
-                        توثيق التقييم والزيارة اليومية للجروح
+                        إدخال مراجعة يومية
                     @endif
                 </h1>
-                <span class="text-muted fs-7">تسجيل المريض رقم: <code class="text-primary fw-bold">{{ $registration->WC_REG_CODE }}</code> | تاريخ اليوم: {{ now()->format('Y-m-d') }}</span>
+                <span class="text-muted fs-7">{{ $registration->patient?->MR_PAT_FULL_NAME }} · رقم الهوية: <bdi>{{ $registration->patient?->MR_PAT_ID_NO }}</bdi> · {{ now()->format('Y-m-d') }}</span>
             </div>
         </div>
+        <a href="{{ route('patients.show', $registration->WC_REG_PATIENT_CD) }}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
+            <i class="bi bi-clock-history"></i>
+            <span>عرض التاريخ الصحي</span>
+        </a>
     </div>
 
     <!-- FLASH MESSAGES -->
@@ -34,13 +38,8 @@
         </div>
     @endif
 
-    <form action="{{ route('registrations.daily-reviews.store', $registration->WC_REG_CODE) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ $scheduledReview ? route('reviews.scheduled.store', $scheduledReview) : route('reviews.daily.store', $registration->WC_REG_CODE) }}" method="POST" enctype="multipart/form-data">
         @csrf
-        @if(isset($scheduledReview) && $scheduledReview)
-            <input type="hidden" name="scheduled_review" value="{{ $scheduledReview->WC_SREV_CODE }}">
-        @elseif(request('scheduled_review'))
-            <input type="hidden" name="scheduled_review" value="{{ request('scheduled_review') }}">
-        @endif
 
         <div class="row g-4">
             <div class="col-12 col-xl-8">
@@ -168,7 +167,7 @@
                         <h6 class="fw-bold text-dark fs-6 mb-3 border-bottom pb-2">النتيجة الإجمالية <span class="text-danger">*</span></h6>
                         
                         <div class="d-flex flex-column gap-3">
-                            @if(isset($scheduledReview) && $scheduledReview)
+                            @if($scheduledReview)
                                 <!-- SCHEDULED REVIEW OUTCOME CHOICES -->
                                 <label class="outcome-card border rounded-3 p-3 bg-white d-block cursor-pointer transition-all border-info-subtle">
                                     <div class="form-check p-0 m-0 d-flex align-items-start gap-2">
@@ -283,7 +282,7 @@
                     <button type="submit" class="btn btn-primary py-3 rounded-4 shadow-sm fw-bolder fs-6">
                         <i class="bi bi-check-lg me-1"></i>حفظ التقييم والزيارة
                     </button>
-                    <a href="{{ route('registrations.daily-reviews.index', $registration->WC_REG_CODE) }}" class="btn btn-light py-3 rounded-4 text-dark fw-bold">إلغاء</a>
+                    <a href="{{ $scheduledReview ? route('reviews.scheduled') : route('reviews.daily.pending') }}" class="btn btn-light py-3 rounded-4 text-dark fw-bold">إلغاء</a>
                 </div>
             </div>
         </div>

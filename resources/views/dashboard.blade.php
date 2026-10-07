@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'الرئيسية - لوحة التحكم التنفيذية')
+@section('title', 'الرئيسية')
 
 @section('content')
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>لوحة التحليلات والمؤشرات التنفيذية</h4>
-        <p class="text-muted small mb-0">عرض وتحليل الأداء السريري المباشر ونسب التعافي والتزام المواعيد</p>
+        <h1 class="wccms-page-heading mb-1">الرئيسية</h1>
+        <p class="text-muted mb-0">ابدأ بمهام العيادة اليومية، أو تابع مؤشرات العمل.</p>
     </div>
     <!-- Quick Period Filter Buttons (US3) -->
     <div class="btn-group shadow-sm" role="group" aria-label="تصفية الفترة الزمنية">
@@ -25,68 +25,97 @@
     </div>
 </div>
 
-<!-- 4 Primary KPI Cards -->
+<nav class="row g-3 mb-4" aria-label="المهام اليومية">
+    <div class="col-12 col-md-4">
+        <a href="{{ route('reviews.daily') }}" class="wccms-shortcut">
+            <i class="bi bi-clipboard2-pulse" aria-hidden="true"></i>
+            <div>
+                <span class="d-block fw-bold mb-1">المراجعة اليومية</span>
+                <span class="text-muted small">المرضى الذين ينتظرون التقييم اليوم</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-md-4">
+        <a href="{{ route('requests.index') }}" class="wccms-shortcut">
+            <i class="bi bi-inbox" aria-hidden="true"></i>
+            <div>
+                <span class="d-block fw-bold mb-1">طلبات الإحالة</span>
+                <span class="text-muted small">مراجعة الطلبات وفتح بيانات الإحالة</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-md-4">
+        <a href="{{ route('reviews.scheduled') }}" class="wccms-shortcut">
+            <i class="bi bi-calendar-check" aria-hidden="true"></i>
+            <div>
+                <span class="d-block fw-bold mb-1">مواعيد اليوم</span>
+                <span class="text-muted small">بدء الزيارات ومتابعة المواعيد</span>
+            </div>
+        </a>
+    </div>
+</nav>
+
+<h2 class="fs-5 fw-bold mb-3">ملخص العيادة</h2>
 <div class="row g-3 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-primary text-white h-100">
+        <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
-                    <h6 class="text-white-50 small mb-1">المرضى المسجلون حالياً</h6>
-                    <h2 class="fw-bold mb-0 text-white">{{ number_format($kpis['active_patients'] ?? 0) }}</h2>
-                    <span class="badge bg-white text-primary mt-2">حالات نشطة بالعيادة</span>
+                    <h3 class="text-muted small mb-1">المرضى المسجلون حالياً</h3>
+                    <span class="wccms-kpi-value">{{ number_format($kpis['active_patients'] ?? 0) }}</span>
+                    <span class="text-muted small">حالات نشطة بالعيادة</span>
                 </div>
-                <i class="bi bi-people-fill fs-1 opacity-50"></i>
             </div>
         </div>
     </div>
     
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-success text-white h-100">
+        <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
-                    <h6 class="text-white-50 small mb-1">متوسط مدة العلاج</h6>
-                    <h2 class="fw-bold mb-0 text-white">{{ number_format($kpis['avg_treatment_days'] ?? 0) }} <span class="fs-6 font-normal">يوم</span></h2>
-                    <span class="badge bg-white text-success mt-2">من التسجيل حتى الخروج</span>
+                    <h3 class="text-muted small mb-1">متوسط مدة العلاج</h3>
+                    <span class="wccms-kpi-value">{{ number_format($kpis['avg_treatment_days'] ?? 0) }} <span class="fs-6">يوم</span></span>
+                    <span class="text-muted small">من التسجيل حتى الخروج</span>
                 </div>
-                <i class="bi bi-clock-history fs-1 opacity-50"></i>
             </div>
         </div>
     </div>
 
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-warning text-dark h-100">
+        <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
-                    <h6 class="text-dark-50 small mb-1">نسبة التخلف عن المواعيد</h6>
-                    <h2 class="fw-bold mb-0 text-dark">{{ $kpis['missed_appointment_rate'] ?? 0 }}%</h2>
-                    <span class="badge bg-dark text-warning mt-2">مواعيد تفويتها (Missed)</span>
+                    <h3 class="text-muted small mb-1">نسبة التخلف عن المواعيد</h3>
+                    <span class="wccms-kpi-value">{{ $kpis['missed_appointment_rate'] ?? 0 }}%</span>
+                    <span class="text-muted small">من المواعيد المسجلة</span>
                 </div>
-                <i class="bi bi-calendar-x-fill fs-1 opacity-50"></i>
             </div>
         </div>
     </div>
 
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-info text-white h-100">
+        <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
-                    <h6 class="text-white-50 small mb-1">طلبات التسجيل المعلقة</h6>
-                    <h2 class="fw-bold mb-0 text-white">{{ number_format($kpis['pending_requests'] ?? 0) }}</h2>
-                    <span class="badge bg-white text-info mt-2">بانتظار الفرز والقبول</span>
+                    <h3 class="text-muted small mb-1">طلبات التسجيل المعلقة</h3>
+                    <span class="wccms-kpi-value">{{ number_format($kpis['pending_requests'] ?? 0) }}</span>
+                    <span class="text-muted small">بانتظار الفرز والقبول</span>
                 </div>
-                <i class="bi bi-inbox-fill fs-1 opacity-50"></i>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
+<details class="wccms-disclosure">
+    <summary>لوحة التحليلات والمؤشرات التنفيذية <span class="small fw-normal">— عرض التفاصيل</span></summary>
+    <div class="wccms-disclosure-content">
+<div class="row g-3">
     <!-- Clinical Outcome Breakdown Progress Bars -->
     <div class="col-12 col-lg-5">
         <x-card title="توزيع نتائج التقييمات السريرية" icon="bi-pie-chart-fill" subtitle="تحليل حالات المرضى والنتائج التقييمية">
             <div class="mb-3">
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>تحسن وتم الخروج (Discharged)</span>
+                    <span class="fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>تحسن وتم الخروج</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['DISCHARGED']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['DISCHARGED']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -96,7 +125,7 @@
 
             <div class="mb-3">
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-primary"><i class="bi bi-arrow-repeat me-1"></i>تحسن يحتاج متابعة (Follow-up)</span>
+                    <span class="fw-semibold text-primary"><i class="bi bi-arrow-repeat me-1"></i>تحسن يحتاج متابعة</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['FOLLOWUP']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['FOLLOWUP']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -106,7 +135,7 @@
 
             <div class="mb-3">
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>تدهور في الحالة (Worsened)</span>
+                    <span class="fw-semibold text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill me-1"></i>تدهور في الحالة</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['WORSENED']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['WORSENED']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -116,7 +145,7 @@
 
             <div>
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-danger"><i class="bi bi-x-circle-fill me-1"></i>حالات وفاة (Deceased)</span>
+                    <span class="fw-semibold text-danger"><i class="bi bi-x-circle-fill me-1"></i>حالات وفاة</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['DECEASED']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['DECEASED']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -179,4 +208,6 @@
         </x-card>
     </div>
 </div>
+    </div>
+</details>
 @endsection

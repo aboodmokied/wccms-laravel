@@ -175,7 +175,7 @@ class ScheduledReviewTest extends TestCase
         $response->assertOk();
         $response->assertViewIs('reviews.scheduled');
         $response->assertSee('عبدالله خالد العتيبي');
-        $response->assertSee('جدول المواعيد والمراجعات المجدولة');
+        $response->assertSee('تابع مواعيد اليوم وابدأ الزيارة');
     }
 
     /**
@@ -203,10 +203,30 @@ class ScheduledReviewTest extends TestCase
         $response->assertSee(Str::limit($upcoming->WC_SREV_CODE, 8, ''));
     }
 
-    /**
-     * US2 (T010): Start fulfillment redirects to daily review index workspace.
-     */
-    public function test_start_fulfillment_redirects_to_daily_review_workspace(): void
+    public function test_scheduled_review_entry_form_is_separate_from_patient_history(): void
+    {
+        $scheduledReview = WcScheduledReview::create([
+            'WC_SREV_CODE' => (string) Str::uuid(),
+            'WC_SREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
+            'WC_SREV_SCHEDULED_DATE' => now(),
+            'WC_SREV_VISIT_SERIAL' => 1,
+            'WC_SREV_STATUS' => 'PENDING',
+        ]);
+
+        $response = $this->call(
+            'GET',
+            "/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}/create",
+            [],
+            ['hospital_token' => $this->jwtToken]
+        );
+
+        $response->assertOk();
+        $response->assertViewIs('reviews.daily_create');
+        $response->assertSee('توثيق مراجعة مجدولة');
+        $response->assertSee('عرض التاريخ الصحي');
+    }
+
+    public function test_legacy_start_fulfillment_redirects_to_scheduled_review_entry_form(): void
     {
         $scheduledReview = WcScheduledReview::create([
             'WC_SREV_CODE' => (string) Str::uuid(),
@@ -223,10 +243,7 @@ class ScheduledReviewTest extends TestCase
             ['hospital_token' => $this->jwtToken]
         );
 
-        $response->assertRedirect(route('registrations.daily-reviews.create', [
-            'registration' => $this->registration->WC_REG_CODE,
-            'scheduled_review' => $scheduledReview->WC_SREV_CODE,
-        ]));
+        $response->assertRedirect(route('reviews.scheduled.create', $scheduledReview));
     }
 
     /**
@@ -244,12 +261,11 @@ class ScheduledReviewTest extends TestCase
 
         $response = $this->call(
             'POST',
-            "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
+            "/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}",
             [
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'إنجاز الموعد المجدول',
-                'scheduled_review_code' => $scheduledReview->WC_SREV_CODE,
                 'details' => [
                     [
                         'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
@@ -263,7 +279,7 @@ class ScheduledReviewTest extends TestCase
             ['hospital_token' => $this->jwtToken]
         );
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('reviews.scheduled'));
 
         // Verify scheduled review is updated to COMPLETED
         $this->assertDatabaseHas('wc_scheduled_review_tb', [

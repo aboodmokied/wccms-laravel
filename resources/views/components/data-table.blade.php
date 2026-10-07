@@ -1,6 +1,6 @@
 @props(['headers' => []])
 
-<div class="table-responsive">
+<div class="table-responsive" tabindex="0" role="region" aria-label="جدول البيانات">
     <table {{ $attributes->merge(['class' => 'table table-hover align-middle mb-0']) }}>
         @if(count($headers) > 0)
             <thead class="table-light">

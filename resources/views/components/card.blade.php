@@ -2,7 +2,7 @@
 
 <div {{ $attributes->merge(['class' => 'card border-0 shadow-sm rounded-3 mb-4']) }}>
     @if($title || $icon)
-        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+        <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap gap-3 align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
                 @if($icon)
                     <i class="{{ $icon }} text-primary fs-5"></i>

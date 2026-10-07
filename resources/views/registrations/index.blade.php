@@ -7,13 +7,13 @@
     <!-- PAGE TITLE ROW -->
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
-            <h1 class="fw-bolder fs-2 mb-1">المرضى المسجلون في العيادة</h1>
-            <p class="text-muted fs-6 mb-0">عرض السجلات النشطة والمخرجة في عيادة العناية بالجروح والمتابعة السريرية.</p>
+            <h1 class="wccms-page-heading mb-1">المرضى المسجلون</h1>
+            <p class="text-muted mb-0">ابحث عن المريض لفتح حالته ومتابعة العلاج.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('requests.index') }}" class="btn btn-primary d-inline-flex align-items-center gap-2">
+            <a href="{{ route('requests.index') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
                 <i class="bi bi-send-plus-fill"></i>
-                <span>طلبات التسجيل الواردة</span>
+                <span>طلبات الإحالة</span>
             </a>
         </div>
     </div>
@@ -23,10 +23,14 @@
         <div class="card-body p-4">
             <div class="row g-3 align-items-center">
                 <!-- Status Tabs -->
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-6 d-flex flex-wrap gap-2" role="group" aria-label="حالة التسجيل">
                     <a href="{{ route('registrations.index', ['status' => 'ACTIVE', 'search' => $searchQuery]) }}"
-                       class="btn {{ $currentStatus === 'ACTIVE' ? 'btn-success fw-bold' : 'btn-outline-secondary' }} px-4">
+                       class="btn {{ $currentStatus === 'ACTIVE' ? 'btn-primary fw-bold' : 'btn-outline-secondary' }} px-4" @if($currentStatus === 'ACTIVE') aria-current="page" @endif>
                         <i class="bi bi-check-circle-fill me-1"></i> الحالات النشطة
+                    </a>
+                    <a href="{{ route('registrations.index', ['status' => 'DISCHARGED', 'search' => $searchQuery]) }}"
+                       class="btn {{ $currentStatus === 'DISCHARGED' ? 'btn-primary fw-bold' : 'btn-outline-secondary' }} px-4" @if($currentStatus === 'DISCHARGED') aria-current="page" @endif>
+                        الحالات المخرجة
                     </a>
                 </div>
 
@@ -38,11 +42,11 @@
                             <span class="input-group-text bg-light border-end-0">
                                 <i class="bi bi-search text-muted"></i>
                             </span>
-                            <input type="text" name="search" class="form-control border-start-0"
+                            <input type="search" name="search" class="form-control border-start-0" aria-label="البحث عن مريض بالاسم أو رقم الهوية"
                                    placeholder="البحث بالاسم أو رقم الهوية..." value="{{ $searchQuery }}">
                             <button type="submit" class="btn btn-primary px-4">بحث</button>
                             @if($searchQuery)
-                                <a href="{{ route('registrations.index', ['status' => $currentStatus]) }}" class="btn btn-light" title="إلغاء البحث">
+                                <a href="{{ route('registrations.index', ['status' => $currentStatus]) }}" class="btn btn-light" title="إلغاء البحث" aria-label="إلغاء البحث">
                                     <i class="bi bi-x-circle"></i>
                                 </a>
                             @endif
@@ -62,7 +66,7 @@
             <span class="badge badge-light-secondary fs-7">{{ $registrations->total() }} سجل</span>
         </div>
 
-        <div class="table-responsive px-4">
+        <div class="table-responsive" tabindex="0" role="region" aria-label="المرضى المسجلون">
             <table class="table align-middle table-hover">
                 <thead>
                     <tr class="text-muted fw-bold fs-7 text-uppercase border-bottom">
@@ -101,9 +105,9 @@
                             </td>
                             <td>
                                 @if($reg->WC_REG_STATUS === 'ACTIVE')
-                                    <span class="badge bg-success px-3 py-2 fs-7">نشط (Active)</span>
+                                    <span class="badge bg-success px-3 py-2 fs-7">نشط</span>
                                 @else
-                                    <span class="badge bg-secondary px-3 py-2 fs-7">مُخرج (Discharged)</span>
+                                    <span class="badge bg-secondary px-3 py-2 fs-7">مُخرج</span>
                                 @endif
                             </td>
                             <td>
