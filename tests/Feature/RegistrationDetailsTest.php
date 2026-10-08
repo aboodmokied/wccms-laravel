@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
 use App\Models\User;
+use App\Models\WcDailyReview;
 use App\Models\WcDepartment;
 use App\Models\WcProcedure;
 use App\Models\WcRegistration;
@@ -102,7 +103,36 @@ class RegistrationDetailsTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('أحمد محمود علي');
-        $response->assertSee('تفاصيل تسجيل المريض');
+        $response->assertSee('الملف السريري للمريض');
+        $response->assertSee('سجل المراجعات');
+    }
+
+    public function test_reviews_are_displayed_from_newest_to_oldest(): void
+    {
+        WcDailyReview::create([
+            'WC_DREV_CODE' => (string) Str::uuid(),
+            'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
+            'WC_DREV_VISIT_DATE' => now()->subDays(2),
+            'WC_DREV_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_DREV_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
+            'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
+            'WC_DREV_GENERAL_NOTES' => 'المراجعة الأقدم',
+        ]);
+
+        WcDailyReview::create([
+            'WC_DREV_CODE' => (string) Str::uuid(),
+            'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
+            'WC_DREV_VISIT_DATE' => now()->subDay(),
+            'WC_DREV_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_DREV_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
+            'WC_DREV_OVERALL_STATUS' => 'IMPROVED_STAY',
+            'WC_DREV_GENERAL_NOTES' => 'المراجعة الأحدث',
+        ]);
+
+        $response = $this->call('GET', "/registrations/{$this->registration->WC_REG_CODE}", [], ['hospital_token' => $this->jwtToken]);
+
+        $response->assertOk();
+        $response->assertSeeInOrder(['المراجعة الأحدث', 'المراجعة الأقدم']);
     }
 
     public function test_can_update_registration_procedure_and_pmh_notes(): void

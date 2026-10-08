@@ -493,3 +493,301 @@
   from { opacity: 1; transform: translateY(0); }
   to   { opacity: 0; transform: translateY(10px); }
 }
+
+/* ============================================================================
+   11. UNIFIED CLINICAL RECORD
+   ============================================================================ */
+.clinical-patient-hero {
+  background: linear-gradient(135deg, #eff6ff 0%, #fff 58%, #f8fafc 100%);
+}
+
+.clinical-summary-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 76px;
+  padding: 0.85rem 1rem;
+  background-color: #fff;
+  border: 1px solid var(--m8-border-color);
+  border-radius: 10px;
+}
+
+.clinical-summary-stat span {
+  color: var(--m8-text-muted);
+  font-size: 0.75rem;
+}
+
+.clinical-summary-stat strong {
+  margin-top: 0.25rem;
+  color: var(--m8-text-main);
+  font-size: 1.25rem;
+}
+
+.clinical-summary-stat .clinical-summary-date {
+  direction: ltr;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.clinical-record-nav {
+  position: sticky;
+  top: calc(var(--m8-header-height) + 0.75rem);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #fff;
+  border: 1px solid var(--m8-border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.clinical-record-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 42px;
+  padding: 0.55rem 0.85rem;
+  color: var(--m8-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.clinical-record-nav a:hover,
+.clinical-record-nav a:focus-visible {
+  color: #1d4ed8;
+  background-color: var(--m8-primary-light);
+}
+
+.clinical-record-nav a span {
+  display: inline-grid;
+  min-width: 22px;
+  min-height: 22px;
+  place-items: center;
+  color: var(--m8-primary);
+  font-size: 0.72rem;
+  background-color: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+}
+
+.clinical-review-entry {
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  background-color: #fff;
+  border: 1px solid var(--m8-border-color);
+  border-radius: 12px;
+}
+
+.clinical-review-entry:last-child {
+  margin-bottom: 0;
+}
+
+.clinical-review-entry[open] {
+  border-color: #bfdbfe;
+  box-shadow: 0 6px 18px rgba(30, 64, 175, 0.08);
+}
+
+.clinical-review-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.clinical-review-summary::-webkit-details-marker {
+  display: none;
+}
+
+.clinical-review-summary:hover {
+  background-color: #f8fafc;
+}
+
+.clinical-review-summary:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.25);
+  outline-offset: -3px;
+}
+
+.clinical-review-index {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: var(--m8-primary);
+  font-weight: 700;
+  background-color: var(--m8-primary-light);
+  border-radius: 50%;
+}
+
+.clinical-review-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.clinical-review-chevron {
+  color: var(--m8-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.clinical-review-entry[open] .clinical-review-chevron {
+  transform: rotate(180deg);
+}
+
+.clinical-review-body {
+  padding: 1.25rem;
+  background-color: #fbfdff;
+  border-top: 1px solid var(--m8-border-color);
+}
+
+.clinical-note {
+  padding: 1rem;
+  background-color: #fff;
+  border-inline-start: 3px solid var(--m8-primary);
+  border-radius: 8px;
+}
+
+.clinical-wound-review {
+  padding: 1rem;
+  background-color: #fff;
+  border: 1px solid var(--m8-border-color);
+  border-radius: 10px;
+}
+
+.clinical-review-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.clinical-review-details > div {
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+}
+
+.clinical-review-details dt {
+  margin-bottom: 0.2rem;
+  color: var(--m8-text-muted);
+  font-size: 0.75rem;
+}
+
+.clinical-review-details dd {
+  margin: 0;
+  color: var(--m8-text-main);
+  font-weight: 600;
+}
+
+.clinical-review-detail-wide {
+  grid-column: 1 / -1;
+}
+
+.clinical-review-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.clinical-review-photo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.4rem;
+  color: var(--m8-text-muted);
+  text-decoration: none;
+  background-color: #f8fafc;
+  border: 1px solid var(--m8-border-color);
+  border-radius: 9px;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clinical-review-photo:hover,
+.clinical-review-photo:focus-visible {
+  color: var(--m8-text-main);
+  border-color: #93c5fd;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+  transform: translateY(-2px);
+}
+
+.clinical-review-photo img {
+  width: 100%;
+  height: 118px;
+  object-fit: cover;
+  background-color: #0f172a;
+  border-radius: 6px;
+}
+
+.clinical-review-photo small {
+  direction: ltr;
+  padding-inline: 0.2rem;
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.clinical-review-photo-badge {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  font-size: 0.65rem;
+}
+
+#clinical-details,
+#review-history {
+  scroll-margin-top: 140px;
+}
+
+@media (max-width: 767.98px) {
+  .clinical-record-nav {
+    position: static;
+  }
+
+  .clinical-record-nav a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .clinical-review-summary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+
+  .clinical-review-outcome {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+
+  .clinical-review-chevron {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .clinical-review-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+[data-bs-theme="dark"] .clinical-patient-hero,
+[data-bs-theme="dark"] .clinical-summary-stat,
+[data-bs-theme="dark"] .clinical-record-nav,
+[data-bs-theme="dark"] .clinical-review-entry,
+[data-bs-theme="dark"] .clinical-note,
+[data-bs-theme="dark"] .clinical-wound-review,
+[data-bs-theme="dark"] .clinical-review-photo {
+  background-color: var(--m8-card-bg);
+  background-image: none;
+}
+
+[data-bs-theme="dark"] .clinical-review-body,
+[data-bs-theme="dark"] .clinical-review-details > div,
+[data-bs-theme="dark"] .clinical-review-summary:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}

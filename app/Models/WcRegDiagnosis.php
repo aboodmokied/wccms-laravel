@@ -59,6 +59,11 @@ class WcRegDiagnosis extends Model
         return $this->hasMany(WcDailyReviewDetail::class, 'WC_DREVD_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE');
     }
 
+    public function woundPhotos()
+    {
+        return $this->hasMany(WcWoundPhoto::class, 'WC_PHOTO_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE');
+    }
+
     public function getLatestDetailAttribute(): ?WcDailyReviewDetail
     {
         if ($this->relationLoaded('dailyReviewDetails')) {

@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'تفاصيل تسجيل المريض - WCCMS')
+@section('title', 'الملف السريري للمريض')
+
+@push('styles')
+    @vite(['resources/css/pages/registrations.css'])
+@endpush
 
 @section('content')
 <div class="container-fluid px-0">
@@ -13,8 +17,8 @@
                 <span>المرضى المسجلون</span>
             </a>
             <div>
-                <h1 class="fw-bolder fs-3 mb-0 text-dark">ملف تسجيل المريض</h1>
-                <span class="text-muted fs-7">كود التسجيل: <code class="text-primary">{{ $registration->WC_REG_CODE }}</code></span>
+                <h1 class="wccms-page-heading mb-1">الملف السريري للمريض</h1>
+                <span class="text-muted">بيانات التسجيل، الجروح، الصور، والمراجعات في صفحة واحدة.</span>
             </div>
         </div>
 
@@ -26,21 +30,9 @@
                 </a>
             @endif
             <a href="{{ route('patients.show', $registration->WC_REG_PATIENT_CD) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 px-3 rounded-2">
-                <i class="bi bi-clock-history"></i>
-                <span>التاريخ الصحي</span>
+                <i class="bi bi-layers"></i>
+                <span>كل تسجيلات المريض</span>
             </a>
-
-            @if($registration->is_reviewed_today)
-                <span class="badge bg-success text-white border border-success-subtle px-3 py-2 fs-7 rounded-pill shadow-xs d-inline-flex align-items-center gap-1">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <span>تمت مراجعته اليوم</span>
-                </span>
-            @else
-                <span class="badge bg-warning text-dark border border-warning-subtle px-3 py-2 fs-7 rounded-pill shadow-xs d-inline-flex align-items-center gap-1">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <span>لم تُجرَ مراجعة اليوم</span>
-                </span>
-            @endif
 
             @if($registration->WC_REG_STATUS === 'ACTIVE')
                 <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7 me-1 rounded-pill">
@@ -79,7 +71,7 @@
     @endif
 
     <!-- HERO PATIENT SUMMARY BANNER -->
-    <div class="card border-0 shadow-sm mb-4 bg-gradient bg-primary bg-opacity-10">
+    <div class="card border-0 shadow-sm mb-3 clinical-patient-hero">
         <div class="card-body p-4">
             <div class="row align-items-center g-3">
                 <div class="col-auto">
@@ -115,28 +107,36 @@
                             @if($registration->is_reviewed_today)
                                 <strong class="text-success"><i class="bi bi-check-circle-fill me-1"></i>تمت المراجعة ({{ \Carbon\Carbon::parse($registration->today_review?->WC_DREV_VISIT_DATE)->format('H:i') }})</strong>
                             @else
-                                <strong class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>لم تتم المراجعة بعد</strong>
+                                <strong class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>لم تُجرَ مراجعة اليوم</strong>
                             @endif
                         </span>
                     </div>
                 </div>
-                <div class="col-12 col-md-auto text-md-end">
-                    <div class="d-flex flex-row flex-md-column gap-2">
-                        <div class="bg-white rounded-3 p-2 px-3 border shadow-xs text-center">
-                            <span class="d-block text-muted fs-8">مراجعة اليوم</span>
-                            @if($registration->is_reviewed_today)
-                                <span class="fw-bolder fs-6 text-success d-inline-flex align-items-center gap-1">
-                                    <i class="bi bi-check-circle-fill"></i> تم التقييم
-                                </span>
-                            @else
-                                <span class="fw-bolder fs-6 text-warning d-inline-flex align-items-center gap-1">
-                                    <i class="bi bi-exclamation-circle"></i> غير مراجع
-                                </span>
-                            @endif
+                <div class="col-12 col-xl-5">
+                    <div class="row g-2">
+                        <div class="col-6 col-sm-3 col-xl-6">
+                            <div class="clinical-summary-stat">
+                                <span>المراجعات</span>
+                                <strong>{{ $healthSummary['reviewsCount'] }}</strong>
+                            </div>
                         </div>
-                        <div class="bg-white rounded-3 p-2 px-3 border shadow-xs text-center">
-                            <span class="d-block text-muted fs-8">تشخيصات الجروح</span>
-                            <span class="fw-bolder fs-5 text-primary">{{ $registration->diagnoses->count() }}</span>
+                        <div class="col-6 col-sm-3 col-xl-6">
+                            <div class="clinical-summary-stat">
+                                <span>الجروح المسجلة</span>
+                                <strong>{{ $registration->diagnoses->count() }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3 col-xl-6">
+                            <div class="clinical-summary-stat">
+                                <span>آخر مراجعة</span>
+                                <strong class="clinical-summary-date">{{ $healthSummary['lastReview'] ? \Illuminate\Support\Carbon::parse($healthSummary['lastReview']->WC_DREV_VISIT_DATE)->format('Y-m-d') : 'لا توجد' }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-3 col-xl-6">
+                            <div class="clinical-summary-stat">
+                                <span>الموعد القادم</span>
+                                <strong class="clinical-summary-date">{{ $healthSummary['nextScheduledReview'] ? \Illuminate\Support\Carbon::parse($healthSummary['nextScheduledReview']->WC_SREV_SCHEDULED_DATE)->format('Y-m-d') : 'لا يوجد' }}</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -144,11 +144,13 @@
         </div>
     </div>
 
-    <!-- WOUND PHOTO PROGRESSION TIMELINE & GALLERY (PHASE 10) -->
-    @include('registrations.partials.wound_photo_timeline')
+    <nav class="clinical-record-nav mb-4" aria-label="أقسام الملف السريري">
+        <a href="#clinical-details"><i class="bi bi-person-vcard" aria-hidden="true"></i>بيانات الحالة</a>
+        <a href="#review-history"><i class="bi bi-clock-history" aria-hidden="true"></i>سجل المراجعات <span>{{ $healthSummary['reviewsCount'] }}</span></a>
+    </nav>
 
     <!-- MAIN TWO-COLUMN CONTENT LAYOUT -->
-    <div class="row g-4">
+    <div class="row g-4 mb-4" id="clinical-details">
         <!-- LEFT COLUMN: DETAILED INFO CARDS -->
         <div class="col-12 col-lg-4">
             <!-- 1. Patient Demographics & Contact Card -->
@@ -301,6 +303,8 @@
             </div>
         </div>
     </div>
+
+    @include('reviews.partials.review_timeline')
 </div>
 
 <!-- MODALS -->

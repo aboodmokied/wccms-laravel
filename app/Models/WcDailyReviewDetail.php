@@ -52,6 +52,11 @@ class WcDailyReviewDetail extends Model
         return $this->belongsTo(WcMedication::class, 'WC_DREVD_MEDICATION_CD', 'WC_MED_CODE');
     }
 
+    public function woundPhotos()
+    {
+        return $this->hasMany(WcWoundPhoto::class, 'WC_PHOTO_DAILY_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
+    }
+
     /**
      * Backward compatibility accessor for outcome status.
      */

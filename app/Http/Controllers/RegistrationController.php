@@ -71,8 +71,36 @@ class RegistrationController extends Controller
             'diagnoses.woundType',
             'diagnoses.diagnosis',
             'diagnoses.clinicalEmployee',
+            'diagnoses.entryUser',
+            'dailyReviews' => function ($query) {
+                $query->orderBy('WC_DREV_VISIT_DATE', 'desc');
+            },
             'dailyReviews.nurse',
+            'dailyReviews.entryUser',
+            'dailyReviews.scheduledReview',
+            'dailyReviews.details.regDiagnosis.woundType',
+            'dailyReviews.details.regDiagnosis.diagnosis',
+            'dailyReviews.details.regDiagnosis.woundPhotos' => function ($query) {
+                $query->where('WC_PHOTO_STAGE', 'INITIAL')
+                    ->orderBy('WC_PHOTO_TAKEN_AT');
+            },
+            'dailyReviews.details.dressing',
+            'dailyReviews.details.medication',
+            'dailyReviews.details.woundPhotos' => function ($query) {
+                $query->orderBy('WC_PHOTO_TAKEN_AT');
+            },
+            'scheduledReviews' => function ($query) {
+                $query->where('WC_SREV_STATUS', 'PENDING')
+                    ->where('WC_SREV_SCHEDULED_DATE', '>=', now()->startOfDay())
+                    ->orderBy('WC_SREV_SCHEDULED_DATE');
+            },
         ])->findOrFail($id);
+
+        $healthSummary = [
+            'reviewsCount' => $registration->dailyReviews->count(),
+            'lastReview' => $registration->dailyReviews->first(),
+            'nextScheduledReview' => $registration->scheduledReviews->first(),
+        ];
 
         $procedures = WcProcedure::where('WC_PROC_IS_ACTIVE', 1)->get();
         $woundTypes = WcWoundType::where('WC_WTYPE_IS_ACTIVE', 1)->get();
@@ -89,6 +117,7 @@ class RegistrationController extends Controller
             'dressings' => $dressings,
             'medications' => $medications,
             'employees' => $employees,
+            'healthSummary' => $healthSummary,
         ]);
     }
 

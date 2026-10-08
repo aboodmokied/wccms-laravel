@@ -208,5 +208,13 @@ class WoundPhotoDocumentationTest extends TestCase
         $photo = WcWoundPhoto::where('WC_PHOTO_STAGE', 'REVIEW')->first();
         $this->assertNotNull($photo);
         Storage::disk('public')->assertExists($photo->WC_PHOTO_PATH);
+
+        $detailsResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->get(route('registrations.show', $registration->WC_REG_CODE));
+
+        $detailsResponse->assertOk();
+        $detailsResponse->assertSee('صور الجرح');
+        $detailsResponse->assertSee(route('wound_photos.show', $photo->WC_PHOTO_CODE), false);
+        $detailsResponse->assertDontSee('id="wound-photos"', false);
     }
 }
