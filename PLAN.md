@@ -134,6 +134,49 @@ VISIT_IN_PROGRESS
 
 ---
 
+## Phase 5A — Longitudinal Patient Medical Record
+**Status: planned — ready to become a dedicated Spec Kit spec.**
+
+### Problem
+
+The patient page currently presents the clinical record for the current registration only. A patient may have multiple Wound Care Clinic registrations across different periods, so previous registrations and their clinical history are not visible from the same patient record.
+
+### Goal
+
+Provide one longitudinal patient medical record that displays the patient's current registration and every previous registration in a clear chronological structure.
+
+### Scope
+
+- Load all registrations belonging to the patient, ordered from newest to oldest.
+- Show the active/current registration first and distinguish it visually from discharged or historical registrations.
+- Group clinical data by registration. Data from separate registrations must never be merged into one visit timeline.
+- For every registration, display:
+  - Registration date, status, department, responsible nurse, procedure, discharge date, and past medical history notes.
+  - Diagnoses and wounds recorded during that registration.
+  - Daily and scheduled reviews, ordered from newest to oldest within the registration.
+  - Wound photos inside the review where they were documented, while preserving the initial baseline photo for comparison.
+  - Pending, completed, cancelled, missed, or voided scheduled appointments where applicable.
+- Expand the current registration by default and present previous registrations as collapsible historical sections to keep the page readable.
+- Support patients who have no active registration but have one or more previous registrations.
+- Preserve direct navigation to the detailed page for an individual registration.
+- Keep actor and data-entry audit information attached to the correct registration and clinical event.
+- Avoid N+1 queries and support pagination or incremental loading when a patient has a large registration history.
+
+### Acceptance Scenarios
+
+1. A patient with one active registration and multiple previous registrations sees all registrations, with the active registration first.
+2. Opening a previous registration shows only its diagnoses, reviews, appointments, and wound photos.
+3. Reviews remain ordered from newest to oldest inside each registration.
+4. A patient with only historical registrations can still access their complete medical record.
+5. A patient with a single registration sees the same complete record without empty historical sections.
+6. The page does not duplicate reviews, photos, or diagnoses across registrations.
+
+### Spec Kit Starting Point
+
+Create a dedicated feature spec for the longitudinal patient record. The spec should define the patient-page information architecture, registration grouping and expansion behavior, query/loading strategy, authorization rules, and feature-test scenarios before implementation begins.
+
+---
+
 ## Phase 6 — Daily Review
 - "Today's follow-up visit" screen per registration: shows all of that registration's diagnoses/wounds at once (the visit header).
 - For each wound: update description, observed changes, new dressing/medication, status assessment (improved+discharge / improved+follow-up / worsened / deceased), and whether it needs further follow-up.

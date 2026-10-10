@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/pages/requests.css',
                 'resources/css/pages/registrations.css',
+                'resources/css/pages/patients.css',
                 'resources/css/pages/reviews.css',
                 'resources/css/pages/admin.css',
                 'resources/js/pages/requests.js',

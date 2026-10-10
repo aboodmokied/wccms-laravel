@@ -285,12 +285,14 @@
                                             <div class="py-4 text-muted">
                                                 <i class="bi bi-bandaid fs-1 d-block mb-3 opacity-50 text-primary"></i>
                                                 <h5 class="fw-bold fs-6 mb-1 text-dark">لا توجد تشخيصات جروح مسجلة لهذا المريض</h5>
-                                                <p class="fs-7 text-muted mb-3">قم بالنقر على زر "إضافة تشخيص جرح" لتوثيق الجرح والبدء بالخطة العلاجية.</p>
                                                 @if($registration->WC_REG_STATUS === 'ACTIVE')
+                                                    <p class="fs-7 text-muted mb-3">قم بالنقر على زر "إضافة تشخيص جرح" لتوثيق الجرح والبدء بالخطة العلاجية.</p>
                                                     <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm rounded-2" data-bs-toggle="modal" data-bs-target="#addWoundModal">
                                                         <i class="bi bi-plus-circle"></i>
                                                         <span>إضافة أول تشخيص جرح</span>
                                                     </button>
+                                                @else
+                                                    <p class="fs-7 text-muted mb-0">لا توجد تشخيصات جروح موثقة ضمن هذا التسجيل.</p>
                                                 @endif
                                             </div>
                                         </td>
@@ -307,8 +309,10 @@
     @include('reviews.partials.review_timeline')
 </div>
 
-<!-- MODALS -->
-@include('registrations.partials.wound_diagnosis_modal')
-@include('registrations.partials.discharge_modal')
+@if($registration->WC_REG_STATUS === 'ACTIVE')
+    <!-- Active-registration workflows -->
+    @include('registrations.partials.wound_diagnosis_modal')
+    @include('registrations.partials.discharge_modal')
+@endif
 
 @endsection
