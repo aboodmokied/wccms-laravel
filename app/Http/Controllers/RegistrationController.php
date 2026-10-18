@@ -6,19 +6,25 @@ use App\Http\Requests\DischargeRegistrationRequest;
 use App\Http\Requests\StoreWoundDiagnosisRequest;
 use App\Http\Requests\UpdateRegistrationRequest;
 use App\Models\PerEmployee;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDiagnosis;
 use App\Models\WcDressing;
 use App\Models\WcMedication;
 use App\Models\WcProcedure;
-use App\Models\WcRegDiagnosis;
 use App\Models\WcRegistration;
 use App\Models\WcWoundType;
+use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
+use App\Services\WoundPhotoStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class RegistrationController extends Controller
 {
+    public function __construct(
+        private ClinicalWorkflowGatewayInterface $clinicalWorkflows,
+        private WoundPhotoStorage $woundPhotoStorage,
+    ) {}
+
     /**
      * Display a listing of registered patients with status filter and search.
      */
@@ -72,6 +78,26 @@ class RegistrationController extends Controller
             'diagnoses.diagnosis',
             'diagnoses.clinicalEmployee',
             'diagnoses.entryUser',
+            'diagnoses.assessments' => fn ($query) => $query->orderBy('WC_WA_ASSESSED_AT'),
+            'diagnoses.assessments.findings.choice',
+            'diagnoses.assessments.woundStatus',
+            'diagnoses.assessments.exudateAmount',
+            'diagnoses.assessments.exudateType',
+            'diagnoses.assessments.odor',
+            'diagnoses.assessments.painSeverity',
+            'diagnoses.assessments.fever',
+            'diagnoses.assessments.location',
+            'diagnoses.assessments.laterality',
+            'diagnoses.assessments.nutrition',
+            'diagnoses.assessments.dressing',
+            'diagnoses.assessments.medication',
+            'diagnoses.assessments.procedure',
+            'diagnoses.assessments.clinicalEmployee',
+            'diagnoses.assessments.woundCareTeamEmployee',
+            'diagnoses.assessments.doctorEmployee',
+            'diagnoses.assessments.entryUser',
+            'diagnoses.assessments.woundPhotos',
+            'diagnoses.assessments.reviewDetail',
             'dailyReviews' => function ($query) {
                 $query->orderBy('WC_DREV_VISIT_DATE', 'desc');
             },
@@ -89,6 +115,19 @@ class RegistrationController extends Controller
             'dailyReviews.details.woundPhotos' => function ($query) {
                 $query->orderBy('WC_PHOTO_TAKEN_AT');
             },
+            'dailyReviews.details.assessment.findings.choice',
+            'dailyReviews.details.assessment.woundStatus',
+            'dailyReviews.details.assessment.exudateAmount',
+            'dailyReviews.details.assessment.exudateType',
+            'dailyReviews.details.assessment.odor',
+            'dailyReviews.details.assessment.painSeverity',
+            'dailyReviews.details.assessment.dressing',
+            'dailyReviews.details.assessment.medication',
+            'dailyReviews.details.assessment.procedure',
+            'dailyReviews.details.assessment.clinicalEmployee',
+            'dailyReviews.details.assessment.entryUser',
+            'dailyReviews.details.assessment.woundPhotos',
+            'dailyReviews.details.assessment.reviewDetail',
             'scheduledReviews' => function ($query) {
                 $query->where('WC_SREV_STATUS', 'PENDING')
                     ->where('WC_SREV_SCHEDULED_DATE', '>=', now()->startOfDay())
@@ -108,6 +147,11 @@ class RegistrationController extends Controller
         $dressings = WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->get();
         $medications = WcMedication::where('WC_MED_IS_ACTIVE', 1)->get();
         $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
+        $assessmentChoices = WcAssessmentChoice::query()
+            ->where('WC_ACH_IS_ACTIVE', 1)
+            ->orderBy('WC_ACH_DISPLAY_ORDER')
+            ->get()
+            ->groupBy('WC_ACH_CATEGORY');
 
         return view('registrations.show', [
             'registration' => $registration,
@@ -118,6 +162,7 @@ class RegistrationController extends Controller
             'medications' => $medications,
             'employees' => $employees,
             'healthSummary' => $healthSummary,
+            'assessmentChoices' => $assessmentChoices,
         ]);
     }
 
@@ -151,16 +196,27 @@ class RegistrationController extends Controller
             return redirect()->back()->with('error', 'لا يمكن إضافة تشخيص جرح جديد لمريض مخرج');
         }
 
-        WcRegDiagnosis::create([
-            'WC_RDIAG_CODE' => (string) Str::uuid(),
-            'WC_RDIAG_REGISTRATION_CD' => $registration->WC_REG_CODE,
-            'WC_RDIAG_WOUND_TYPE_CD' => $request->validated('wound_type_code'),
-            'WC_RDIAG_DIAGNOSIS_CD' => $request->validated('diagnosis_code'),
-            'WC_RDIAG_CLINICAL_EMP_CD' => $request->validated('clinical_nurse_code'),
-            'WC_RDIAG_ENTRY_USER_CD' => Auth::user()->PER_USER_CODE,
-        ]);
+        $payload = $request->validated();
+        $photos = [];
 
-        return redirect()->back()->with('success', 'تم توثيق تشخيص الجرح الأول بنجاح');
+        try {
+            $photos = $this->woundPhotoStorage->persist(
+                $request->file('assessment.wound_photos'),
+                'صورة أولية للجرح المضاف'
+            );
+            $payload['assessment']['photos'] = $photos;
+            unset($payload['assessment']['wound_photos']);
+            $payload['clinic_nurse_code'] = $payload['clinical_nurse_code'];
+            $payload['entry_user_code'] = Auth::user()->PER_USER_CODE;
+            $payload['assessed_at'] = now()->toDateTimeString();
+            $this->clinicalWorkflows->addWound($registration, $payload);
+        } catch (\Throwable $exception) {
+            $this->woundPhotoStorage->cleanup($photos);
+
+            return redirect()->back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'تم توثيق الجرح وتقييمه الأولي بنجاح');
     }
 
     /**

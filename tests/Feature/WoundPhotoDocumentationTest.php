@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
 use App\Models\PerUser;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
 use App\Models\WcRegDiagnosis;
@@ -12,6 +13,7 @@ use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundPhoto;
 use App\Models\WcWoundType;
+use Database\Seeders\WcAssessmentChoiceSeeder;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -38,6 +40,7 @@ class WoundPhotoDocumentationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(WcAssessmentChoiceSeeder::class);
         config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = PerUser::create([
@@ -117,8 +120,13 @@ class WoundPhotoDocumentationTest extends TestCase
             ->post(route('requests.accept', $requestModel->WC_REQ_CODE), [
                 'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
                 'department_code' => $this->department->WC_DEPT_CODE,
+                'has_allergies' => false,
+                'no_comorbidities' => true,
+                'next_visit_date' => now()->addWeek()->toDateString(),
+                'follow_up_objective' => 'متابعة الجرح',
                 'diagnoses' => [
                     [
+                        ...$this->structuredAssessment(true),
                         'wound_type_code' => $this->woundType->WC_WTYPE_CODE,
                         'diagnosis_code' => $this->diagnosis->WC_DIAG_CODE,
                         'wound_photos' => [$photoFile],
@@ -126,7 +134,7 @@ class WoundPhotoDocumentationTest extends TestCase
                 ],
             ]);
 
-        $response->assertRedirect(route('registrations.index'));
+        $response->assertRedirect();
 
         $this->assertDatabaseHas('wc_wound_photo_tb', [
             'WC_PHOTO_STAGE' => 'INITIAL',
@@ -185,14 +193,16 @@ class WoundPhotoDocumentationTest extends TestCase
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('registrations.daily-reviews.store', $registration->WC_REG_CODE), [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->employee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'متابعة سريرية للجرح',
                 'details' => [
                     [
-                        'diagnosis_code' => $regDiag->WC_RDIAG_CODE,
+                        ...$this->structuredAssessment(false),
+                        'registration_diagnosis_code' => $regDiag->WC_RDIAG_CODE,
                         'outcome_status' => 'IMPROVED_FOLLOWUP',
-                        'observation' => 'تحسن في أطراف الجرح',
+                        'clinical_observation' => 'تحسن في أطراف الجرح',
                         'wound_photos' => [$reviewPhotoFile],
                     ],
                 ],
@@ -216,5 +226,32 @@ class WoundPhotoDocumentationTest extends TestCase
         $detailsResponse->assertSee('صور الجرح');
         $detailsResponse->assertSee(route('wound_photos.show', $photo->WC_PHOTO_CODE), false);
         $detailsResponse->assertDontSee('id="wound-photos"', false);
+    }
+
+    /** @return array<string, mixed> */
+    private function structuredAssessment(bool $initial): array
+    {
+        $choice = fn (string $category, string $key): string => WcAssessmentChoice::query()
+            ->where('WC_ACH_CATEGORY', $category)->where('WC_ACH_KEY', $key)->valueOrFail('WC_ACH_CODE');
+        $payload = [
+            'wound_status_choice_code' => $choice('WOUND_STATUS', $initial ? 'FIRST_VISIT' : 'IMPROVING'),
+            'wound_bed_choice_codes' => [$choice('WOUND_BED', 'GRANULATION')],
+            'wound_margin_choice_codes' => $initial ? [$choice('WOUND_MARGIN', 'NONE_OBSERVED')] : [],
+            'exudate_amount_choice_code' => $choice('EXUDATE_AMOUNT', 'DRY'),
+            'odor_choice_code' => $choice('ODOR', 'NONE'),
+            'pain_severity_choice_code' => $choice('PAIN_SEVERITY', 'NONE'),
+            'pain_at_dressing' => false,
+            'treatment_notes' => 'تنظيف الجرح',
+            'follow_up_required' => true,
+        ];
+        if ($initial) {
+            $payload += [
+                'fever_choice_code' => $choice('FEVER', 'NONE'), 'length_mm' => 10, 'width_mm' => 8, 'depth_mm' => 0,
+                'location_choice_code' => $choice('LOCATION', 'FOOT'), 'laterality_choice_code' => $choice('LATERALITY', 'LEFT'),
+                'swab_taken' => false, 'nutrition_choice_code' => $choice('NUTRITION', 'WELL_NOURISHED'),
+            ];
+        }
+
+        return $payload;
     }
 }

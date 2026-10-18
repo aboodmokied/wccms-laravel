@@ -2,61 +2,71 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Concerns\ValidatesWoundAssessment;
+use App\Models\WcRegistration;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDailyReviewRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use ValidatesWoundAssessment;
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            'nurse_code' => ['required', 'string', 'size:36', 'exists:per_employee_tb,PER_EMP_CODE'],
-            'overall_status' => ['required', 'string', 'in:IMPROVED_DISCHARGE,IMPROVED_SCHEDULED,IMPROVED_STAY,WORSENED_SCHEDULED,WORSENED_ADMISSION,WORSENED_STAY,DEATH'],
-            'general_notes' => ['nullable', 'string'],
-            'scheduled_date' => ['nullable', 'date'],
-            'scheduled_review_code' => ['nullable', 'string', 'size:36', 'exists:wc_scheduled_review_tb,WC_SREV_CODE'],
+            'submission_key' => ['required', 'uuid'],
+            'nurse_code' => ['required', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'wct_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'doctor_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'overall_status' => ['required', Rule::in(['IMPROVED_DISCHARGE', 'IMPROVED_SCHEDULED', 'IMPROVED_STAY', 'WORSENED_SCHEDULED', 'WORSENED_ADMISSION', 'WORSENED_STAY', 'DEATH'])],
+            'general_notes' => ['nullable', 'string', 'max:5000'],
+            'next_visit_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'follow_up_frequency' => ['nullable', 'string', 'max:100'],
+            'follow_up_objective' => ['nullable', 'required_with:next_visit_date,follow_up_frequency', 'string', 'max:2000'],
             'details' => ['required', 'array', 'min:1'],
-            'details.*.diagnosis_code' => ['required', 'string', 'size:36', 'exists:wc_reg_diagnosis_tb,WC_RDIAG_CODE'],
-            'details.*.dressing_code' => ['nullable', 'string', 'size:36', 'exists:wc_dressing_tb,WC_DRESS_CODE'],
-            'details.*.medication_code' => ['nullable', 'string', 'size:36', 'exists:wc_medication_tb,WC_MED_CODE'],
-            'details.*.observation' => ['nullable', 'string'],
-            'details.*.outcome_status' => ['required', 'string', 'in:IMPROVED_DISCHARGE,IMPROVED_FOLLOWUP,WORSENED,DECEASED'],
-            'details.*.wound_photos' => ['nullable', 'array'],
-            'details.*.wound_photos.*' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            ...$this->woundAssessmentRules('details.*', false),
         ];
     }
 
-    /**
-     * Custom Arabic validation attribute names.
-     */
+    public function withValidator($validator): void
+    {
+        $this->configureWoundAssessmentValidator($validator, 'details', false);
+        $validator->after(function ($validator): void {
+            $registration = $this->route('registration');
+            if (! $registration) {
+                $registration = $this->route('scheduledReview')?->registration;
+            }
+            if (is_string($registration)) {
+                $registration = WcRegistration::query()->find($registration);
+            }
+            if (! $registration instanceof WcRegistration) {
+                return;
+            }
+
+            $expected = $registration->diagnoses()->pluck('WC_RDIAG_CODE')->sort()->values()->all();
+            $submitted = collect($this->input('details', []))->pluck('registration_diagnosis_code')->filter()->values();
+            if ($submitted->duplicates()->isNotEmpty() || $submitted->sort()->values()->all() !== $expected) {
+                $validator->errors()->add('details', 'يجب إدخال تقييم واحد كامل لكل جرح تابع لهذا التسجيل.');
+            }
+        });
+    }
+
+    /** @return array<string, string> */
     public function attributes(): array
     {
         return [
-            'nurse_code' => 'الممرض المباشر / السريري',
-            'overall_status' => 'النتيجة الإجمالية للزيارة',
-            'general_notes' => 'الملاحظات العامة',
-            'scheduled_date' => 'تاريخ الموعد المجدول',
-            'details' => 'تفاصيل تقييم الجروح',
-            'details.*.diagnosis_code' => 'تشخيص الجرح',
-            'details.*.dressing_code' => 'الضمادة المطبقة',
-            'details.*.medication_code' => 'العلاج الموضعي',
-            'details.*.observation' => 'الملاحظة السريرية',
-            'details.*.outcome_status' => 'تقييم حالة الجرح',
-            'details.*.wound_photos' => 'صور الجرح المرفقة',
-            'details.*.wound_photos.*' => 'صورة المراجعة للجرح',
+            'submission_key' => 'مفتاح الإرسال',
+            'nurse_code' => 'الممرض السريري',
+            'overall_status' => 'النتيجة الإجمالية',
+            'details' => 'تقييمات الجروح',
+            'details.*.registration_diagnosis_code' => 'هوية الجرح',
+            'details.*.outcome_status' => 'نتيجة الجرح',
         ];
     }
 }

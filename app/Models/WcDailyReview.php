@@ -28,7 +28,15 @@ class WcDailyReview extends Model
         'WC_DREV_ENTRY_USER_CD',
         'WC_DREV_OVERALL_STATUS',
         'WC_DREV_GENERAL_NOTES',
+        'WC_DREV_SUBMISSION_KEY',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'WC_DREV_VISIT_DATE' => 'datetime',
+        ];
+    }
 
     public function registration()
     {

@@ -306,6 +306,23 @@
         </div>
     </div>
 
+    <section class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom p-4"><h2 class="h5 fw-bold mb-1">التقييمات المنظمة حسب الجرح</h2><p class="text-muted small mb-0">خط الأساس والمتابعات بترتيب زمني واضح لكل جرح.</p></div>
+        <div class="card-body p-4 d-grid gap-4">
+            @forelse($registration->diagnoses as $diagnosis)
+                <article><h3 class="h6 fw-bold">{{ $diagnosis->woundType?->WC_WTYPE_NAME ?? 'جرح غير محدد' }} — {{ $diagnosis->diagnosis?->WC_DIAG_NAME ?? 'دون تشخيص' }}</h3>
+                    @forelse($diagnosis->assessments as $assessment)
+                        @include('wound_assessments.partials.summary', compact('assessment'))
+                    @empty
+                        @include('wound_assessments.partials.summary', ['assessment' => null])
+                    @endforelse
+                </article>
+            @empty
+                <p class="text-muted mb-0">لا توجد جروح مسجلة.</p>
+            @endforelse
+        </div>
+    </section>
+
     @include('reviews.partials.review_timeline')
 </div>
 

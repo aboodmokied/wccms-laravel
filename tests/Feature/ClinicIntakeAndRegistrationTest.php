@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
 use App\Models\User;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
 use App\Models\WcMedication;
@@ -12,6 +13,7 @@ use App\Models\WcProcedure;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
+use Database\Seeders\WcAssessmentChoiceSeeder;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -34,6 +36,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(WcAssessmentChoiceSeeder::class);
         config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = User::create([
@@ -148,12 +151,9 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $req->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
-            ]);
+            ->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload());
 
         $response->assertStatus(302);
-        $response->assertRedirect(route('registrations.index'));
 
         $this->assertDatabaseHas('wc_request_reg_tb', [
             'WC_REQ_CODE' => $req->WC_REQ_CODE,
@@ -166,6 +166,8 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
+        $registration = WcRegistration::where('WC_REG_REQUEST_CD', $req->WC_REQ_CODE)->firstOrFail();
+        $response->assertRedirect(route('registrations.show', $registration));
     }
 
     public function test_clinic_nurse_can_accept_referral_with_clinical_data_and_diagnosis(): void
@@ -203,20 +205,16 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $req->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
-                'department_code' => $this->department->WC_DEPT_CODE,
+            ->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload($woundType, $diagnosis, [
                 'procedure_code' => $procedure->WC_PROC_CODE,
                 'pmh_notes' => 'المريض يعاني من السكري الضغط',
-                'wound_type_code' => $woundType->WC_WTYPE_CODE,
-                'diagnosis_code' => $diagnosis->WC_DIAG_CODE,
-            ]);
+            ]));
 
         $response->assertStatus(302);
-        $response->assertRedirect(route('registrations.index'));
 
         $registration = WcRegistration::where('WC_REG_REQUEST_CD', $req->WC_REQ_CODE)->first();
         $this->assertNotNull($registration);
+        $response->assertRedirect(route('registrations.show', $registration));
         $this->assertEquals($procedure->WC_PROC_CODE, $registration->WC_REG_PROCEDURE_CD);
         $this->assertEquals('المريض يعاني من السكري الضغط', $registration->WC_REG_PMH_NOTES);
 
@@ -258,7 +256,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         ]);
     }
 
-    public function test_clinic_nurse_can_accept_referral_with_initial_medication_creates_daily_review(): void
+    public function test_clinic_nurse_can_accept_referral_with_initial_medication_creates_baseline_assessment(): void
     {
         $token = $this->generateJwt('clinic_nurse_1');
 
@@ -293,23 +291,70 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $req->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
-                'department_code' => $this->department->WC_DEPT_CODE,
-                'wound_type_code' => $woundType->WC_WTYPE_CODE,
-                'diagnosis_code' => $diagnosis->WC_DIAG_CODE,
+            ->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload($woundType, $diagnosis, [
                 'medication_code' => $medication->WC_MED_CODE,
-            ]);
+            ]));
 
         $response->assertStatus(302);
-        $response->assertRedirect(route('registrations.index'));
 
         $registration = WcRegistration::where('WC_REG_REQUEST_CD', $req->WC_REQ_CODE)->first();
         $this->assertNotNull($registration);
+        $response->assertRedirect(route('registrations.show', $registration));
 
-        $this->assertDatabaseHas('wc_daily_review_tb', [
-            'WC_DREV_REGISTRATION_CD' => $registration->WC_REG_CODE,
-            'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
+        $this->assertDatabaseHas('wc_wound_assessment_tb', [
+            'WC_WA_TYPE' => 'INITIAL',
+            'WC_WA_MEDICATION_CD' => $medication->WC_MED_CODE,
         ]);
+    }
+
+    /** @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    private function structuredAcceptancePayload(
+        ?WcWoundType $woundType = null,
+        ?WcDiagnosis $diagnosis = null,
+        array $overrides = [],
+    ): array {
+        $woundType ??= WcWoundType::create([
+            'WC_WTYPE_CODE' => (string) Str::uuid(), 'WC_WTYPE_NAME' => 'جرح اختباري', 'WC_WTYPE_IS_ACTIVE' => 1,
+        ]);
+        $diagnosis ??= WcDiagnosis::create([
+            'WC_DIAG_CODE' => (string) Str::uuid(), 'WC_DIAG_NAME' => 'تشخيص اختباري', 'WC_DIAG_IS_ACTIVE' => 1,
+        ]);
+        $choice = fn (string $category, string $key): string => WcAssessmentChoice::query()
+            ->where('WC_ACH_CATEGORY', $category)->where('WC_ACH_KEY', $key)->valueOrFail('WC_ACH_CODE');
+        $shared = array_intersect_key($overrides, array_flip(['procedure_code', 'pmh_notes']));
+        $treatment = array_intersect_key($overrides, array_flip(['medication_code', 'dressing_code', 'procedure_code', 'treatment_notes']));
+
+        return [
+            ...$shared,
+            'department_code' => $this->department->WC_DEPT_CODE,
+            'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+            'has_allergies' => false,
+            'no_comorbidities' => true,
+            'next_visit_date' => now()->addWeek()->toDateString(),
+            'follow_up_objective' => 'متابعة التئام الجرح',
+            'diagnoses' => [[
+                'wound_type_code' => $woundType->WC_WTYPE_CODE,
+                'diagnosis_code' => $diagnosis->WC_DIAG_CODE,
+                'wound_status_choice_code' => $choice('WOUND_STATUS', 'FIRST_VISIT'),
+                'wound_bed_choice_codes' => [$choice('WOUND_BED', 'GRANULATION')],
+                'wound_margin_choice_codes' => [$choice('WOUND_MARGIN', 'NONE_OBSERVED')],
+                'exudate_amount_choice_code' => $choice('EXUDATE_AMOUNT', 'DRY'),
+                'odor_choice_code' => $choice('ODOR', 'NONE'),
+                'pain_severity_choice_code' => $choice('PAIN_SEVERITY', 'NONE'),
+                'pain_at_dressing' => false,
+                'fever_choice_code' => $choice('FEVER', 'NONE'),
+                'length_mm' => 12.5,
+                'width_mm' => 8,
+                'depth_mm' => 0,
+                'location_choice_code' => $choice('LOCATION', 'FOOT'),
+                'laterality_choice_code' => $choice('LATERALITY', 'LEFT'),
+                'swab_taken' => false,
+                'nutrition_choice_code' => $choice('NUTRITION', 'WELL_NOURISHED'),
+                'treatment_notes' => 'تنظيف ومتابعة',
+                ...$treatment,
+            ]],
+        ];
     }
 }

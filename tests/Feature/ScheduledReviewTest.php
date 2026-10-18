@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
 use App\Models\User;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
 use App\Models\WcDressing;
@@ -14,6 +15,7 @@ use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundType;
+use Database\Seeders\WcAssessmentChoiceSeeder;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -42,6 +44,7 @@ class ScheduledReviewTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(WcAssessmentChoiceSeeder::class);
 
         $this->nurseUser = User::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -263,15 +266,17 @@ class ScheduledReviewTest extends TestCase
             'POST',
             "/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'إنجاز الموعد المجدول',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredAssessment(false),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'dressing_code' => $this->dressing->WC_DRESS_CODE,
                         'medication_code' => $this->medication->WC_MED_CODE,
-                        'observation' => 'فحص الزيارة المجدولة',
+                        'clinical_observation' => 'فحص الزيارة المجدولة',
                         'outcome_status' => 'IMPROVED_FOLLOWUP',
                     ],
                 ],
@@ -396,8 +401,13 @@ class ScheduledReviewTest extends TestCase
             [
                 'clinic_nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'department_code' => $this->department->WC_DEPT_CODE,
+                'has_allergies' => false,
+                'no_comorbidities' => true,
+                'next_visit_date' => now()->addWeek()->toDateString(),
+                'follow_up_objective' => 'متابعة التسجيل الجديد',
                 'diagnoses' => [
                     [
+                        ...$this->structuredAssessment(true),
                         'wound_type_code' => $this->regDiagnosis->WC_RDIAG_WOUND_TYPE_CD,
                         'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_DIAGNOSIS_CD,
                     ],
@@ -412,5 +422,31 @@ class ScheduledReviewTest extends TestCase
         $this->assertDatabaseMissing('wc_scheduled_review_tb', [
             'WC_SREV_CODE' => $oldPendingReview->WC_SREV_CODE,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function structuredAssessment(bool $initial): array
+    {
+        $choice = fn (string $category, string $key): string => WcAssessmentChoice::query()
+            ->where('WC_ACH_CATEGORY', $category)->where('WC_ACH_KEY', $key)->valueOrFail('WC_ACH_CODE');
+        $payload = [
+            'wound_status_choice_code' => $choice('WOUND_STATUS', $initial ? 'FIRST_VISIT' : 'IMPROVING'),
+            'wound_bed_choice_codes' => [$choice('WOUND_BED', 'GRANULATION')],
+            'wound_margin_choice_codes' => $initial ? [$choice('WOUND_MARGIN', 'NONE_OBSERVED')] : [],
+            'exudate_amount_choice_code' => $choice('EXUDATE_AMOUNT', 'DRY'),
+            'odor_choice_code' => $choice('ODOR', 'NONE'),
+            'pain_severity_choice_code' => $choice('PAIN_SEVERITY', 'NONE'),
+            'pain_at_dressing' => false, 'dressing_code' => $this->dressing->WC_DRESS_CODE,
+            'follow_up_required' => true,
+        ];
+        if ($initial) {
+            $payload += [
+                'fever_choice_code' => $choice('FEVER', 'NONE'), 'length_mm' => 10, 'width_mm' => 7, 'depth_mm' => 0,
+                'location_choice_code' => $choice('LOCATION', 'FOOT'), 'laterality_choice_code' => $choice('LATERALITY', 'LEFT'),
+                'swab_taken' => false, 'nutrition_choice_code' => $choice('NUTRITION', 'WELL_NOURISHED'),
+            ];
+        }
+
+        return $payload;
     }
 }

@@ -28,6 +28,8 @@
                     <p class="patient-wound-description">{{ $wound->WC_RDIAG_DESCRIPTION }}</p>
                 @endif
 
+                @include('wound_assessments.partials.summary', ['assessment' => $wound->assessments->firstWhere('WC_WA_TYPE', 'INITIAL')])
+
                 <dl class="patient-audit-grid">
                     <div>
                         <dt>الموظف السريري</dt>

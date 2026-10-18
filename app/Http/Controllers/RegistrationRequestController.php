@@ -7,26 +7,30 @@ use App\Http\Requests\MarkIneligibleRequest;
 use App\Http\Requests\StoreRegistrationRequest;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
-use App\Models\WcDailyReview;
-use App\Models\WcDailyReviewDetail;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
+use App\Models\WcDressing;
 use App\Models\WcMedication;
+use App\Models\WcPmh;
 use App\Models\WcProcedure;
-use App\Models\WcRegDiagnosis;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
-use App\Models\WcWoundPhoto;
 use App\Models\WcWoundType;
+use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\HospitalPatientSyncServiceInterface;
-use App\Services\ScheduledReviewService;
+use App\Services\WoundPhotoStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class RegistrationRequestController extends Controller
 {
+    public function __construct(
+        private ClinicalWorkflowGatewayInterface $clinicalWorkflows,
+        private WoundPhotoStorage $woundPhotoStorage,
+    ) {}
+
     public function index(Request $request)
     {
         $query = $request->input('search');
@@ -129,6 +133,13 @@ class RegistrationRequestController extends Controller
         $woundTypes = WcWoundType::where('WC_WTYPE_IS_ACTIVE', 1)->get();
         $diagnoses = WcDiagnosis::where('WC_DIAG_IS_ACTIVE', 1)->get();
         $medications = WcMedication::where('WC_MED_IS_ACTIVE', 1)->get();
+        $dressings = WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->orderBy('WC_DRESS_NAME')->get();
+        $pmhConditions = WcPmh::where('WC_PMH_IS_ACTIVE', 1)->orderBy('WC_PMH_NAME')->get();
+        $assessmentChoices = WcAssessmentChoice::query()
+            ->where('WC_ACH_IS_ACTIVE', 1)
+            ->orderBy('WC_ACH_DISPLAY_ORDER')
+            ->get()
+            ->groupBy('WC_ACH_CATEGORY');
 
         return view('requests.show', [
             'request' => $requestModel,
@@ -138,6 +149,9 @@ class RegistrationRequestController extends Controller
             'woundTypes' => $woundTypes,
             'diagnoses' => $diagnoses,
             'medications' => $medications,
+            'dressings' => $dressings,
+            'pmhConditions' => $pmhConditions,
+            'assessmentChoices' => $assessmentChoices,
         ]);
     }
 
@@ -166,151 +180,30 @@ class RegistrationRequestController extends Controller
         }
 
         $validated = $request->validated();
+        $persistedPhotos = [];
 
-        $clinicNurseCode = $validated['clinic_nurse_code']
-            ?? $requestModel->WC_REQ_REVIEWED_BY_CD
-            ?? PerEmployee::first()?->PER_EMP_CODE;
-
-        $departmentCode = $validated['department_code']
-            ?? WcDepartment::where('WC_DEPT_NAME', 'LIKE', '%Wound Care%')->first()?->WC_DEPT_CODE
-            ?? WcDepartment::where('WC_DEPT_IS_ACTIVE', 1)->first()?->WC_DEPT_CODE
-            ?? WcDepartment::first()?->WC_DEPT_CODE;
-
-        $userCode = Auth::user()?->PER_USER_CODE;
-
-        $registration = DB::transaction(function () use ($request, $requestModel, $clinicNurseCode, $departmentCode, $validated, $userCode) {
-            $requestModel->update([
-                'WC_REQ_STATUS' => 'ACCEPTED',
-                'WC_REQ_REVIEWED_BY_CD' => $clinicNurseCode,
-            ]);
-
-            $reg = WcRegistration::create([
-                'WC_REG_CODE' => (string) Str::uuid(),
-                'WC_REG_REQUEST_CD' => $requestModel->WC_REQ_CODE,
-                'WC_REG_PATIENT_CD' => $requestModel->WC_REQ_PATIENT_CD,
-                'WC_REG_DEPARTMENT_CD' => $departmentCode,
-                'WC_REG_PROCEDURE_CD' => $validated['procedure_code'] ?? null,
-                'WC_REG_PMH_NOTES' => $validated['pmh_notes'] ?? null,
-                'WC_REG_DATE' => now(),
-                'WC_REG_NURSE_CD' => $clinicNurseCode,
-                'WC_REG_ENTRY_USER_CD' => $userCode,
-                'WC_REG_STATUS' => 'ACTIVE',
-            ]);
-
-            $medicationEntries = [];
-
-            if (! empty($validated['diagnoses']) && is_array($validated['diagnoses'])) {
-                foreach ($validated['diagnoses'] as $index => $diagItem) {
-                    if (! empty($diagItem['wound_type_code']) && ! empty($diagItem['diagnosis_code'])) {
-                        $regDiag = WcRegDiagnosis::create([
-                            'WC_RDIAG_CODE' => (string) Str::uuid(),
-                            'WC_RDIAG_REGISTRATION_CD' => $reg->WC_REG_CODE,
-                            'WC_RDIAG_WOUND_TYPE_CD' => $diagItem['wound_type_code'],
-                            'WC_RDIAG_DIAGNOSIS_CD' => $diagItem['diagnosis_code'],
-                            'WC_RDIAG_CLINICAL_EMP_CD' => $clinicNurseCode,
-                            'WC_RDIAG_ENTRY_USER_CD' => $userCode,
-                        ]);
-
-                        $photos = $request->file("diagnoses.{$index}.wound_photos");
-                        if (! empty($photos) && is_array($photos)) {
-                            foreach ($photos as $photoFile) {
-                                if ($photoFile && $photoFile->isValid()) {
-                                    $path = $photoFile->store('wound_photos/'.date('Y/m'), 'public');
-                                    WcWoundPhoto::create([
-                                        'WC_PHOTO_CODE' => (string) Str::uuid(),
-                                        'WC_PHOTO_REG_DIAGNOSIS_CD' => $regDiag->WC_RDIAG_CODE,
-                                        'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => null,
-                                        'WC_PHOTO_STAGE' => 'INITIAL',
-                                        'WC_PHOTO_PATH' => $path,
-                                        'WC_PHOTO_CAPTION' => 'صورة أوليّة للجرح عند قبول التسجيل',
-                                        'WC_PHOTO_TAKEN_AT' => now(),
-                                        'WC_PHOTO_NURSE_CD' => $clinicNurseCode,
-                                        'WC_PHOTO_ENTRY_USER_CD' => $userCode,
-                                    ]);
-                                }
-                            }
-                        }
-
-                        if (! empty($diagItem['medication_code'])) {
-                            $medicationEntries[] = [
-                                'diag' => $regDiag,
-                                'med_code' => $diagItem['medication_code'],
-                            ];
-                        }
-                    }
-                }
-            } elseif (! empty($validated['wound_type_code']) && ! empty($validated['diagnosis_code'])) {
-                $regDiag = WcRegDiagnosis::create([
-                    'WC_RDIAG_CODE' => (string) Str::uuid(),
-                    'WC_RDIAG_REGISTRATION_CD' => $reg->WC_REG_CODE,
-                    'WC_RDIAG_WOUND_TYPE_CD' => $validated['wound_type_code'],
-                    'WC_RDIAG_DIAGNOSIS_CD' => $validated['diagnosis_code'],
-                    'WC_RDIAG_CLINICAL_EMP_CD' => $clinicNurseCode,
-                    'WC_RDIAG_ENTRY_USER_CD' => $userCode,
-                ]);
-
-                $photos = $request->file('wound_photos');
-                if (! empty($photos) && is_array($photos)) {
-                    foreach ($photos as $photoFile) {
-                        if ($photoFile && $photoFile->isValid()) {
-                            $path = $photoFile->store('wound_photos/'.date('Y/m'), 'public');
-                            WcWoundPhoto::create([
-                                'WC_PHOTO_CODE' => (string) Str::uuid(),
-                                'WC_PHOTO_REG_DIAGNOSIS_CD' => $regDiag->WC_RDIAG_CODE,
-                                'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => null,
-                                'WC_PHOTO_STAGE' => 'INITIAL',
-                                'WC_PHOTO_PATH' => $path,
-                                'WC_PHOTO_CAPTION' => 'صورة أوليّة للجرح عند قبول التسجيل',
-                                'WC_PHOTO_TAKEN_AT' => now(),
-                                'WC_PHOTO_NURSE_CD' => $clinicNurseCode,
-                                'WC_PHOTO_ENTRY_USER_CD' => $userCode,
-                            ]);
-                        }
-                    }
-                }
-
-                if (! empty($validated['medication_code'])) {
-                    $medicationEntries[] = [
-                        'diag' => $regDiag,
-                        'med_code' => $validated['medication_code'],
-                    ];
-                }
+        try {
+            foreach ($validated['diagnoses'] as $index => &$diagnosis) {
+                $diagnosis['photos'] = $this->woundPhotoStorage->persist(
+                    $request->file("diagnoses.{$index}.wound_photos"),
+                    'صورة أولية للجرح عند قبول التسجيل'
+                );
+                $persistedPhotos = [...$persistedPhotos, ...$diagnosis['photos']];
+                unset($diagnosis['wound_photos']);
             }
+            unset($diagnosis);
 
-            if (! empty($medicationEntries)) {
-                $dailyReview = WcDailyReview::create([
-                    'WC_DREV_CODE' => (string) Str::uuid(),
-                    'WC_DREV_REGISTRATION_CD' => $reg->WC_REG_CODE,
-                    'WC_DREV_VISIT_DATE' => now(),
-                    'WC_DREV_NURSE_CD' => $clinicNurseCode,
-                    'WC_DREV_ENTRY_USER_CD' => $userCode,
-                    'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
-                    'WC_DREV_GENERAL_NOTES' => 'توثيق العلاج الدوائي الأولي عند قبول المريض',
-                ]);
+            $validated['entry_user_code'] = Auth::user()->PER_USER_CODE;
+            $validated['assessed_at'] = now()->toDateTimeString();
+            $registration = $this->clinicalWorkflows->acceptRegistration($requestModel, $validated);
+        } catch (\Throwable $exception) {
+            $this->woundPhotoStorage->cleanup($persistedPhotos);
 
-                foreach ($medicationEntries as $entry) {
-                    WcDailyReviewDetail::create([
-                        'WC_REVD_CODE' => (string) Str::uuid(),
-                        'WC_REVD_REVIEW_CD' => $dailyReview->WC_DREV_CODE,
-                        'WC_REVD_REVIEW_TYPE' => 'DAILY',
-                        'WC_DREVD_REG_DIAGNOSIS_CD' => $entry['diag']->WC_RDIAG_CODE,
-                        'WC_DREVD_MEDICATION_CD' => $entry['med_code'],
-                        'WC_DREVD_STATUS' => 'WORSENED',
-                    ]);
-                }
-            }
+            return redirect()->back()->withInput()->with('error', $exception->getMessage());
+        }
 
-            // Clean up any old pending scheduled reviews from patient's previous registrations
-            app(ScheduledReviewService::class)->deletePendingForPreviousRegistrations(
-                $requestModel->WC_REQ_PATIENT_CD,
-                $reg->WC_REG_CODE
-            );
-
-            return $reg;
-        });
-
-        return redirect()->route('registrations.index')
-            ->with('success', 'تم قبول طلب التسجيل وإنشاء الملف الطبي وتوثيق البيانات والتشخيص الأولي بنجاح');
+        return redirect()->route('registrations.show', $registration->WC_REG_CODE)
+            ->with('success', 'تم قبول الطلب وحفظ التقييمات الأولية لكل الجروح بنجاح');
     }
 
     public function markIneligible(MarkIneligibleRequest $request, WcRequestReg $requestModel)

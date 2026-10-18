@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasDbFirstAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class WcDailyReviewDetail extends Model
 {
@@ -55,6 +56,11 @@ class WcDailyReviewDetail extends Model
     public function woundPhotos()
     {
         return $this->hasMany(WcWoundPhoto::class, 'WC_PHOTO_DAILY_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
+    }
+
+    public function assessment(): HasOne
+    {
+        return $this->hasOne(WcWoundAssessment::class, 'WC_WA_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
     }
 
     /**

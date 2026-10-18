@@ -2,66 +2,66 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Concerns\ValidatesWoundAssessment;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AcceptRegistrationRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use ValidatesWoundAssessment;
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            'department_code' => ['nullable', 'string', 'size:36', 'exists:wc_department_tb,WC_DEPT_CODE'],
-            'procedure_code' => ['nullable', 'string', 'size:36', 'exists:wc_procedure_tb,WC_PROC_CODE'],
+            'department_code' => ['required', 'uuid', Rule::exists('wc_department_tb', 'WC_DEPT_CODE')->where('WC_DEPT_IS_ACTIVE', 1)],
+            'procedure_code' => ['nullable', 'uuid', Rule::exists('wc_procedure_tb', 'WC_PROC_CODE')->where('WC_PROC_IS_ACTIVE', 1)],
+            'clinic_nurse_code' => ['required', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'wct_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'doctor_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'has_allergies' => ['required', 'boolean'],
+            'allergies_description' => ['exclude_unless:has_allergies,1', 'required_if:has_allergies,1', 'nullable', 'string', 'max:2000'],
+            'no_comorbidities' => ['required', 'boolean'],
+            'pmh_codes' => ['exclude_if:no_comorbidities,1', 'nullable', 'array'],
+            'pmh_codes.*' => ['required', 'uuid', 'distinct', Rule::exists('wc_pmh_tb', 'WC_PMH_CODE')->where('WC_PMH_IS_ACTIVE', 1)],
             'pmh_notes' => ['nullable', 'string', 'max:2000'],
-            'clinic_nurse_code' => ['nullable', 'string', 'size:36', 'exists:per_employee_tb,PER_EMP_CODE'],
-            'wound_type_code' => ['nullable', 'string', 'size:36', 'exists:wc_wound_type_tb,WC_WTYPE_CODE'],
-            'diagnosis_code' => ['nullable', 'string', 'size:36', 'exists:wc_diagnosis_tb,WC_DIAG_CODE'],
-            'medication_code' => ['nullable', 'string', 'size:36', 'exists:wc_medication_tb,WC_MED_CODE'],
-            'diagnoses' => ['nullable', 'array'],
-            'diagnoses.*.wound_type_code' => ['nullable', 'string', 'size:36', 'exists:wc_wound_type_tb,WC_WTYPE_CODE'],
-            'diagnoses.*.diagnosis_code' => ['nullable', 'string', 'size:36', 'exists:wc_diagnosis_tb,WC_DIAG_CODE'],
-            'diagnoses.*.medication_code' => ['nullable', 'string', 'size:36', 'exists:wc_medication_tb,WC_MED_CODE'],
-            'wound_photos' => ['nullable', 'array'],
-            'wound_photos.*' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
-            'diagnoses.*.wound_photos' => ['nullable', 'array'],
-            'diagnoses.*.wound_photos.*' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'next_visit_date' => ['nullable', 'date', 'after_or_equal:today', 'required_without:follow_up_frequency'],
+            'follow_up_frequency' => ['nullable', 'string', 'max:100', 'required_without:next_visit_date'],
+            'follow_up_objective' => ['required_with:next_visit_date,follow_up_frequency', 'string', 'max:2000'],
+            'diagnoses' => ['required', 'array', 'min:1'],
+            ...$this->woundAssessmentRules('diagnoses.*', true),
         ];
     }
 
-    /**
-     * Custom Arabic attribute names.
-     */
+    public function withValidator($validator): void
+    {
+        $this->configureWoundAssessmentValidator($validator, 'diagnoses', true);
+    }
+
+    /** @return array<string, string> */
     public function attributes(): array
     {
         return [
             'department_code' => 'قسم العيادة',
-            'procedure_code' => 'الإجراء الطبي الأولي',
-            'pmh_notes' => 'التاريخ المرضي والملاحظات',
-            'clinic_nurse_code' => 'الممرض المعالج/الفاحص',
-            'wound_type_code' => 'نوع الجرح',
-            'diagnosis_code' => 'التشخيص الطبي الأولي',
-            'medication_code' => 'العلاج الدوائي الأولي',
-            'diagnoses' => 'التشخيصات السريرية',
-            'diagnoses.*.wound_type_code' => 'نوع الجرح الفرعي',
-            'diagnoses.*.diagnosis_code' => 'التشخيص الطبي الفرعي',
-            'diagnoses.*.medication_code' => 'العلاج الدوائي الفرعي',
-            'wound_photos' => 'صور الجرح الأولي',
-            'wound_photos.*' => 'صورة الجرح الأولي',
-            'diagnoses.*.wound_photos' => 'صور الجرح الفرعي',
-            'diagnoses.*.wound_photos.*' => 'صورة الجرح الفرعي',
+            'clinic_nurse_code' => 'الممرض السريري',
+            'wct_employee_code' => 'عضو فريق الجروح',
+            'doctor_employee_code' => 'الطبيب',
+            'has_allergies' => 'وجود حساسية',
+            'allergies_description' => 'وصف الحساسية',
+            'no_comorbidities' => 'عدم وجود أمراض مزمنة',
+            'pmh_codes' => 'الأمراض المزمنة',
+            'next_visit_date' => 'تاريخ الزيارة القادمة',
+            'follow_up_frequency' => 'تكرار المتابعة',
+            'follow_up_objective' => 'هدف المتابعة',
+            'diagnoses' => 'الجروح',
+            'diagnoses.*.length_mm' => 'طول الجرح',
+            'diagnoses.*.width_mm' => 'عرض الجرح',
+            'diagnoses.*.depth_mm' => 'عمق الجرح',
         ];
     }
 }

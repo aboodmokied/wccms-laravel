@@ -690,3 +690,16 @@
     padding: 0.6rem 0.5rem;
   }
 }
+
+.structured-review-page .wound-followup-card {
+  border-inline-start: 0.3rem solid var(--m8-primary, #3e97ff) !important;
+}
+
+.latest-assessment {
+  background: color-mix(in srgb, var(--m8-primary, #3e97ff) 5%, white) !important;
+}
+
+@media (max-width: 767.98px) {
+  .structured-review-page .card-body { padding: 1rem; }
+  .structured-review-page .wound-assessment-fields .col-4 { width: 100%; }
+}

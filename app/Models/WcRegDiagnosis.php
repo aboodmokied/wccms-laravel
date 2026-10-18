@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\HasDbFirstAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class WcRegDiagnosis extends Model
 {
@@ -62,6 +64,23 @@ class WcRegDiagnosis extends Model
     public function woundPhotos()
     {
         return $this->hasMany(WcWoundPhoto::class, 'WC_PHOTO_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE');
+    }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(WcWoundAssessment::class, 'WC_WA_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE');
+    }
+
+    public function initialAssessment(): HasOne
+    {
+        return $this->hasOne(WcWoundAssessment::class, 'WC_WA_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE')
+            ->where('WC_WA_TYPE', 'INITIAL');
+    }
+
+    public function latestAssessment(): HasOne
+    {
+        return $this->hasOne(WcWoundAssessment::class, 'WC_WA_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE')
+            ->latestOfMany('WC_WA_ASSESSED_AT');
     }
 
     public function getLatestDetailAttribute(): ?WcDailyReviewDetail

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
 use App\Models\User;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
 use App\Models\WcDressing;
@@ -12,6 +13,7 @@ use App\Models\WcMedication;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
+use Database\Seeders\WcAssessmentChoiceSeeder;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -42,6 +44,7 @@ class WoundDiagnosisCreationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(WcAssessmentChoiceSeeder::class);
 
         $this->nurseUser = User::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -126,12 +129,17 @@ class WoundDiagnosisCreationTest extends TestCase
     public function test_can_add_wound_diagnosis_with_dual_audit_tracking(): void
     {
         $response = $this->call('POST', "/registrations/{$this->registration->WC_REG_CODE}/diagnoses", [
-            'wound_type_code' => $this->woundType->WC_WTYPE_CODE,
-            'diagnosis_code' => $this->diagnosis->WC_DIAG_CODE,
-            'dressing_code' => $this->dressing->WC_DRESS_CODE,
-            'medication_code' => $this->medication->WC_MED_CODE,
             'clinical_nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+            'assessment' => [
+                ...$this->structuredBaseline(),
+                'wound_type_code' => $this->woundType->WC_WTYPE_CODE,
+                'diagnosis_code' => $this->diagnosis->WC_DIAG_CODE,
+                'dressing_code' => $this->dressing->WC_DRESS_CODE,
+                'medication_code' => $this->medication->WC_MED_CODE,
+            ],
         ], ['hospital_token' => $this->jwtToken]);
+
+        $response->assertSessionHasNoErrors();
 
         $response->assertRedirect();
 
@@ -142,5 +150,36 @@ class WoundDiagnosisCreationTest extends TestCase
             'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
             'WC_RDIAG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function structuredBaseline(): array
+    {
+        return [
+            'wound_status_choice_code' => $this->choice('WOUND_STATUS', 'FIRST_VISIT'),
+            'wound_bed_choice_codes' => [$this->choice('WOUND_BED', 'GRANULATION')],
+            'wound_margin_choice_codes' => [$this->choice('WOUND_MARGIN', 'NONE_OBSERVED')],
+            'exudate_amount_choice_code' => $this->choice('EXUDATE_AMOUNT', 'DRY'),
+            'exudate_type_choice_code' => null,
+            'odor_choice_code' => $this->choice('ODOR', 'NONE'),
+            'pain_severity_choice_code' => $this->choice('PAIN_SEVERITY', 'NONE'),
+            'pain_at_dressing' => false,
+            'fever_choice_code' => $this->choice('FEVER', 'NONE'),
+            'length_mm' => 20.25,
+            'width_mm' => 10,
+            'depth_mm' => 0,
+            'location_choice_code' => $this->choice('LOCATION', 'FOOT'),
+            'laterality_choice_code' => $this->choice('LATERALITY', 'LEFT'),
+            'swab_taken' => false,
+            'nutrition_choice_code' => $this->choice('NUTRITION', 'WELL_NOURISHED'),
+        ];
+    }
+
+    private function choice(string $category, string $key): string
+    {
+        return WcAssessmentChoice::query()
+            ->where('WC_ACH_CATEGORY', $category)
+            ->where('WC_ACH_KEY', $key)
+            ->valueOrFail('WC_ACH_CODE');
     }
 }

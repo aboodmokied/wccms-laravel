@@ -34,4 +34,9 @@
             <i class="bi bi-scissors me-1"></i>الإجراءات السريرية
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('admin.assessment_choices.*') ? 'active fw-bold' : 'text-dark' }}" href="{{ route('admin.assessment_choices.index') }}">
+            <i class="bi bi-ui-checks-grid me-1"></i>خيارات التقييم
+        </a>
+    </li>
 </ul>

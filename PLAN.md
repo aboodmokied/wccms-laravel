@@ -135,7 +135,7 @@ VISIT_IN_PROGRESS
 ---
 
 ## Phase 5A — Longitudinal Patient Medical Record
-**Status: planned — ready to become a dedicated Spec Kit spec.**
+**Status: implemented through Spec 011 (`specs/011-longitudinal-patient-record`).**
 
 ### Problem
 
@@ -174,6 +174,154 @@ Provide one longitudinal patient medical record that displays the patient's curr
 ### Spec Kit Starting Point
 
 Create a dedicated feature spec for the longitudinal patient record. The spec should define the patient-page information architecture, registration grouping and expansion behavior, query/loading strategy, authorization rules, and feature-test scenarios before implementation begins.
+
+---
+
+## Phase 5B — Structured Wound Assessment & Hospital Form Parity
+**Status: hospital-form discovery captured — ready for a dedicated Spec Kit spec and clinical clarification.**
+
+### Source Documents Reviewed
+
+This phase is based on the hospital forms supplied on 2026-10-10:
+
+- `First Visit.xlsx` — initial wound assessment form, including its `Wound Assessment Form` and `DAILY FOLLOW UP` worksheets.
+- `wound care daily follow up.docx` — the hospital's repeated daily wound follow-up grid.
+
+The forms establish an important clinical rule: **each wound-assessment sheet represents one diagnosis/wound**. A patient registration can contain multiple diagnoses, so patient and visit data must be recorded once while the structured assessment is repeated independently for every `WC_REG_DIAGNOSIS_TB` record.
+
+### Problem
+
+The system already supports multiple diagnoses per registration and one review-detail row per diagnosis. However, its current structured fields cover mainly wound type, diagnosis, free-text observation, dressing, medication, outcome, follow-up flag, and photos. The hospital forms contain additional clinical findings that currently can only be omitted or buried in free text, which prevents reliable comparison, validation, and reporting.
+
+### Goal
+
+Capture every clinically meaningful field from the hospital's initial and follow-up forms as structured, diagnosis-specific data, while preserving one shared visit header and reusing the same assessment workflow for daily and scheduled reviews.
+
+### Required Clinical Dataset
+
+#### Shared patient and encounter context — recorded once
+
+- Patient name, identifier, date of birth, and gender from the patient record.
+- Ward/department and encounter date/time.
+- Primary diagnosis label and the list of registration diagnoses/wounds.
+- Ward nurse, Wound Care Team clinician, doctor where applicable, and authenticated data-entry user.
+- Allergies and relevant past medical history.
+- Electronic attestation timestamp and clinical employee identity.
+
+#### Initial assessment — repeated for every diagnosis/wound
+
+- Wound type: pressure, surgical, puncture, crush, plus managed master-data values.
+- Exudate amount: dry/none, low, medium, high.
+- Exudate type: watery, cloudy, purulent, clear.
+- Odor: none, slight, moderate, offensive.
+- Pain assessment and whether pain occurs during dressing changes.
+- Fever: none, low-grade, high.
+- Wound-bed findings: granulation, necrotic tissue, slough, epithelialization, and other approved findings.
+- Wound-margin findings: erythema, edema, delayed healing, pocketing, and other approved findings.
+- Size in millimetres: length, width, and depth, stored as numeric values rather than combined text.
+- Anatomical location: head, abdomen, back, legs, buttocks, feet, hand, forearm, plus clinically approved values and laterality when needed.
+- Whether a swab was taken.
+- Nutrition status: well nourished or malnourished.
+- Baseline status: first visit, deteriorating, static, or improving.
+- Relevant comorbidities: none, vascular disease, diabetes, hypertension, plus approved values.
+- Treatment, initial dressing, medication, and baseline photos.
+- Follow-up plan, next-visit date/frequency, and main objective for the next visit.
+
+#### Daily and scheduled follow-up — repeated for every assessed diagnosis/wound
+
+- Assessment date and time.
+- Wound status: deteriorating, static, or improving.
+- Wound-bed findings: granulation, necrotic tissue, slough, pocketing, and approved additional findings.
+- Exudate amount and type.
+- Odor.
+- Pain level and pain during dressing changes.
+- Dressing/procedure used: gauze, foam, antimicrobial, debridement with dressing, another documented option, or a managed master-data value.
+- Medication, wound description, change since the prior assessment, outcome, follow-up requirement, and review photos.
+- Clinical employee and data-entry user.
+
+A fulfilled scheduled appointment must create the same daily-review header and diagnosis-specific assessment details, linked through `WC_DREV_SCHEDULED_REVIEW_CD`. Scheduled reviews must not introduce a second competing clinical-assessment schema.
+
+### Data-Model Direction
+
+- Keep `WC_REG_DIAGNOSIS_TB` as the stable identity of a wound/diagnosis across one registration.
+- Keep `WC_DAILY_REVIEW_TB` as the visit header and `WC_REVIEW_DETAIL_TB` as the link between a visit and each assessed diagnosis.
+- Add a reusable structured assessment entity, provisionally `WC_WOUND_ASSESSMENT_TB`, linked to:
+  - `WC_RDIAG_CODE` for the owning diagnosis/wound.
+  - Nullable `WC_REVD_CODE` for a follow-up assessment; null identifies the baseline/initial assessment.
+  - Assessment context and timestamp, clinical employee, and data-entry user.
+- Store scalar findings as typed columns with portable string codes and CHECK constraints: status, exudate amount/type, odor, pain level, pain-at-dressing-change flag, fever, dimensions, swab flag, nutrition status, treatment, and follow-up objective.
+- Add a normalized multi-value finding structure, provisionally `WC_WOUND_ASSESSMENT_FINDING_TB`, for categories where more than one finding may be present, such as wound bed, wound margin, location, and clinically wound-specific findings. Do not serialize the core clinical dataset into opaque free text or database-specific JSON.
+- Model registration-level comorbidities/allergies once and reference them from each wound assessment view rather than duplicating the same patient fact for every diagnosis.
+- Use managed master data for wound types, dressings, locations, tissue findings, and other extensible clinical options when the values must be administratively configurable.
+- Add new forward migrations; preserve current records and keep new structured fields nullable for legacy reviews until a deliberate backfill is defined.
+- Enforce database-level ownership constraints so an assessment, review detail, photo, and diagnosis always belong to the same registration.
+- Preserve the existing actor/data-entry separation on every new clinical record.
+
+### Form and Workflow Changes
+
+#### Initial registration
+
+- Render patient and encounter context once at the top.
+- Use a diagnosis repeater where each diagnosis card contains the complete initial hospital assessment dataset and its own baseline photos.
+- Allow multiple diagnosis cards before acceptance and validate each card independently.
+- Make treatment and follow-up planning visible within the owning diagnosis, while creating/linking a scheduled appointment when a next-visit date is entered.
+
+#### Daily review
+
+- Create one visit header, then render one assessment panel for each diagnosis selected for that visit.
+- Show the latest assessment beside the new entry for clinical comparison.
+- Save structured findings, dressing/medication, narrative changes, and photos under the correct review detail.
+- Require an explicit “not assessed” reason if an active diagnosis is intentionally skipped, subject to clinical confirmation.
+
+#### Scheduled review
+
+- Reuse the daily-review form partial and validation contract.
+- Lock the registration and appointment ownership from the selected scheduled review.
+- Store the resulting clinical data in the same review/detail/assessment tables, then complete the appointment atomically.
+
+#### Longitudinal record
+
+- Display the structured findings per diagnosis at baseline and on every later review.
+- Present dimensions and key findings as comparable values over time without mixing diagnoses or registrations.
+- Continue placing baseline photos under the diagnosis and follow-up photos under their owning review.
+
+### Compatibility and Migration
+
+- Existing `WC_RDIAG_DESCRIPTION`, `WC_DREVD_WOUND_DESCRIPTION`, and `WC_DREVD_WOUND_CHANGES` remain available for narrative clinical context.
+- Existing outcome, dressing, medication, appointment, photo, and audit data must continue to render.
+- Do not infer structured findings from old free text automatically. Historical values remain “not recorded” unless a reviewed backfill mapping exists.
+- Seed the report vocabulary with stable English codes and Arabic display labels while keeping it compatible with the later Oracle port.
+- Add a source-to-schema mapping artifact during the Spec Kit planning phase so every hospital-form field has exactly one owner, type, allowed-value set, and UI location.
+
+### Acceptance Scenarios
+
+1. A registration containing three diagnoses stores three independent initial assessments while patient and encounter context is stored once.
+2. Editing or reviewing one diagnosis never changes the findings, dimensions, photos, or treatment of another diagnosis.
+3. A daily visit stores one header and a separate structured assessment for every assessed diagnosis.
+4. Completing a scheduled appointment uses the same assessment fields and tables as a daily review and retains its appointment link.
+5. Exudate, odor, pain, wound-bed findings, wound-margin findings, dimensions, location, swab, nutrition, treatment, and follow-up plan can be represented without relying only on narrative text.
+6. Multiple simultaneous wound-bed or wound-margin findings can be retained when clinically valid.
+7. The longitudinal record compares baseline and follow-up values for the same diagnosis only.
+8. Existing registrations and reviews created before this phase remain readable and show missing structured fields as “not recorded.”
+9. Clinical employee and data-entry user remain separately attributable for initial, daily, and scheduled assessments.
+10. Database constraints reject a review assessment or photo attached to a diagnosis from another registration.
+
+### Clinical Clarifications Required Before `/speckit-plan`
+
+1. Confirm whether wound-bed and wound-margin options are multi-select and where `Pocketing` belongs, because the two supplied forms classify it differently.
+2. Replace the paper's mixed pain choices with an approved representation: severity plus a separate “during dressing change” flag, or preserve the choices exactly.
+3. Confirm whether location is single-select or multi-select and whether side/laterality and a free-text anatomical detail are mandatory.
+4. Confirm whether allergies and comorbidities belong to the patient, hospital admission, registration, or wound assessment, and which external hospital values can be imported.
+5. Define the distinct responsibilities of `Nurse`, `WCT`, and `DR` on the initial form and how each maps to hospital employees/users.
+6. Confirm whether the authenticated clinical identity and timestamp replace the handwritten signature or whether a separate signature artifact is required.
+7. Decide whether every active diagnosis must be assessed in every visit or whether a documented “not assessed” reason is sufficient.
+8. Clarify whether `Debridement & dsg` is a procedure plus dressing rather than a dressing value, and map every paper option to the correct master-data table.
+9. Confirm millimetres as the canonical storage unit and the required numeric precision for length, width, and depth.
+10. Confirm whether exact printable replicas of the hospital forms are required or whether complete structured capture and a clinically equivalent report are sufficient.
+
+### Spec Kit Starting Point
+
+Create a dedicated feature spec from this phase. The specification must include the source-to-schema field matrix, the diagnosis-repeat workflow, unified initial/daily/scheduled assessment rules, clinical validation requirements, legacy-data behavior, authorization/audit requirements, and feature tests for multi-diagnosis isolation before implementation starts.
 
 ---
 
@@ -235,12 +383,14 @@ Create a dedicated feature spec for the longitudinal patient record. The spec sh
 
 ```
 Phase 1 (DB) → Phase 2 (UI Foundation) → Phase 3 (Auth) → Phase 4 (Requests) → Phase 5 (Registration)
-                                                                                     ↓
-                                                     Phase 6 (Daily Review) → Phase 7 (Scheduled Review)
+                                                                                     ├──→ Phase 5A (Longitudinal Record)
+                                                                                     └──→ Phase 5B (Structured Wound Assessment)
+                                                                                                      ↓
+                                                                         Phase 6 (Daily Review) → Phase 7 (Scheduled Review)
                                                                                      ↓
                                                Phase 8 (Master Data)   Phase 9 (Reports)   Phase 10 (Photos)
                                                                                      ↓
                                                       Phase 11 (Oracle Port) → Phase 12 (Hospital Integration)
 ```
 
-Phase 8, Phase 9, and Phase 10 can run in parallel with the rest of the clinical workflow once Phase 2 is done.
+Phase 5B defines the structured clinical dataset consumed by Phases 6 and 7. Phase 8, Phase 9, and Phase 10 can run in parallel with the rest of the clinical workflow once Phase 2 is done.

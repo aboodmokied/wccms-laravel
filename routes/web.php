@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AssessmentChoiceController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DiagnosisController;
 use App\Http\Controllers\Admin\DressingController;
@@ -142,5 +143,9 @@ Route::middleware(['hospital.jwt'])->group(function () {
         Route::post('/admin/procedures', [ProcedureController::class, 'store'])->name('admin.procedures.store');
         Route::put('/admin/procedures/{procedure}', [ProcedureController::class, 'update'])->name('admin.procedures.update');
         Route::patch('/admin/procedures/{procedure}/toggle', [ProcedureController::class, 'toggleActive'])->name('admin.procedures.toggle');
+
+        Route::get('/admin/assessment-choices', [AssessmentChoiceController::class, 'index'])->name('admin.assessment_choices.index');
+        Route::put('/admin/assessment-choices/{assessmentChoice}', [AssessmentChoiceController::class, 'update'])->name('admin.assessment_choices.update');
+        Route::patch('/admin/assessment-choices/{assessmentChoice}/toggle', [AssessmentChoiceController::class, 'toggle'])->name('admin.assessment_choices.toggle');
     });
 });

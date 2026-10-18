@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Models\Concerns\HasDbFirstAttributes;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WcRegistration extends Model
 {
@@ -27,6 +29,12 @@ class WcRegistration extends Model
         'WC_REG_DEPARTMENT_CD',
         'WC_REG_PROCEDURE_CD',
         'WC_REG_PMH_NOTES',
+        'WC_REG_HAS_ALLERGIES',
+        'WC_REG_ALLERGIES_DESCRIPTION',
+        'WC_REG_NO_COMORBIDITIES',
+        'WC_REG_NEXT_VISIT_DATE',
+        'WC_REG_FOLLOW_UP_FREQUENCY',
+        'WC_REG_FOLLOW_UP_OBJECTIVE',
         'WC_REG_DATE',
         'WC_REG_NURSE_CD',
         'WC_REG_ENTRY_USER_CD',
@@ -34,6 +42,35 @@ class WcRegistration extends Model
         'WC_REG_DISCHARGED_AT',
         'WC_REG_DISCHARGED_BY_EMP_CD',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'WC_REG_DATE' => 'datetime',
+            'WC_REG_HAS_ALLERGIES' => 'boolean',
+            'WC_REG_NO_COMORBIDITIES' => 'boolean',
+            'WC_REG_NEXT_VISIT_DATE' => 'datetime',
+            'WC_REG_DISCHARGE_DATE' => 'date',
+            'WC_REG_DISCHARGED_AT' => 'datetime',
+        ];
+    }
+
+    public function pmhLinks(): HasMany
+    {
+        return $this->hasMany(WcRegistrationPmh::class, 'WC_RPMH_REGISTRATION_CD', 'WC_REG_CODE');
+    }
+
+    public function pmhConditions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            WcPmh::class,
+            'wc_registration_pmh_tb',
+            'WC_RPMH_REGISTRATION_CD',
+            'WC_RPMH_PMH_CD',
+            'WC_REG_CODE',
+            'WC_PMH_CODE'
+        );
+    }
 
     public function request()
     {

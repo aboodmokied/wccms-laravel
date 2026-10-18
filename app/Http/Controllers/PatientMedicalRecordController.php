@@ -61,6 +61,22 @@ class PatientMedicalRecordController extends Controller
                             'diagnoses.diagnosis',
                             'diagnoses.clinicalEmployee',
                             'diagnoses.entryUser',
+                            'diagnoses.assessments' => fn (HasMany $assessments) => $assessments->orderBy('WC_WA_ASSESSED_AT'),
+                            'diagnoses.assessments.findings.choice',
+                            'diagnoses.assessments.woundStatus',
+                            'diagnoses.assessments.exudateAmount',
+                            'diagnoses.assessments.exudateType',
+                            'diagnoses.assessments.odor',
+                            'diagnoses.assessments.painSeverity',
+                            'diagnoses.assessments.dressing',
+                            'diagnoses.assessments.medication',
+                            'diagnoses.assessments.procedure',
+                            'diagnoses.assessments.clinicalEmployee',
+                            'diagnoses.assessments.woundCareTeamEmployee',
+                            'diagnoses.assessments.doctorEmployee',
+                            'diagnoses.assessments.entryUser',
+                            'diagnoses.assessments.woundPhotos',
+                            'diagnoses.assessments.reviewDetail',
                             'diagnoses.woundPhotos' => function (HasMany $photos): void {
                                 $photos
                                     ->where('WC_PHOTO_STAGE', 'INITIAL')
@@ -85,6 +101,19 @@ class PatientMedicalRecordController extends Controller
                             'dailyReviews.details.regDiagnosis.diagnosis',
                             'dailyReviews.details.dressing',
                             'dailyReviews.details.medication',
+                            'dailyReviews.details.assessment.findings.choice',
+                            'dailyReviews.details.assessment.woundStatus',
+                            'dailyReviews.details.assessment.exudateAmount',
+                            'dailyReviews.details.assessment.exudateType',
+                            'dailyReviews.details.assessment.odor',
+                            'dailyReviews.details.assessment.painSeverity',
+                            'dailyReviews.details.assessment.dressing',
+                            'dailyReviews.details.assessment.medication',
+                            'dailyReviews.details.assessment.procedure',
+                            'dailyReviews.details.assessment.clinicalEmployee',
+                            'dailyReviews.details.assessment.entryUser',
+                            'dailyReviews.details.assessment.woundPhotos',
+                            'dailyReviews.details.assessment.reviewDetail',
                             'dailyReviews.details.woundPhotos' => function (HasMany $photos): void {
                                 $photos
                                     ->where('WC_PHOTO_STAGE', 'REVIEW')

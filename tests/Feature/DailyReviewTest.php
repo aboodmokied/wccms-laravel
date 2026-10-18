@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MrPatient;
 use App\Models\PerEmployee;
 use App\Models\User;
+use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
 use App\Models\WcDressing;
@@ -13,6 +14,7 @@ use App\Models\WcRegDiagnosis;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
+use Database\Seeders\WcAssessmentChoiceSeeder;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -41,6 +43,7 @@ class DailyReviewTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(WcAssessmentChoiceSeeder::class);
 
         $this->nurseUser = User::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -169,15 +172,17 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'ملاحظة اختبارية',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'dressing_code' => $this->dressing->WC_DRESS_CODE,
                         'medication_code' => $this->medication->WC_MED_CODE,
-                        'observation' => 'تكون أنسجة حبيبانية',
+                        'clinical_observation' => 'تكون أنسجة حبيبانية',
                         'outcome_status' => 'IMPROVED_FOLLOWUP',
                     ],
                 ],
@@ -221,11 +226,13 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'IMPROVED_DISCHARGE',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'outcome_status' => 'IMPROVED_DISCHARGE',
                     ],
                 ],
@@ -243,7 +250,7 @@ class DailyReviewTest extends TestCase
     }
 
     /**
-     * US3: IMPROVED_SCHEDULED discharges and creates a pending scheduled review appointment.
+     * US3: IMPROVED_SCHEDULED keeps the registration active and creates a pending appointment.
      */
     public function test_improved_scheduled_creates_pending_scheduled_review(): void
     {
@@ -253,12 +260,15 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'IMPROVED_SCHEDULED',
-                'scheduled_date' => $scheduledDate,
+                'next_visit_date' => $scheduledDate,
+                'follow_up_objective' => 'موعد متابعة',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'outcome_status' => 'IMPROVED_FOLLOWUP',
                     ],
                 ],
@@ -268,10 +278,10 @@ class DailyReviewTest extends TestCase
 
         $response->assertRedirect();
 
-        // Registration should be DISCHARGED
+        // Registration remains active while follow-up is scheduled
         $this->assertDatabaseHas('wc_registration_tb', [
             'WC_REG_CODE' => $this->registration->WC_REG_CODE,
-            'WC_REG_STATUS' => 'DISCHARGED',
+            'WC_REG_STATUS' => 'ACTIVE',
         ]);
 
         // Scheduled review should be created and PENDING
@@ -302,11 +312,13 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'outcome_status' => 'IMPROVED_FOLLOWUP',
                     ],
                 ],
@@ -352,11 +364,13 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'outcome_status' => 'IMPROVED_DISCHARGE',
                     ],
                 ],
@@ -388,11 +402,13 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'outcome_status' => 'WORSENED',
                     ],
                 ],
@@ -421,12 +437,14 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'DEATH',
                 'general_notes' => 'تسجيل حالة وفاة',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'outcome_status' => 'DECEASED',
                     ],
                 ],
@@ -436,10 +454,10 @@ class DailyReviewTest extends TestCase
 
         $response->assertRedirect();
 
-        // DEATH does not auto-discharge
+        // DEATH closes the registration.
         $this->assertDatabaseHas('wc_registration_tb', [
             'WC_REG_CODE' => $this->registration->WC_REG_CODE,
-            'WC_REG_STATUS' => 'ACTIVE',
+            'WC_REG_STATUS' => 'DISCHARGED',
         ]);
 
         // No scheduled review created
@@ -463,11 +481,13 @@ class DailyReviewTest extends TestCase
             'POST',
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
+                'submission_key' => (string) Str::uuid(),
                 'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
-                        'diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
+                        ...$this->structuredDetail(),
+                        'registration_diagnosis_code' => $this->regDiagnosis->WC_RDIAG_CODE,
                         'dressing_code' => $this->dressing->WC_DRESS_CODE,
                         'medication_code' => $this->medication->WC_MED_CODE,
                         'observation' => 'فحص ضمادة وعلاج',
@@ -492,5 +512,30 @@ class DailyReviewTest extends TestCase
             'WC_RDIAG_CODE' => $this->regDiagnosis->WC_RDIAG_CODE,
             'WC_RDIAG_DRESSING_CD' => $this->dressing->WC_DRESS_CODE,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function structuredDetail(): array
+    {
+        return [
+            'wound_status_choice_code' => $this->choice('WOUND_STATUS', 'IMPROVING'),
+            'wound_bed_choice_codes' => [$this->choice('WOUND_BED', 'GRANULATION')],
+            'wound_margin_choice_codes' => [],
+            'exudate_amount_choice_code' => $this->choice('EXUDATE_AMOUNT', 'DRY'),
+            'exudate_type_choice_code' => null,
+            'odor_choice_code' => $this->choice('ODOR', 'NONE'),
+            'pain_severity_choice_code' => $this->choice('PAIN_SEVERITY', 'NONE'),
+            'pain_at_dressing' => false,
+            'treatment_notes' => 'خطة علاج اختبارية',
+            'follow_up_required' => true,
+        ];
+    }
+
+    private function choice(string $category, string $key): string
+    {
+        return WcAssessmentChoice::query()
+            ->where('WC_ACH_CATEGORY', $category)
+            ->where('WC_ACH_KEY', $key)
+            ->valueOrFail('WC_ACH_CODE');
     }
 }

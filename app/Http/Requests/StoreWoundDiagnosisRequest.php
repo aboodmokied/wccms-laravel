@@ -2,46 +2,53 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\Concerns\ValidatesWoundAssessment;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreWoundDiagnosisRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use ValidatesWoundAssessment;
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            'wound_type_code' => ['required', 'string', 'size:36', 'exists:wc_wound_type_tb,WC_WTYPE_CODE'],
-            'diagnosis_code' => ['required', 'string', 'size:36', 'exists:wc_diagnosis_tb,WC_DIAG_CODE'],
-            'dressing_code' => ['nullable', 'string', 'size:36', 'exists:wc_dressing_tb,WC_DRESS_CODE'],
-            'medication_code' => ['nullable', 'string', 'size:36', 'exists:wc_medication_tb,WC_MED_CODE'],
-            'clinical_nurse_code' => ['required', 'string', 'size:36', 'exists:per_employee_tb,PER_EMP_CODE'],
+            'clinical_nurse_code' => ['required', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'wct_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'doctor_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'assessment' => ['required', 'array'],
+            ...$this->woundAssessmentRules('assessment', true),
         ];
     }
 
-    /**
-     * Custom Arabic validation attribute names.
-     */
+    protected function prepareForValidation(): void
+    {
+        if (is_array($this->input('assessment'))) {
+            $this->merge(['assessment_collection' => [$this->input('assessment')]]);
+        }
+    }
+
+    public function withValidator($validator): void
+    {
+        $this->configureWoundAssessmentValidator($validator, 'assessment_collection', true);
+    }
+
+    /** @return array<string, string> */
     public function attributes(): array
     {
         return [
-            'wound_type_code' => 'نوع الجرح',
-            'diagnosis_code' => 'التشخيص السريري',
-            'dressing_code' => 'الضمادة الأولية',
-            'medication_code' => 'العلاج الموضعي الأولي',
-            'clinical_nurse_code' => 'الممرض الفاحص/السريري',
+            'clinical_nurse_code' => 'الممرض السريري',
+            'assessment.wound_type_code' => 'نوع الجرح',
+            'assessment.diagnosis_code' => 'التشخيص',
+            'assessment.length_mm' => 'طول الجرح',
+            'assessment.width_mm' => 'عرض الجرح',
+            'assessment.depth_mm' => 'عمق الجرح',
         ];
     }
 }

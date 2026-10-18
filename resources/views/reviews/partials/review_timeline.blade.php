@@ -126,6 +126,8 @@
                                         </span>
                                     </div>
 
+                                    @include('wound_assessments.partials.summary', ['assessment' => $detail->assessment])
+
                                     <dl class="clinical-review-details mb-0">
                                         <div>
                                             <dt>الضمادة</dt>

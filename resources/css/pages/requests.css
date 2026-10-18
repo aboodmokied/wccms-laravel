@@ -1085,3 +1085,17 @@
   font-weight: 500;
   color: var(--m8-text-dark, #181c32);
 }
+
+.initial-assessment-page .wound-card {
+  border-inline-start: 0.3rem solid var(--m8-primary, #3e97ff) !important;
+  overflow: hidden;
+}
+
+.wound-assessment-fields .form-label {
+  color: var(--m8-text-dark, #181c32);
+}
+
+@media (max-width: 767.98px) {
+  .initial-assessment-page .card-body { padding: 1rem; }
+  .wound-assessment-fields .col-4 { width: 100%; }
+}

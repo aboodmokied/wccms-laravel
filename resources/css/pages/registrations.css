@@ -791,3 +791,14 @@
 [data-bs-theme="dark"] .clinical-review-summary:hover {
   background-color: rgba(255, 255, 255, 0.04);
 }
+
+.assessment-summary {
+  background: color-mix(in srgb, var(--m8-primary, #3e97ff) 4%, var(--m8-card-bg, #fff));
+}
+
+.assessment-summary dt { color: var(--m8-text-muted, #7e8299); }
+
+@media (max-width: 575.98px) {
+  .assessment-summary dt,
+  .assessment-summary dd { width: 100%; }
+}
