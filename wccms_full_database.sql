@@ -13,7 +13,7 @@
 -- ============================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
-SET NAMES utf8mb4;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET TIME_ZONE = '+00:00';
 
 -- ----------------------------------------------------------------------------
@@ -705,6 +705,12 @@ CREATE TABLE `wc_report_export_tb` (
 --     أي تغيير في ترتيب أعمدة هذه الجداول يتطلب تعديل الإجراءات.
 --   - عند النقل إلى Oracle تُعاد كتابتها يدوياً بـ PL/SQL (المبدأ السادس في الدستور).
 --   - DELIMITER $$ يعمل في mysql client و MySQL Workbench و phpMyAdmin.
+--   - يحفظ MySQL مع كل إجراء الـ collation والـ sql_mode الخاصين بالاتصال لحظة إنشائه. لذلك يجب إنشاؤها بنفس
+--     إعدادات اتصال Laravel (السطران التاليان). لو أُنشئت بالـ collation الافتراضي في MySQL 8 (utf8mb4_0900_ai_ci)
+--     تفشل كل العمليات بخطأ «Illegal mix of collations»، ولو أُنشئت بـ sql_mode فارغ قد تُقبل بيانات خاطئة بصمت.
+
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET SESSION sql_mode = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 DELIMITER $$
 
