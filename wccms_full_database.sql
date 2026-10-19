@@ -3,6 +3,13 @@
 -- Database: wccms
 -- Target Engine: MySQL / MariaDB (Portable DB-First Schema)
 -- Generated Date: 2026-10-05 10:23:38
+-- Synced with the system schema: 2026-10-19
+--
+-- حالة الجداول (السطر «الحالة» تحت عنوان كل جدول):
+--   [خارجي — من نظام المستشفى]  جدول يملكه نظام المستشفى؛ نظامنا يتصل به ويقرأه ولا ينشئه.
+--   [جدول النظام]                جدول من جداول العيادة يُبنى في قاعدة نظامنا.
+--   [جدول النظام — جديد، غير موجود في القاعدة الحالية]
+--                                جدول من جداول العيادة أُضيف إلى هذا الملف ولم يُبنَ بعد في القاعدة.
 -- ============================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -11,6 +18,7 @@ SET TIME_ZONE = '+00:00';
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `per_users_tb`
+-- الحالة: [خارجي — من نظام المستشفى] نظامنا يقرأ هذا الجدول ولا ينشئه؛ تعريفه هنا مرجع لمطابقة البنية فقط، والبيانات أدناه للتطوير والاختبار.
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `per_users_tb`;
 CREATE TABLE `per_users_tb` (
@@ -33,6 +41,7 @@ INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USE
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `per_employee_tb`
+-- الحالة: [خارجي — من نظام المستشفى] نظامنا يقرأ هذا الجدول ولا ينشئه؛ تعريفه هنا مرجع لمطابقة البنية فقط، والبيانات أدناه للتطوير والاختبار.
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `per_employee_tb`;
 CREATE TABLE `per_employee_tb` (
@@ -54,6 +63,7 @@ INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `mr_patient_tb`
+-- الحالة: [خارجي — من نظام المستشفى] نظامنا يقرأ هذا الجدول ولا ينشئه؛ تعريفه هنا مرجع لمطابقة البنية فقط، والبيانات أدناه للتطوير والاختبار.
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `mr_patient_tb`;
 CREATE TABLE `mr_patient_tb` (
@@ -83,6 +93,7 @@ INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PAT
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_department_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_department_tb`;
 CREATE TABLE `wc_department_tb` (
@@ -102,6 +113,7 @@ INSERT INTO `wc_department_tb` (`WC_DEPT_CODE`, `WC_DEPT_NAME`, `WC_DEPT_IS_ACTI
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_pmh_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_pmh_tb`;
 CREATE TABLE `wc_pmh_tb` (
@@ -120,6 +132,7 @@ INSERT INTO `wc_pmh_tb` (`WC_PMH_CODE`, `WC_PMH_NAME`, `WC_PMH_IS_ACTIVE`) VALUE
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_diagnosis_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_diagnosis_tb`;
 CREATE TABLE `wc_diagnosis_tb` (
@@ -139,6 +152,7 @@ INSERT INTO `wc_diagnosis_tb` (`WC_DIAG_CODE`, `WC_DIAG_NAME`, `WC_DIAG_IS_ACTIV
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_wound_type_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_wound_type_tb`;
 CREATE TABLE `wc_wound_type_tb` (
@@ -158,6 +172,7 @@ INSERT INTO `wc_wound_type_tb` (`WC_WTYPE_CODE`, `WC_WTYPE_NAME`, `WC_WTYPE_IS_A
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_dressing_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_dressing_tb`;
 CREATE TABLE `wc_dressing_tb` (
@@ -176,6 +191,7 @@ INSERT INTO `wc_dressing_tb` (`WC_DRESS_CODE`, `WC_DRESS_NAME`, `WC_DRESS_IS_ACT
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_medication_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_medication_tb`;
 CREATE TABLE `wc_medication_tb` (
@@ -194,6 +210,7 @@ INSERT INTO `wc_medication_tb` (`WC_MED_CODE`, `WC_MED_NAME`, `WC_MED_IS_ACTIVE`
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_procedure_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_procedure_tb`;
 CREATE TABLE `wc_procedure_tb` (
@@ -212,6 +229,7 @@ INSERT INTO `wc_procedure_tb` (`WC_PROC_CODE`, `WC_PROC_NAME`, `WC_PROC_IS_ACTIV
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_request_reg_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_request_reg_tb`;
 CREATE TABLE `wc_request_reg_tb` (
@@ -250,6 +268,7 @@ INSERT INTO `wc_request_reg_tb` (`WC_REQ_CODE`, `WC_REQ_PATIENT_CD`, `WC_REQ_PAT
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_registration_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_registration_tb`;
 CREATE TABLE `wc_registration_tb` (
@@ -304,6 +323,7 @@ INSERT INTO `wc_registration_tb` (`WC_REG_CODE`, `WC_REG_REQUEST_CD`, `WC_REG_PA
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_reg_diagnosis_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_reg_diagnosis_tb`;
 CREATE TABLE `wc_reg_diagnosis_tb` (
@@ -336,6 +356,7 @@ INSERT INTO `wc_reg_diagnosis_tb` (`WC_RDIAG_CODE`, `WC_RDIAG_REGISTRATION_CD`, 
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_scheduled_review_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_scheduled_review_tb`;
 CREATE TABLE `wc_scheduled_review_tb` (
@@ -364,6 +385,7 @@ INSERT INTO `wc_scheduled_review_tb` (`WC_SREV_CODE`, `WC_SREV_REGISTRATION_CD`,
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_daily_review_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_daily_review_tb`;
 CREATE TABLE `wc_daily_review_tb` (
@@ -399,6 +421,7 @@ INSERT INTO `wc_daily_review_tb` (`WC_DREV_CODE`, `WC_DREV_REGISTRATION_CD`, `WC
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_review_detail_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_review_detail_tb`;
 CREATE TABLE `wc_review_detail_tb` (
@@ -434,6 +457,7 @@ INSERT INTO `wc_review_detail_tb` (`WC_REVD_CODE`, `WC_REVD_REVIEW_CD`, `WC_REVD
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_wound_photo_tb`
+-- الحالة: [جدول النظام]
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `wc_wound_photo_tb`;
 CREATE TABLE `wc_wound_photo_tb` (
@@ -457,12 +481,209 @@ CREATE TABLE `wc_wound_photo_tb` (
   CONSTRAINT `wc_wound_photo_tb_wc_photo_daily_review_detail_cd_foreign` FOREIGN KEY (`WC_PHOTO_DAILY_REVIEW_DETAIL_CD`) REFERENCES `wc_review_detail_tb` (`WC_REVD_CODE`) ON DELETE SET NULL,
   CONSTRAINT `wc_wound_photo_tb_wc_photo_entry_user_cd_foreign` FOREIGN KEY (`WC_PHOTO_ENTRY_USER_CD`) REFERENCES `per_users_tb` (`PER_USER_CODE`),
   CONSTRAINT `wc_wound_photo_tb_wc_photo_nurse_cd_foreign` FOREIGN KEY (`WC_PHOTO_NURSE_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`),
+  CONSTRAINT `wc_wound_photo_tb_wc_photo_assessment_cd_foreign` FOREIGN KEY (`WC_PHOTO_ASSESSMENT_CD`) REFERENCES `wc_wound_assessment_tb` (`WC_WA_CODE`) ON DELETE SET NULL,
   CONSTRAINT `wc_wound_photo_tb_wc_photo_reg_diagnosis_cd_foreign` FOREIGN KEY (`WC_PHOTO_REG_DIAGNOSIS_CD`) REFERENCES `wc_reg_diagnosis_tb` (`WC_RDIAG_CODE`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول التوثيق البصري وصور الجروح السريرية عند القبول وأثناء المراجعات الدوريّة';
 
 -- Data for `wc_wound_photo_tb`
 INSERT INTO `wc_wound_photo_tb` (`WC_PHOTO_CODE`, `WC_PHOTO_REG_DIAGNOSIS_CD`, `WC_PHOTO_DAILY_REVIEW_DETAIL_CD`, `WC_PHOTO_STAGE`, `WC_PHOTO_PATH`, `WC_PHOTO_CAPTION`, `WC_PHOTO_TAKEN_AT`, `WC_PHOTO_NURSE_CD`, `WC_PHOTO_ENTRY_USER_CD`) VALUES ('a1b4acf4-712d-4b05-8acd-e45964d8ccc6', '9ae42471-4842-4101-8404-5ace607b00a6', NULL, 'INITIAL', 'wound_photos/2026/10/demo_initial.jpg', 'صورة خط الأساس الأولية عند القبول', '2026-10-02 10:23:13', 'a817e223-7e7c-461c-90db-93742a8fd86d', '2759d629-76e6-4c59-bfd2-3a4aeadc2c54');
 INSERT INTO `wc_wound_photo_tb` (`WC_PHOTO_CODE`, `WC_PHOTO_REG_DIAGNOSIS_CD`, `WC_PHOTO_DAILY_REVIEW_DETAIL_CD`, `WC_PHOTO_STAGE`, `WC_PHOTO_PATH`, `WC_PHOTO_CAPTION`, `WC_PHOTO_TAKEN_AT`, `WC_PHOTO_NURSE_CD`, `WC_PHOTO_ENTRY_USER_CD`) VALUES ('ba84bdac-18af-4455-a3c8-764d8f946b01', '9ae42471-4842-4101-8404-5ace607b00a6', 'c2d18a5a-e90f-4e50-96a0-dde296e153a4', 'REVIEW', 'wound_photos/2026/10/demo_review.jpg', 'صورة متابعة بعد 3 أيام من التضميد', '2026-10-05 10:23:13', 'a817e223-7e7c-461c-90db-93742a8fd86d', '2759d629-76e6-4c59-bfd2-3a4aeadc2c54');
+
+-- ----------------------------------------------------------------------------
+-- Table Structure for `wc_assessment_choice_tb`
+-- الحالة: [جدول النظام — جديد، غير موجود في القاعدة الحالية]
+-- ----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `wc_assessment_choice_tb`;
+CREATE TABLE `wc_assessment_choice_tb` (
+  `WC_ACH_CODE` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المعرّف الفريد لخيار التقييم (UUID) - المفتاح الأساسي',
+  `WC_ACH_CATEGORY` varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'فئة الخيار الثابتة (WOUND_STATUS / WOUND_BED / WOUND_MARGIN / EXUDATE_AMOUNT / ...)',
+  `WC_ACH_KEY` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المفتاح الثابت للخيار داخل فئته؛ لا يتغير حفاظاً على السجل التاريخي',
+  `WC_ACH_LABEL_AR` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'التسمية العربية للخيار (محفوظة، والمعروض هو الاسم الإنجليزي)',
+  `WC_ACH_LABEL_EN` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'الاسم الإنجليزي المعروض للخيار (المصطلحات الطبية تُعرض بالإنجليزية)',
+  `WC_ACH_IS_ACTIVE` smallint NOT NULL DEFAULT '1' COMMENT 'حالة الخيار: 1 = فعّال، 0 = معطّل (يبقى مقروءاً في السجلات القديمة)',
+  `WC_ACH_DISPLAY_ORDER` int NOT NULL DEFAULT '0' COMMENT 'ترتيب عرض الخيار داخل فئته',
+  PRIMARY KEY (`WC_ACH_CODE`),
+  UNIQUE KEY `wc_ach_category_key_unique` (`WC_ACH_CATEGORY`,`WC_ACH_KEY`),
+  KEY `wc_ach_category_active_order_index` (`WC_ACH_CATEGORY`,`WC_ACH_IS_ACTIVE`,`WC_ACH_DISPLAY_ORDER`),
+  CONSTRAINT `wc_ach_active_check` CHECK ((`WC_ACH_IS_ACTIVE` in (0,1)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='خيارات التقييم المنظم للجروح (قاع الجرح، الحواف، الإفرازات، الألم، الموقع...)';
+
+-- Data for `wc_assessment_choice_tb`
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('74636a0f-6c4c-5f00-8283-5f73565e1189', 'WOUND_STATUS', 'FIRST_VISIT', 'الزيارة الأولى', 'First Visit', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('d8475fb6-eae6-5c57-a708-ff4dda9a6641', 'WOUND_STATUS', 'DETERIORATING', 'متدهور', 'Deteriorating', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('75ffdf3c-10a9-58f8-b1f2-375b9693278b', 'WOUND_STATUS', 'STATIC', 'ثابت', 'Static', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('fc988323-62c7-5e16-8938-e377a2db8399', 'WOUND_STATUS', 'IMPROVING', 'يتحسن', 'Improving', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('2d4da355-77d1-53cb-aa6b-2e803fb4f38b', 'WOUND_BED', 'GRANULATION', 'نسيج حبيبي', 'Granulation', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('fd72be76-4949-586c-be90-df16d8f4feb8', 'WOUND_BED', 'NECROTIC', 'نسيج نخري', 'Necrotic', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('8ac13d45-0745-5c9a-86bb-689e9f814bef', 'WOUND_BED', 'SLOUGHING', 'نسيج رخو متموت', 'Sloughing', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('671acde1-5c40-5e7d-87d2-007d751b59c8', 'WOUND_BED', 'EPITHELIALIZING', 'تكوّن ظهارة', 'Epithelializing', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('6545d402-17e8-5a8e-ae5b-a2a47712f3fd', 'WOUND_MARGIN', 'NONE_OBSERVED', 'لا توجد علامة مسجلة', 'None Observed', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('3a63bc4d-5566-5758-90bb-b7eac470839d', 'WOUND_MARGIN', 'ERYTHEMA', 'احمرار', 'Erythema', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('63777fca-5f85-5e4f-a262-0a8238058ec7', 'WOUND_MARGIN', 'EDEMA', 'وذمة', 'Edema', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('b0e19189-d70b-5503-9930-7547f0adb7fe', 'WOUND_MARGIN', 'DELAYED_HEALING', 'تأخر الالتئام', 'Delayed Healing', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('49f3a7f0-7793-5cad-9408-35cabf2b97ae', 'WOUND_MARGIN', 'POCKETING', 'جيوب', 'Pocketing', '1', '5');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('eb9f2b1e-695d-570d-a531-a61b1e10c11e', 'EXUDATE_AMOUNT', 'DRY', 'جاف', 'Dry', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('19f895da-643d-5ae9-9de3-8cc9a163822f', 'EXUDATE_AMOUNT', 'LOW', 'قليل', 'Low', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('76ac6747-9888-5728-a2db-63874c72aa31', 'EXUDATE_AMOUNT', 'MEDIUM', 'متوسط', 'Moderate', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('72164366-2474-5c14-86a4-de6b277f1c7b', 'EXUDATE_AMOUNT', 'HIGH', 'غزير', 'High', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('edaf969b-f319-5c89-93c3-d8e837621a94', 'EXUDATE_TYPE', 'WATERY', 'مائي', 'Watery', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('6d8a2470-bc35-5b86-9776-b488eba9af62', 'EXUDATE_TYPE', 'CLOUDY', 'عكر', 'Cloudy', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('e967154e-4bbd-52cf-8157-85a42a540022', 'EXUDATE_TYPE', 'PURULENT', 'صديدي', 'Purulent', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('d0be4b00-9abf-59a6-94a3-942aed07bd15', 'EXUDATE_TYPE', 'CLEAR', 'صافي', 'Clear', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('7796d504-faa8-5d33-a36c-34fe35a40bb8', 'ODOR', 'NONE', 'لا توجد رائحة', 'None', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('302d9143-1cee-5181-8cf3-f12c03a06d15', 'ODOR', 'SLIGHT', 'خفيفة', 'Slight', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('9bf9dcd9-f3b9-5ced-b9dd-3ff33a71c24c', 'ODOR', 'MODERATE', 'متوسطة', 'Moderate', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('7258dbf1-28d9-5e0c-860b-780852dbf893', 'ODOR', 'OFFENSIVE', 'كريهة', 'Offensive', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('e51134bd-d344-5e78-a9e2-80cee7d83f33', 'PAIN_SEVERITY', 'NONE', 'لا يوجد ألم', 'None', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('a0df59cf-f123-5ed0-8334-a01b6daa1c4a', 'PAIN_SEVERITY', 'MODERATE', 'متوسط', 'Moderate', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('d6a4b0ac-11f0-52ae-afa0-9455532aaa81', 'PAIN_SEVERITY', 'SEVERE', 'شديد', 'Severe', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('71a8b48d-7648-54e4-a8c0-fd699749fa22', 'FEVER', 'NONE', 'لا توجد حرارة', 'None', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('457159fa-50d3-5b92-bd77-306ed8a1c4cb', 'FEVER', 'LOW', 'حرارة بسيطة', 'Low-grade', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('03a25574-42b1-5ada-8800-7719aa38ac32', 'FEVER', 'HIGH', 'حرارة مرتفعة', 'High', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('07b2f891-1e5e-55a9-84e3-a109ad770324', 'NUTRITION', 'WELL_NOURISHED', 'جيد التغذية', 'Well Nourished', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('9dc115fd-efb9-5ce5-8d27-8ed276a40453', 'NUTRITION', 'MALNOURISHED', 'سوء تغذية', 'Malnourished', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('0920b847-5300-5563-98b4-e57f36e340fd', 'LOCATION', 'HEAD', 'الرأس', 'Head', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('e7838ae8-913e-5356-8f8b-9a687a04f86a', 'LOCATION', 'ABDOMEN', 'البطن', 'Abdomen', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('b9f67614-35f4-59b4-90ba-0ada1bde0aa1', 'LOCATION', 'BACK', 'الظهر', 'Back', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('260188a7-0083-5756-bcbb-f43613d5d3ea', 'LOCATION', 'LEG', 'الساق', 'Leg', '1', '4');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('5129c0d4-2079-5d2a-9e1b-98026048a62c', 'LOCATION', 'BUTTOCKS', 'الأرداف', 'Buttocks', '1', '5');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('4f421b77-a05a-5b15-a484-b241a025d862', 'LOCATION', 'FOOT', 'القدم', 'Foot', '1', '6');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('79353c82-2b51-57db-afad-9d9cfaedcf89', 'LOCATION', 'HAND', 'اليد', 'Hand', '1', '7');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('6fb9866a-2d63-549b-a15e-90e635a0564f', 'LOCATION', 'FOREARM', 'الساعد', 'Forearm', '1', '8');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('2b1269f2-68d6-5251-872a-6584546d00d4', 'LOCATION', 'OTHER', 'أخرى', 'Other', '1', '9');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('cbec0a9e-de4d-5df2-ac16-a6209cb7e4e2', 'LATERALITY', 'NOT_APPLICABLE', 'لا ينطبق', 'Not Applicable', '1', '1');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('503d315f-ffaa-5b7e-980c-b10298d2f491', 'LATERALITY', 'LEFT', 'يسار', 'Left', '1', '2');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('80edc088-f465-5b79-ba61-0fea9ba8c587', 'LATERALITY', 'RIGHT', 'يمين', 'Right', '1', '3');
+INSERT INTO `wc_assessment_choice_tb` (`WC_ACH_CODE`, `WC_ACH_CATEGORY`, `WC_ACH_KEY`, `WC_ACH_LABEL_AR`, `WC_ACH_LABEL_EN`, `WC_ACH_IS_ACTIVE`, `WC_ACH_DISPLAY_ORDER`) VALUES ('6ba07a68-10cb-5023-aac6-549ddcebd6ae', 'LATERALITY', 'BILATERAL', 'ثنائي الجانب', 'Bilateral', '1', '4');
+
+-- ----------------------------------------------------------------------------
+-- Table Structure for `wc_registration_pmh_tb`
+-- الحالة: [جدول النظام — جديد، غير موجود في القاعدة الحالية]
+-- ----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `wc_registration_pmh_tb`;
+CREATE TABLE `wc_registration_pmh_tb` (
+  `WC_RPMH_CODE` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المعرّف الفريد لربط التسجيل بالمرض المزمن (UUID) - المفتاح الأساسي',
+  `WC_RPMH_REGISTRATION_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'رمز التسجيل السريري (FK -> WC_REGISTRATION_TB)',
+  `WC_RPMH_PMH_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'رمز المرض المزمن من القائمة الأساسية (FK -> WC_PMH_TB)',
+  PRIMARY KEY (`WC_RPMH_CODE`),
+  UNIQUE KEY `wc_rpmh_registration_pmh_unique` (`WC_RPMH_REGISTRATION_CD`,`WC_RPMH_PMH_CD`),
+  KEY `wc_registration_pmh_tb_wc_rpmh_pmh_cd_foreign` (`WC_RPMH_PMH_CD`),
+  CONSTRAINT `wc_registration_pmh_tb_wc_rpmh_pmh_cd_foreign` FOREIGN KEY (`WC_RPMH_PMH_CD`) REFERENCES `wc_pmh_tb` (`WC_PMH_CODE`),
+  CONSTRAINT `wc_registration_pmh_tb_wc_rpmh_registration_cd_foreign` FOREIGN KEY (`WC_RPMH_REGISTRATION_CD`) REFERENCES `wc_registration_tb` (`WC_REG_CODE`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='الأمراض المزمنة (PMH) المسجلة لكل تسجيل سريري';
+
+-- ----------------------------------------------------------------------------
+-- Table Structure for `wc_wound_assessment_tb`
+-- الحالة: [جدول النظام — جديد، غير موجود في القاعدة الحالية]
+-- ----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `wc_wound_assessment_tb`;
+CREATE TABLE `wc_wound_assessment_tb` (
+  `WC_WA_CODE` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المعرّف الفريد للتقييم المنظم (UUID) - المفتاح الأساسي',
+  `WC_WA_REG_DIAGNOSIS_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'الجرح المقيَّم (FK -> WC_REG_DIAGNOSIS_TB)',
+  `WC_WA_REVIEW_DETAIL_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'سطر المراجعة لتقييم المتابعة؛ فارغ للتقييم الأولي (FK -> WC_REVIEW_DETAIL_TB)',
+  `WC_WA_TYPE` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'نوع التقييم (INITIAL = أولي عند التسجيل / FOLLOW_UP = متابعة في مراجعة)',
+  `WC_WA_CLINICAL_EMP_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'الموظف السريري منفذ التقييم (FK -> PER_EMPLOYEE_TB)',
+  `WC_WA_WCT_EMP_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'عضو فريق الجروح المشارك (FK -> PER_EMPLOYEE_TB)',
+  `WC_WA_DOCTOR_EMP_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'الطبيب المشارك (FK -> PER_EMPLOYEE_TB)',
+  `WC_WA_ENTRY_USER_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المستخدم مدخل التقييم (FK -> PER_USERS_TB)',
+  `WC_WA_ASSESSED_AT` datetime NOT NULL COMMENT 'تاريخ ووقت التقييم',
+  `WC_WA_WOUND_STATUS_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Wound Status (FK -> WC_ASSESSMENT_CHOICE_TB، فئة WOUND_STATUS)',
+  `WC_WA_EXUDATE_AMOUNT_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Exudate Amount (FK -> WC_ASSESSMENT_CHOICE_TB، فئة EXUDATE_AMOUNT)',
+  `WC_WA_EXUDATE_TYPE_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Exudate Type؛ فارغ عندما تكون الإفرازات Dry (FK -> WC_ASSESSMENT_CHOICE_TB)',
+  `WC_WA_ODOR_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Odor (FK -> WC_ASSESSMENT_CHOICE_TB، فئة ODOR)',
+  `WC_WA_PAIN_SEVERITY_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Pain Severity (FK -> WC_ASSESSMENT_CHOICE_TB، فئة PAIN_SEVERITY)',
+  `WC_WA_PAIN_AT_DRESSING` tinyint(1) NOT NULL COMMENT 'Pain at Dressing Change: 1 = نعم، 0 = لا',
+  `WC_WA_FEVER_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Fever (FK -> WC_ASSESSMENT_CHOICE_TB، فئة FEVER)',
+  `WC_WA_LENGTH_MM` decimal(8,2) DEFAULT NULL COMMENT 'Length بالمليمتر (أكبر من 0 وحتى 1000)',
+  `WC_WA_WIDTH_MM` decimal(8,2) DEFAULT NULL COMMENT 'Width بالمليمتر (أكبر من 0 وحتى 1000)',
+  `WC_WA_DEPTH_MM` decimal(8,2) DEFAULT NULL COMMENT 'Depth بالمليمتر (من 0 حتى 1000)',
+  `WC_WA_LOCATION_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Location (FK -> WC_ASSESSMENT_CHOICE_TB، فئة LOCATION)',
+  `WC_WA_LATERALITY_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Laterality (FK -> WC_ASSESSMENT_CHOICE_TB، فئة LATERALITY)',
+  `WC_WA_LOCATION_NOTES` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Location Details نص حر',
+  `WC_WA_SWAB_TAKEN` tinyint(1) DEFAULT NULL COMMENT 'Swab Taken: 1 = نعم، 0 = لا',
+  `WC_WA_NUTRITION_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nutrition (FK -> WC_ASSESSMENT_CHOICE_TB، فئة NUTRITION)',
+  `WC_WA_DRESSING_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Type of DSG (FK -> WC_DRESSING_TB)',
+  `WC_WA_MEDICATION_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Medication (FK -> WC_MEDICATION_TB)',
+  `WC_WA_PROCEDURE_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Procedure (FK -> WC_PROCEDURE_TB)',
+  `WC_WA_TREATMENT_NOTES` text COLLATE utf8mb4_unicode_ci COMMENT 'Treatment Plan / Notes نص حر',
+  `WC_WA_CLINICAL_OBSERVATION` text COLLATE utf8mb4_unicode_ci COMMENT 'Clinical Observation نص حر',
+  `WC_WA_WOUND_CHANGES` text COLLATE utf8mb4_unicode_ci COMMENT 'Wound Changes منذ الزيارة السابقة، نص حر',
+  `WC_WA_FOLLOW_UP_REQUIRED` tinyint(1) NOT NULL COMMENT 'هل يحتاج الجرح متابعة: 1 = نعم، 0 = لا',
+  PRIMARY KEY (`WC_WA_CODE`),
+  UNIQUE KEY `wc_wa_review_detail_unique` (`WC_WA_REVIEW_DETAIL_CD`),
+  KEY `wc_wa_diagnosis_assessed_index` (`WC_WA_REG_DIAGNOSIS_CD`,`WC_WA_ASSESSED_AT`),
+  KEY `wc_wound_assessment_tb_wc_wa_clinical_emp_cd_foreign` (`WC_WA_CLINICAL_EMP_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_wct_emp_cd_foreign` (`WC_WA_WCT_EMP_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_doctor_emp_cd_foreign` (`WC_WA_DOCTOR_EMP_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_entry_user_cd_foreign` (`WC_WA_ENTRY_USER_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_wound_status_cd_foreign` (`WC_WA_WOUND_STATUS_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_exudate_amount_cd_foreign` (`WC_WA_EXUDATE_AMOUNT_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_exudate_type_cd_foreign` (`WC_WA_EXUDATE_TYPE_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_odor_cd_foreign` (`WC_WA_ODOR_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_pain_severity_cd_foreign` (`WC_WA_PAIN_SEVERITY_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_fever_cd_foreign` (`WC_WA_FEVER_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_location_cd_foreign` (`WC_WA_LOCATION_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_laterality_cd_foreign` (`WC_WA_LATERALITY_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_nutrition_cd_foreign` (`WC_WA_NUTRITION_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_dressing_cd_foreign` (`WC_WA_DRESSING_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_medication_cd_foreign` (`WC_WA_MEDICATION_CD`),
+  KEY `wc_wound_assessment_tb_wc_wa_procedure_cd_foreign` (`WC_WA_PROCEDURE_CD`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_clinical_emp_cd_foreign` FOREIGN KEY (`WC_WA_CLINICAL_EMP_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_doctor_emp_cd_foreign` FOREIGN KEY (`WC_WA_DOCTOR_EMP_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_dressing_cd_foreign` FOREIGN KEY (`WC_WA_DRESSING_CD`) REFERENCES `wc_dressing_tb` (`WC_DRESS_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_entry_user_cd_foreign` FOREIGN KEY (`WC_WA_ENTRY_USER_CD`) REFERENCES `per_users_tb` (`PER_USER_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_exudate_amount_cd_foreign` FOREIGN KEY (`WC_WA_EXUDATE_AMOUNT_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_exudate_type_cd_foreign` FOREIGN KEY (`WC_WA_EXUDATE_TYPE_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_fever_cd_foreign` FOREIGN KEY (`WC_WA_FEVER_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_laterality_cd_foreign` FOREIGN KEY (`WC_WA_LATERALITY_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_location_cd_foreign` FOREIGN KEY (`WC_WA_LOCATION_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_medication_cd_foreign` FOREIGN KEY (`WC_WA_MEDICATION_CD`) REFERENCES `wc_medication_tb` (`WC_MED_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_nutrition_cd_foreign` FOREIGN KEY (`WC_WA_NUTRITION_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_odor_cd_foreign` FOREIGN KEY (`WC_WA_ODOR_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_pain_severity_cd_foreign` FOREIGN KEY (`WC_WA_PAIN_SEVERITY_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_procedure_cd_foreign` FOREIGN KEY (`WC_WA_PROCEDURE_CD`) REFERENCES `wc_procedure_tb` (`WC_PROC_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_reg_diagnosis_cd_foreign` FOREIGN KEY (`WC_WA_REG_DIAGNOSIS_CD`) REFERENCES `wc_reg_diagnosis_tb` (`WC_RDIAG_CODE`) ON DELETE CASCADE,
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_review_detail_cd_foreign` FOREIGN KEY (`WC_WA_REVIEW_DETAIL_CD`) REFERENCES `wc_review_detail_tb` (`WC_REVD_CODE`) ON DELETE CASCADE,
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_wct_emp_cd_foreign` FOREIGN KEY (`WC_WA_WCT_EMP_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`),
+  CONSTRAINT `wc_wound_assessment_tb_wc_wa_wound_status_cd_foreign` FOREIGN KEY (`WC_WA_WOUND_STATUS_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`),
+  CONSTRAINT `wc_wa_measurement_check` CHECK ((((`WC_WA_LENGTH_MM` is null) or ((`WC_WA_LENGTH_MM` > 0) and (`WC_WA_LENGTH_MM` <= 1000))) and ((`WC_WA_WIDTH_MM` is null) or ((`WC_WA_WIDTH_MM` > 0) and (`WC_WA_WIDTH_MM` <= 1000))) and ((`WC_WA_DEPTH_MM` is null) or ((`WC_WA_DEPTH_MM` >= 0) and (`WC_WA_DEPTH_MM` <= 1000))))),
+  CONSTRAINT `wc_wa_type_link_check` CHECK ((((`WC_WA_TYPE` = _utf8mb4'INITIAL') and (`WC_WA_REVIEW_DETAIL_CD` is null)) or ((`WC_WA_TYPE` = _utf8mb4'FOLLOW_UP') and (`WC_WA_REVIEW_DETAIL_CD` is not null))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='التقييم المنظم لكل جرح: أولي عند التسجيل ومتابعة في كل مراجعة';
+
+-- ----------------------------------------------------------------------------
+-- Table Structure for `wc_assessment_finding_tb`
+-- الحالة: [جدول النظام — جديد، غير موجود في القاعدة الحالية]
+-- ----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `wc_assessment_finding_tb`;
+CREATE TABLE `wc_assessment_finding_tb` (
+  `WC_AF_CODE` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المعرّف الفريد للنتيجة (UUID) - المفتاح الأساسي',
+  `WC_AF_ASSESSMENT_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'التقييم المنظم (FK -> WC_WOUND_ASSESSMENT_TB)',
+  `WC_AF_CHOICE_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'الخيار المختار من Wound Bed أو Wound Margins (FK -> WC_ASSESSMENT_CHOICE_TB)',
+  PRIMARY KEY (`WC_AF_CODE`),
+  UNIQUE KEY `wc_af_assessment_choice_unique` (`WC_AF_ASSESSMENT_CD`,`WC_AF_CHOICE_CD`),
+  KEY `wc_assessment_finding_tb_wc_af_choice_cd_foreign` (`WC_AF_CHOICE_CD`),
+  CONSTRAINT `wc_assessment_finding_tb_wc_af_assessment_cd_foreign` FOREIGN KEY (`WC_AF_ASSESSMENT_CD`) REFERENCES `wc_wound_assessment_tb` (`WC_WA_CODE`) ON DELETE CASCADE,
+  CONSTRAINT `wc_assessment_finding_tb_wc_af_choice_cd_foreign` FOREIGN KEY (`WC_AF_CHOICE_CD`) REFERENCES `wc_assessment_choice_tb` (`WC_ACH_CODE`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='نتائج قاع الجرح وحوافه المختارة في كل تقييم منظم (اختيار متعدد)';
+
+-- ----------------------------------------------------------------------------
+-- Table Structure for `wc_report_export_tb`
+-- الحالة: [جدول النظام — جديد، غير موجود في القاعدة الحالية]
+-- ----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `wc_report_export_tb`;
+CREATE TABLE `wc_report_export_tb` (
+  `WC_RPEX_CODE` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المعرّف الفريد لعملية تصدير التقرير (UUID) - المفتاح الأساسي',
+  `WC_RPEX_USER_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المستخدم الذي صدّر التقرير (FK -> PER_USERS_TB)',
+  `WC_RPEX_EXPORTED_AT` datetime NOT NULL COMMENT 'تاريخ ووقت التصدير',
+  `WC_RPEX_PERIOD_FROM` date NOT NULL COMMENT 'أول يوم من الشهر الأول في فترة التقرير',
+  `WC_RPEX_PERIOD_TO` date NOT NULL COMMENT 'أول يوم من الشهر الأخير في فترة التقرير',
+  `WC_RPEX_DEPARTMENT_CODES` text COLLATE utf8mb4_unicode_ci COMMENT 'رموز الأقسام المحددة (JSON)، فارغ = كل الأقسام',
+  `WC_RPEX_CASE_COUNT` int NOT NULL COMMENT 'عدد الحالات في ورقة الحالات',
+  PRIMARY KEY (`WC_RPEX_CODE`),
+  KEY `wc_report_export_tb_wc_rpex_user_cd_index` (`WC_RPEX_USER_CD`),
+  KEY `wc_report_export_tb_wc_rpex_exported_at_index` (`WC_RPEX_EXPORTED_AT`),
+  CONSTRAINT `wc_report_export_tb_wc_rpex_user_cd_foreign` FOREIGN KEY (`WC_RPEX_USER_CD`) REFERENCES `per_users_tb` (`PER_USER_CODE`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='سجل عمليات تصدير التقارير الشهرية (من صدّر، ومتى، وأي فترة وأقسام)';
 
 SET FOREIGN_KEY_CHECKS = 1;
 -- ============================================================================
