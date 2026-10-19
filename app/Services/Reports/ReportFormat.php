@@ -9,40 +9,43 @@ use Carbon\CarbonInterface;
  */
 final class ReportFormat
 {
-    public const LIST_SEPARATOR = '، ';
+    /**
+     * Values are medical terms in English (spec 014), so they are joined as in the workbook ("swap culture, debridement").
+     */
+    public const LIST_SEPARATOR = ', ';
 
     /**
-     * Case-list column headers in workbook order (FR-004); the doctor specialty column is deferred.
+     * Case-list column headers exactly as the clinic workbook (spec 014); the doctor specialty column is deferred.
      */
     public const CASE_COLUMNS = [
-        '#',
-        'اسم المريض',
-        'الشهر',
-        'رقم الهوية',
-        'الجنس',
-        'سنة الميلاد',
-        'التشخيص',
-        'مكان الجرح ووصفه',
-        'تاريخ الدخول للمستشفى',
-        'التاريخ المرضي',
-        'نوع الجرح',
-        'الضماد',
-        'الدواء',
-        'الإجراء',
-        'القسم',
-        'الصور',
-        'تاريخ الخروج',
-        'النتيجة',
+        'NO',
+        'Pt Name',
+        'MONTHS',
+        'ID',
+        'Gender',
+        'DoB',
+        'Diagnosis',
+        'Discussion',
+        'DoA',
+        'PMH',
+        'Type of Wound',
+        'Type of DSG',
+        'Medication',
+        'Procedure',
+        'Department',
+        'Picture',
+        'DISCHARGE',
+        'Comment',
     ];
 
-    public const PREVIOUS_COLUMNS = ['التسجيل السابق', 'نتيجة التسجيل السابق'];
+    public const PREVIOUS_COLUMNS = ['Previous Registration', 'Previous Comment'];
 
     /**
-     * Arabic month and year, e.g. "نوفمبر 2025".
+     * Month as written in the workbook, e.g. "Nov -2025".
      */
     public static function month(CarbonInterface $month): string
     {
-        return $month->copy()->locale('ar')->translatedFormat('F Y');
+        return $month->format('M -Y');
     }
 
     public static function date(?CarbonInterface $date): string

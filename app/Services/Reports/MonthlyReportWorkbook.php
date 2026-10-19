@@ -15,11 +15,11 @@ use OpenSpout\Writer\XLSX\Writer;
  */
 class MonthlyReportWorkbook
 {
-    public const CASES_SHEET = 'الحالات';
+    public const CASES_SHEET = 'CASES';
 
-    public const SUMMARY_SHEET = 'الملخص';
+    public const SUMMARY_SHEET = 'CASES-A';
 
-    public const READMISSIONS_SHEET = 'إعادة الدخول';
+    public const READMISSIONS_SHEET = 'ReAdmission';
 
     private const DATE_FORMAT = 'yyyy-mm-dd';
 
@@ -55,12 +55,12 @@ class MonthlyReportWorkbook
         }
 
         $this->startSheet($writer, self::SUMMARY_SHEET, true);
-        $this->writeCounts($writer, 'عدد الحالات حسب الشهر', array_map(fn (array $row): array => [
+        $this->writeCounts($writer, 'MONTHS', array_map(fn (array $row): array => [
             'label' => ReportFormat::month($row['month']),
             'count' => $row['count'],
         ], $summary['perMonth']), $summary['totalCases']);
-        $this->writeCounts($writer, 'الحالات حسب الجنس', $summary['perGender'], $summary['totalCases']);
-        $this->writeCounts($writer, 'الحالات حسب التشخيص', $summary['perDiagnosis'], null);
+        $this->writeCounts($writer, 'Gender', $summary['perGender'], $summary['totalCases']);
+        $this->writeCounts($writer, 'Diagnosis', $summary['perDiagnosis'], null);
 
         $this->startSheet($writer, self::READMISSIONS_SHEET, true);
         $writer->addRow($this->headerRow([...ReportFormat::CASE_COLUMNS, ...ReportFormat::PREVIOUS_COLUMNS]));
@@ -129,12 +129,12 @@ class MonthlyReportWorkbook
      */
     private function writeCounts(Writer $writer, string $title, array $items, ?int $total): void
     {
-        $writer->addRow($this->headerRow([$title, 'العدد']));
+        $writer->addRow($this->headerRow([$title, 'Cases']));
         foreach ($items as $item) {
             $writer->addRow(Row::fromValues([$item['label'], $item['count']]));
         }
         if ($total !== null) {
-            $writer->addRow(Row::fromValuesWithStyle(['المجموع', $total], $this->headerStyle));
+            $writer->addRow(Row::fromValuesWithStyle(['Total', $total], $this->headerStyle));
         }
         $writer->addRow(Row::fromValues([]));
     }

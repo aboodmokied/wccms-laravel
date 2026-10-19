@@ -39,6 +39,13 @@
   top: 0;
 }
 
+/* Medical terms are English (spec 014): each cell takes the direction of its own text. */
+.m8-report-table th,
+.m8-report-table td,
+.m8-report-bar-label {
+  unicode-bidi: plaintext;
+}
+
 .m8-report-table td.m8-report-wrap {
   white-space: normal;
   min-width: 160px;

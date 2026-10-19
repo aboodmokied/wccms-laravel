@@ -12,13 +12,11 @@ enum CaseOutcome: string
     case Death = 'DEATH';
     case HospitalTransfer = 'HOSPITAL_TRANSFER';
 
+    /**
+     * English display name from the clinical glossary (spec 014).
+     */
     public function label(): string
     {
-        return match ($this) {
-            self::Ongoing => 'يستمر العلاج',
-            self::Discharged => 'خروج',
-            self::Death => 'وفاة',
-            self::HospitalTransfer => 'تحويل للمستشفى',
-        };
+        return __('clinical.case_outcomes.'.$this->value);
     }
 }

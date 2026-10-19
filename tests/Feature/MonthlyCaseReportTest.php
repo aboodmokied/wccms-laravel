@@ -58,7 +58,7 @@ class MonthlyCaseReportTest extends TestCase
         $cases = $this->casesOf($response);
         $this->assertCount(1, $cases);
         $this->assertSame(['DF', 'bedsore PEU'], $cases->first()->diagnoses);
-        $response->assertSee('DF، bedsore PEU');
+        $response->assertSee('DF, bedsore PEU');
     }
 
     public function test_lists_each_dressing_used_during_the_case_once_in_first_seen_order(): void
@@ -117,7 +117,7 @@ class MonthlyCaseReportTest extends TestCase
         $case = $this->casesOf($response)->first();
         $this->assertNull($case->dischargeDate);
         $this->assertSame(CaseOutcome::Ongoing, $case->outcome);
-        $response->assertSee('يستمر العلاج');
+        $response->assertSee('Ongoing Treatment');
     }
 
     /**
@@ -197,8 +197,8 @@ class MonthlyCaseReportTest extends TestCase
         $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
 
         $case = $this->casesOf($response)->first();
-        $this->assertSame(['القدم - يمين - الكعب'], $case->woundLocations);
-        $this->assertSame(['Pressure (نسيج نخري، جيوب)'], $case->woundTypes);
+        $this->assertSame(['Foot - Right - الكعب'], $case->woundLocations);
+        $this->assertSame(['Pressure (Necrotic, Pocketing)'], $case->woundTypes);
         $this->assertSame(2, $case->photoCount);
     }
 
@@ -244,7 +244,7 @@ class MonthlyCaseReportTest extends TestCase
         $cases = $this->casesOf($response);
         $this->assertSame(['427408844', 'PAT-1002'], $cases->pluck('idNumber')->all());
         $this->assertSame(1969, $cases->first()->birthYear);
-        $this->assertSame(['لا يوجد'], $cases->first()->pastMedicalHistory);
+        $this->assertSame(['No'], $cases->first()->pastMedicalHistory);
     }
 
     public function test_month_without_cases_shows_the_empty_state(): void
@@ -280,6 +280,30 @@ class MonthlyCaseReportTest extends TestCase
         $response = $this->call('GET', route('reports.monthly.cases', ['departments' => ['not-a-department']]), [], $this->reportCookies());
 
         $response->assertSessionHasErrors(['departments.0' => 'القسم المحدد غير موجود.']);
+    }
+
+    public function test_table_uses_the_workbook_headers_and_english_values(): void
+    {
+        $this->registerCase([
+            'patient' => $this->reportPatient(['MR_PAT_GENDER' => 'FEMALE']),
+            'registeredAt' => CarbonImmutable::parse('2025-11-03 09:00'),
+            'status' => 'DISCHARGED',
+            'dischargedAt' => CarbonImmutable::parse('2025-11-20 10:00'),
+        ]);
+        $registration = $this->registerCase([
+            'registeredAt' => CarbonImmutable::parse('2025-11-04 09:00'),
+            'status' => 'DISCHARGED',
+            'dischargedAt' => CarbonImmutable::parse('2025-11-25 10:00'),
+        ]);
+        $this->reviewRegistration($registration, CarbonImmutable::parse('2025-11-25 09:00'), 'DEATH');
+
+        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+
+        $response->assertSeeInOrder([
+            'NO', 'Pt Name', 'MONTHS', 'ID', 'Gender', 'DoB', 'Diagnosis', 'Discussion', 'DoA', 'PMH', 'Type of Wound',
+            'Type of DSG', 'Medication', 'Procedure', 'Department', 'Picture', 'DISCHARGE', 'Comment',
+        ]);
+        $response->assertSeeInOrder(['Nov -2025', 'Female', 'Discharged', 'Nov -2025', 'Male', 'Death']);
     }
 
     public function test_escapes_patient_names_in_the_table(): void

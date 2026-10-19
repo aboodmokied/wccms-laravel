@@ -32,7 +32,7 @@ class ReadmissionReportTest extends TestCase
         $this->assertSame('2025-12-01', $readmissions->first()->case->registeredAt->toDateString());
         $this->assertSame('2025-11-22', $readmissions->first()->previousRegisteredAt->toDateString());
         $this->assertSame(CaseOutcome::Discharged, $readmissions->first()->previousOutcome);
-        $response->assertSeeInOrder(['2025-11-22', 'خروج']);
+        $response->assertSeeInOrder(['2025-11-22', 'Discharged']);
     }
 
     public function test_first_registration_is_never_a_readmission(): void

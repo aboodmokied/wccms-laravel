@@ -6,6 +6,7 @@ use App\Models\Concerns\HasDbFirstAttributes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class WcAssessmentChoice extends Model
 {
@@ -26,6 +27,7 @@ class WcAssessmentChoice extends Model
         'WC_ACH_CATEGORY',
         'WC_ACH_KEY',
         'WC_ACH_LABEL_AR',
+        'WC_ACH_LABEL_EN',
         'WC_ACH_IS_ACTIVE',
         'WC_ACH_DISPLAY_ORDER',
     ];
@@ -36,6 +38,17 @@ class WcAssessmentChoice extends Model
             'WC_ACH_IS_ACTIVE' => 'boolean',
             'WC_ACH_DISPLAY_ORDER' => 'integer',
         ];
+    }
+
+    /**
+     * The name shown on every page: the English name (medical terms are not translated, spec 014), else the stable
+     * key in words for a choice that has no English name yet.
+     */
+    public function displayLabel(): string
+    {
+        $english = trim((string) $this->WC_ACH_LABEL_EN);
+
+        return $english !== '' ? $english : Str::of((string) $this->WC_ACH_KEY)->lower()->replace('_', ' ')->title()->toString();
     }
 
     public function findings(): HasMany

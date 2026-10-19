@@ -20,7 +20,7 @@ class MonthlyCaseSummaryTest extends TestCase
 
         $summary = $response->viewData('summary');
         $this->assertSame([['2025-11', 125], ['2025-12', 79]], $this->monthCounts($summary));
-        $this->assertSame([['label' => 'ذكر', 'count' => 122], ['label' => 'أنثى', 'count' => 82]], $summary['perGender']);
+        $this->assertSame([['label' => 'Male', 'count' => 122], ['label' => 'Female', 'count' => 82]], $summary['perGender']);
         $this->assertSame([
             ['label' => 'DF', 'count' => 69],
             ['label' => 'Inf Wound', 'count' => 55],
@@ -46,7 +46,7 @@ class MonthlyCaseSummaryTest extends TestCase
 
         $summary = $response->viewData('summary');
         $this->assertSame([['2025-11', 1]], $this->monthCounts($summary));
-        $this->assertSame([['label' => 'ذكر', 'count' => 0], ['label' => 'أنثى', 'count' => 1]], $summary['perGender']);
+        $this->assertSame([['label' => 'Male', 'count' => 0], ['label' => 'Female', 'count' => 1]], $summary['perGender']);
         $this->assertSame([['label' => 'DF', 'count' => 1], ['label' => 'bedsore PEU', 'count' => 1]], $summary['perDiagnosis']);
         $this->assertSame(1, $summary['totalCases']);
     }
@@ -73,7 +73,7 @@ class MonthlyCaseSummaryTest extends TestCase
         $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
 
         $this->assertSame(
-            [['label' => 'ذكر', 'count' => 0], ['label' => 'أنثى', 'count' => 0], ['label' => 'غير محدد', 'count' => 1]],
+            [['label' => 'Male', 'count' => 0], ['label' => 'Female', 'count' => 0], ['label' => 'Unspecified', 'count' => 1]],
             $response->viewData('summary')['perGender'],
         );
     }
@@ -84,8 +84,8 @@ class MonthlyCaseSummaryTest extends TestCase
 
         $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-12']), [], $this->reportCookies());
 
-        $response->assertSeeInOrder(['نوفمبر 2025', '125', 'ديسمبر 2025', '79']);
-        $response->assertSeeInOrder(['ذكر', '122', 'أنثى', '82']);
+        $response->assertSeeInOrder(['Nov -2025', '125', 'Dec -2025', '79']);
+        $response->assertSeeInOrder(['Male', '122', 'Female', '82']);
     }
 
     public function test_rejects_an_end_month_before_the_start_month(): void

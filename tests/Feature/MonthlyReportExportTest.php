@@ -34,10 +34,10 @@ class MonthlyReportExportTest extends TestCase
             array_keys($sheets),
         );
         $this->assertCount(205, $sheets[MonthlyReportWorkbook::CASES_SHEET]);
-        $this->assertSame(['عدد الحالات حسب الشهر', 'العدد'], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][0]);
-        $this->assertSame(['نوفمبر 2025', 125], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][1]);
-        $this->assertSame(['ديسمبر 2025', 79], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][2]);
-        $this->assertSame(['المجموع', 204], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][3]);
+        $this->assertSame(['MONTHS', 'Cases'], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][0]);
+        $this->assertSame(['Nov -2025', 125], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][1]);
+        $this->assertSame(['Dec -2025', 79], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][2]);
+        $this->assertSame(['Total', 204], $sheets[MonthlyReportWorkbook::SUMMARY_SHEET][3]);
         $this->assertCount(7, $sheets[MonthlyReportWorkbook::READMISSIONS_SHEET]);
 
         $export = WcReportExport::query()->sole();
@@ -62,12 +62,12 @@ class MonthlyReportExportTest extends TestCase
 
         $response->assertDownload('monthly-cases-2025-11.xlsx');
         $row = $this->readSheets($response->baseResponse->getFile()->getPathname())[MonthlyReportWorkbook::CASES_SHEET][1];
-        $this->assertSame([1, 'ثائر عبيد', 'نوفمبر 2025'], array_slice($row, 0, 3));
+        $this->assertSame([1, 'ثائر عبيد', 'Nov -2025'], array_slice($row, 0, 3));
         $this->assertInstanceOf(DateTimeInterface::class, $row[8]);
         $this->assertSame('2025-10-15', $row[8]->format('Y-m-d'));
         $this->assertInstanceOf(DateTimeInterface::class, $row[16]);
         $this->assertSame('2025-11-22', $row[16]->format('Y-m-d'));
-        $this->assertSame('خروج', $row[17]);
+        $this->assertSame('Discharged', $row[17]);
     }
 
     public function test_every_sheet_reads_right_to_left(): void

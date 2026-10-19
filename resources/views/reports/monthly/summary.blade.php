@@ -48,9 +48,9 @@
     </div>
 
     <div class="col-12 col-xl-6">
-        <x-card title="الحالات حسب الجنس" icon="bi-pie-chart" :subtitle="'المجموع: '.$summary['totalCases']">
+        <x-card title="الحالات حسب Gender" icon="bi-pie-chart" :subtitle="'المجموع: '.$summary['totalCases']">
             <div class="d-flex flex-wrap align-items-center justify-content-center gap-4">
-                <svg class="m8-report-pie" viewBox="0 0 64 64" role="img" aria-label="الحالات حسب الجنس">
+                <svg class="m8-report-pie" viewBox="0 0 64 64" role="img" aria-label="الحالات حسب Gender">
                     <circle class="m8-report-pie-track" cx="32" cy="32" r="16"></circle>
                     @foreach($summary['perGender'] as $index => $gender)
                         @php($length = $gender['count'] / $genderTotal * $circumference)
@@ -77,7 +77,7 @@
     </div>
 
     <div class="col-12">
-        <x-card title="الحالات حسب التشخيص" icon="bi-clipboard2-pulse" subtitle="الحالة ذات أكثر من تشخيص تُحسب تحت كل تشخيص من تشخيصاتها">
+        <x-card title="الحالات حسب Diagnosis" icon="bi-clipboard2-pulse" subtitle="الحالة ذات أكثر من Diagnosis تُحسب تحت كل واحد منها">
             @if($summary['perDiagnosis'] === [])
                 <div class="text-center text-muted py-4">لا توجد حالات في هذه الفترة.</div>
             @else

@@ -1,5 +1,12 @@
 <!--
-### Sync Impact Report
+### Sync Impact Report (1.3.0)
+- **Version Change**: 1.2.0 → 1.3.0 (MINOR bump: principle IV gains a medical-terminology exception)
+- **Modified Principles**: IV. First-Class Arabic & RTL Support — medical terminology (clinical field labels,
+  assessment values, clinical outcomes) is displayed in English on every page and is never translated; all other
+  user-facing text stays Arabic. Decided by the project owner on 2026-10-19 (spec 014).
+- **Added / Removed Sections**: None.
+
+### Sync Impact Report (1.2.0)
 - **Version Change**: 1.1.0 → 1.2.0 (MINOR bump: added Principle VI — MySQL-first, Oracle-later development constraint)
 - **Modified Principles**:
   - II. Database-First Architecture & In-Database Logic: scoped the stored-procedure mandate to core clinical workflows rather than all mutations; corrected "voiding registrations/reviews" to "discharging registrations" and "voiding pending scheduled reviews" to match the actual data model.
@@ -33,6 +40,10 @@ All database objects must strictly adhere to the unified naming reference docume
 Any user interface or text content MUST support Arabic as a first-class language.
 - Layouts must natively support Right-to-Left (RTL) directional rendering.
 - User-facing text, error messages, and clinical review interfaces must provide complete Arabic localization.
+- **Exception — medical terminology**: clinical field labels (e.g. Diagnosis, Exudate Amount, Wound Bed), assessment
+  values (e.g. Granulation, Purulent) and clinical outcomes are displayed in English on every page, form, report and
+  export, and are never translated. They render left-to-right inside the RTL layout. Messages that mention them stay
+  Arabic (e.g. «حقل Exudate Amount مطلوب.»).
 
 ### V. Actor vs. Data-Entry Separation
 Any feature or record involving clinical actions ("who performed a clinical action") MUST explicitly distinguish:
@@ -53,4 +64,4 @@ Development happens against MySQL locally; the schema is deliberately designed t
 ## Governance
 This constitution supersedes all secondary development guidelines. Any changes to core database logic, architecture, or naming protocols require an amended constitution update and version bump.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-20
+**Version**: 1.3.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-19

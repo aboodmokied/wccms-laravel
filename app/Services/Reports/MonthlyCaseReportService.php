@@ -22,12 +22,6 @@ use Illuminate\Support\Collection;
  */
 class MonthlyCaseReportService
 {
-    public const SWAB_PROCEDURE = 'swap culture';
-
-    public const NO_COMORBIDITIES = 'لا يوجد';
-
-    public const UNSPECIFIED_GENDER = 'غير محدد';
-
     private const TISSUE_FINDING_CATEGORIES = ['WOUND_BED', 'WOUND_MARGIN'];
 
     private const NO_FINDING_KEYS = ['NONE_OBSERVED'];
@@ -100,7 +94,7 @@ class MonthlyCaseReportService
             ->values()
             ->all();
 
-        $perGender = collect(['ذكر', 'أنثى'])
+        $perGender = collect([__('clinical.genders.MALE'), __('clinical.genders.FEMALE')])
             ->map(fn (string $gender): array => [
                 'label' => $gender,
                 'count' => $cases->where('gender', $gender)->count(),
@@ -108,7 +102,7 @@ class MonthlyCaseReportService
 
         $unspecified = $cases->whereNull('gender')->count();
         if ($unspecified > 0) {
-            $perGender->push(['label' => self::UNSPECIFIED_GENDER, 'count' => $unspecified]);
+            $perGender->push(['label' => __('clinical.genders.UNSPECIFIED'), 'count' => $unspecified]);
         }
 
         $perDiagnosis = $cases
@@ -267,7 +261,7 @@ class MonthlyCaseReportService
                 $registration->procedure?->WC_PROC_NAME,
                 ...$assessments->map(fn (WcWoundAssessment $assessment): ?string => $assessment->procedure?->WC_PROC_NAME),
                 $assessments->contains(fn (WcWoundAssessment $assessment): bool => (bool) $assessment->WC_WA_SWAB_TAKEN)
-                    ? self::SWAB_PROCEDURE
+                    ? __('clinical.swab_procedure')
                     : null,
             ]),
             photoCount: (int) $wounds->sum('wound_photos_count'),
@@ -308,7 +302,7 @@ class MonthlyCaseReportService
         }
 
         if ((bool) $registration->WC_REG_NO_COMORBIDITIES) {
-            return [self::NO_COMORBIDITIES];
+            return [__('clinical.no_comorbidities')];
         }
 
         return $this->distinct([$registration->WC_REG_PMH_NOTES]);
@@ -318,8 +312,8 @@ class MonthlyCaseReportService
     {
         $initial = $this->initialAssessment($wound);
         $parts = $this->distinct([
-            $initial?->location?->WC_ACH_LABEL_AR,
-            $initial?->laterality?->WC_ACH_LABEL_AR,
+            $initial?->location?->displayLabel(),
+            $initial?->laterality?->displayLabel(),
             $initial?->WC_WA_LOCATION_NOTES,
         ]);
 
@@ -338,14 +332,14 @@ class MonthlyCaseReportService
                         <=> array_search($b->choice->WC_ACH_CATEGORY, self::TISSUE_FINDING_CATEGORIES, true),
                     fn (WcAssessmentFinding $a, WcAssessmentFinding $b): int => (int) $a->choice->WC_ACH_DISPLAY_ORDER <=> (int) $b->choice->WC_ACH_DISPLAY_ORDER,
                 ])
-                ->map(fn (WcAssessmentFinding $finding): ?string => $finding->choice?->WC_ACH_LABEL_AR)
+                ->map(fn (WcAssessmentFinding $finding): ?string => $finding->choice?->displayLabel())
         );
 
         if ($findings === []) {
             return $type;
         }
 
-        return trim(($type ?? '').' ('.implode('، ', $findings).')');
+        return trim(($type ?? '').' ('.implode(ReportFormat::LIST_SEPARATOR, $findings).')');
     }
 
     private function initialAssessment(WcRegDiagnosis $wound): ?WcWoundAssessment
@@ -372,8 +366,8 @@ class MonthlyCaseReportService
     private function gender(?string $gender): ?string
     {
         return match (mb_strtoupper(trim((string) $gender))) {
-            'MALE', 'M' => 'ذكر',
-            'FEMALE', 'F' => 'أنثى',
+            'MALE', 'M' => __('clinical.genders.MALE'),
+            'FEMALE', 'F' => __('clinical.genders.FEMALE'),
             default => null,
         };
     }
