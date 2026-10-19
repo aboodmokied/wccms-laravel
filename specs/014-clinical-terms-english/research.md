@@ -59,3 +59,17 @@ Code: `Http/Requests/{AcceptRegistrationRequest,StoreWoundDiagnosisRequest,Store
 `Services/ReportingService`, `Services/Reports/*`, `Models/WcAssessmentChoice`.
 Tests asserting Arabic medical terms: `AssessmentChoiceAdminTest`, `WoundAssessmentModelTest`,
 `MonthlyCaseReportTest`, `MonthlyCaseSummaryTest`, `MonthlyReportExportTest` (and `StructuredWoundTestCase` labels).
+
+## Verification (2026-10-19)
+
+- Full suite on SQLite: 147 tests, 146 passed, 1 skipped (MySQL-only). On MySQL 8.4, one fresh database per file:
+  `ClinicalTermsDisplayTest`, `AssessmentChoiceAdminTest`, `WoundAssessmentHistoryTest`, `PatientMedicalRecordTest`,
+  `StructuredInitialAssessmentTest` and the four monthly report test files — 58 tests, all passed.
+- Found and fixed while doing US2/US3 (both block the agreed behaviour):
+  1. `lang/ar/validation.php` did not exist, so built-in messages showed raw keys (`validation.required`); added the
+     Arabic messages for the rules the project uses, which FR-005 needs.
+  2. The patient history report compared `WC_DREV_OVERALL_STATUS` codes with outcome group names, so every review was
+     labelled as a death; it now shows each review's own outcome from the glossary (screen and CSV).
+- Not changed: `registrations/create.blade.php` is not reachable from any route or controller (legacy page).
+- Gender stays Arabic in the patient demographics banner (demographic, not a medical term); the monthly report
+  shows `Male`/`Female` as the workbook does.
