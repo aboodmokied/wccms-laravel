@@ -18,7 +18,7 @@ R1).
 **Language/Version**: PHP 8.3, Laravel 13
 
 **Primary Dependencies**: existing stack (Bootstrap 5.3 RTL, Bootstrap Icons, Tailwind 4 via Vite, `m8-` design
-tokens); new: `openspout/openspout` ^4 for `.xlsx` ([research.md](research.md) R6)
+tokens); new: `openspout/openspout` ^5.3 for `.xlsx` ([research.md](research.md) R6)
 
 **Storage**: MySQL 8.4 (local, WAMP), Oracle later; one new table `wc_report_export_tb`
 ([data-model.md](data-model.md))
@@ -96,7 +96,7 @@ resources/
 routes/web.php                                      # 4 routes in the hospital.jwt group
 
 tests/
-├── Support/WorkbookSyntheticCases.php              # 204 synthetic cases from aggregate counts (R9)
+├── WorkbookSyntheticCases.php                      # 204 synthetic cases from aggregate counts (R9)
 └── Feature/
     ├── MonthlyCaseReportTest.php                   # US1
     ├── MonthlyCaseSummaryTest.php                  # US2, SC-001

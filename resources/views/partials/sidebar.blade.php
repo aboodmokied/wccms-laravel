@@ -65,6 +65,12 @@
             <span>التقارير</span>
         </a>
 
+        <a href="{{ route('reports.monthly.cases') }}"
+           class="m8-nav-item {{ request()->routeIs('reports.monthly.*') ? 'active' : '' }}" @if(request()->routeIs('reports.monthly.*')) aria-current="page" @endif>
+            <i class="bi bi-calendar3"></i>
+            <span>التقارير الشهرية</span>
+        </a>
+
         <a href="{{ route('requests.my') }}"
            class="m8-nav-item {{ request()->routeIs('requests.my') ? 'active' : '' }}" @if(request()->routeIs('requests.my')) aria-current="page" @endif>
             <i class="bi bi-person-lines-fill"></i>

@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MockHospitalAuthController;
 use App\Http\Controllers\DailyReviewController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MonthlyReportController;
 use App\Http\Controllers\PatientMedicalRecordController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RegistrationRequestController;
@@ -98,6 +99,11 @@ Route::middleware(['hospital.jwt'])->group(function () {
 
     Route::get('/reports/history', [ReportController::class, 'history'])->name('reports.history');
     Route::get('/reports/history/{patient}/export', [ReportController::class, 'exportCsv'])->name('reports.history.export');
+
+    Route::get('/reports/monthly', [MonthlyReportController::class, 'cases'])->name('reports.monthly.cases');
+    Route::get('/reports/monthly/summary', [MonthlyReportController::class, 'summary'])->name('reports.monthly.summary');
+    Route::get('/reports/monthly/readmissions', [MonthlyReportController::class, 'readmissions'])->name('reports.monthly.readmissions');
+    Route::get('/reports/monthly/export', [MonthlyReportController::class, 'export'])->name('reports.monthly.export');
 
     // Admin-Only Routes
     Route::middleware(['role:ADMIN'])->group(function () {

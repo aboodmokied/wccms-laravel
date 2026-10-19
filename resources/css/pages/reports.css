@@ -1,0 +1,127 @@
+/**
+ * ============================================================================
+ * WCCMS — Monthly Reports Page Styles
+ * Extends Metronic 8 Design System
+ * ============================================================================
+ */
+
+/* ----------------------------------------------------------------------------
+ * 1. Filters and tabs
+ * ---------------------------------------------------------------------------- */
+.m8-report-tabs .nav-link {
+  color: var(--m8-text-subtitle);
+  font-weight: 600;
+}
+
+.m8-report-tabs .nav-link.active {
+  color: var(--m8-primary);
+}
+
+.m8-report-departments {
+  max-height: 260px;
+  overflow-y: auto;
+  min-width: 240px;
+}
+
+/* ----------------------------------------------------------------------------
+ * 2. Case table
+ * ---------------------------------------------------------------------------- */
+.m8-report-table {
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.m8-report-table th {
+  color: var(--m8-text-subtitle);
+  font-weight: 700;
+  background-color: var(--m8-input-solid-bg);
+  position: sticky;
+  top: 0;
+}
+
+.m8-report-table td.m8-report-wrap {
+  white-space: normal;
+  min-width: 160px;
+}
+
+/* ----------------------------------------------------------------------------
+ * 3. Charts
+ * ---------------------------------------------------------------------------- */
+.m8-report-bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) 1fr 3rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.m8-report-bar-label {
+  color: var(--m8-text-main);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m8-report-bar-track {
+  height: 14px;
+  background-color: var(--m8-primary-light);
+  border-radius: var(--m8-radius-sm);
+  overflow: hidden;
+}
+
+.m8-report-bar-fill {
+  height: 100%;
+  background-color: var(--m8-primary);
+  border-radius: var(--m8-radius-sm);
+}
+
+.m8-report-bar-value {
+  font-weight: 700;
+  color: var(--m8-text-main);
+  text-align: end;
+}
+
+.m8-report-pie {
+  width: 180px;
+  height: 180px;
+}
+
+.m8-report-pie circle {
+  fill: none;
+  stroke-width: 32;
+}
+
+.m8-report-pie-track {
+  stroke: var(--m8-border-color);
+}
+
+.m8-report-pie-slice-0 {
+  stroke: var(--m8-primary);
+  background-color: var(--m8-primary);
+}
+
+.m8-report-pie-slice-1 {
+  stroke: var(--m8-info);
+  background-color: var(--m8-info);
+}
+
+.m8-report-pie-slice-2 {
+  stroke: var(--m8-text-muted);
+  background-color: var(--m8-text-muted);
+}
+
+.m8-report-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-inline-end: 0.4rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 576px) {
+  .m8-report-bar-row {
+    grid-template-columns: minmax(70px, 110px) 1fr 2.5rem;
+  }
+}

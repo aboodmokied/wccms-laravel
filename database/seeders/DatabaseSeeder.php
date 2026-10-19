@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             WcDressingSeeder::class,
             WcMedicationSeeder::class,
             WcProcedureSeeder::class,
+            WcClinicWorkbookListsSeeder::class,
             WcAssessmentChoiceSeeder::class,
             TestSeeder::class,
         ]);

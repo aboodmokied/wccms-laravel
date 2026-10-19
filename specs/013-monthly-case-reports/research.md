@@ -71,7 +71,7 @@ system were verified against the code and the local MySQL schema on 2026-10-19.
 
 ## R6. Excel export library
 
-- **Decision**: `openspout/openspout` (v4), added to `composer.json` `require`.
+- **Decision**: `openspout/openspout` (^5.3, the version Composer resolves for PHP 8.3), added to `composer.json` `require`.
 - **Rationale**: Clarification Q7. It writes `.xlsx` as a stream (low memory), supports several sheets,
   right-to-left sheet views and date-typed cells, and has no extension requirements beyond those Laravel already
   needs (`zip`, `xmlwriter`).
@@ -114,3 +114,17 @@ system were verified against the code and the local MySQL schema on 2026-10-19.
 2. `ReportingService::getKpis()` counts active patients with `WC_REG_STATUS = 'REGISTERED'`; registrations are
    stored as `ACTIVE`, so the dashboard's active-patient KPI is always 0.
 3. Doctor specialty (`DR`) — deferred feature (clarification Q4).
+4. `league/commonmark` 2.10.1 (an existing Laravel dependency, unchanged by this feature) has two open advisories
+   (`composer audit`: PKSA-m2dq-1fhr-29b1 medium, PKSA-m4t9-vsgq-8khn high); fixed by updating that package.
+
+## Verification (2026-10-19)
+
+- **SC-001**: the synthetic dataset gives 125/79 cases, 82 female/122 male, the six diagnosis counts and 6
+  readmissions on SQLite and on MySQL 8.4 (`MonthlyCaseSummaryTest`, `ReadmissionReportTest`).
+- **SC-003**: 2,040 synthetic cases, 12-month range, MySQL 8.4, after warm-up, PHP with Xdebug off and OPcache on:
+  summary 1.53 s, readmissions 1.81 s, one-month case list (1,020 rows) 0.96 s. With WAMP's default Xdebug
+  `develop` mode the same requests take 5–7 s; that is the development PHP configuration, not the report code.
+- **SC-004/SC-005**: `MonthlyReportExportTest` (record per export; three RTL sheets; Arabic text; date cells).
+- **FR-001–FR-016**: each covered by the feature tests above; full suite 140 tests, 139 passed, 1 skipped
+  (MySQL-only test).
+- **Open**: SC-002 (time for a user to produce the month) and the visual RTL/phone-width check (T038) need a person.
