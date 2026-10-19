@@ -269,6 +269,12 @@ CREATE TABLE `wc_registration_tb` (
   `WC_REG_DISCHARGE_TYPE` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'سبب ونوع الخروج (شفاء، تحويل، وفاة)',
   `WC_REG_DISCHARGED_AT` datetime DEFAULT NULL COMMENT 'تاريخ ووقت تنفيذ إغلاق الملف بالنظام',
   `WC_REG_DISCHARGED_BY_EMP_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'الموظف منفذ قرار التخريج (FK -> PER_EMPLOYEE_TB)',
+  `WC_REG_HAS_ALLERGIES` tinyint(1) DEFAULT NULL COMMENT 'هل لدى المريض حساسية: 1 = نعم، 0 = لا، فارغ = سجل قديم قبل التقييم المنظم',
+  `WC_REG_ALLERGIES_DESCRIPTION` text COLLATE utf8mb4_unicode_ci COMMENT 'وصف الحساسية (مطلوب عند وجود حساسية وفارغ عند عدمها)',
+  `WC_REG_NO_COMORBIDITIES` tinyint(1) DEFAULT NULL COMMENT 'لا توجد أمراض مصاحبة: 1 = لا توجد (لا تُربط أمراض في WC_REGISTRATION_PMH_TB)',
+  `WC_REG_NEXT_VISIT_DATE` datetime DEFAULT NULL COMMENT 'تاريخ الزيارة القادمة في خطة المتابعة',
+  `WC_REG_FOLLOW_UP_FREQUENCY` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'تكرار المتابعة (مثال: كل أسبوع)',
+  `WC_REG_FOLLOW_UP_OBJECTIVE` text COLLATE utf8mb4_unicode_ci COMMENT 'هدف خطة المتابعة',
   PRIMARY KEY (`WC_REG_CODE`),
   KEY `wc_registration_tb_wc_reg_request_cd_index` (`WC_REG_REQUEST_CD`),
   KEY `wc_registration_tb_wc_reg_patient_cd_index` (`WC_REG_PATIENT_CD`),
@@ -286,7 +292,8 @@ CREATE TABLE `wc_registration_tb` (
   CONSTRAINT `wc_registration_tb_wc_reg_patient_cd_foreign` FOREIGN KEY (`WC_REG_PATIENT_CD`) REFERENCES `mr_patient_tb` (`MR_PAT_CODE`),
   CONSTRAINT `wc_registration_tb_wc_reg_procedure_cd_foreign` FOREIGN KEY (`WC_REG_PROCEDURE_CD`) REFERENCES `wc_procedure_tb` (`WC_PROC_CODE`),
   CONSTRAINT `wc_registration_tb_wc_reg_procedure_performed_by_cd_foreign` FOREIGN KEY (`WC_REG_PROCEDURE_PERFORMED_BY_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`),
-  CONSTRAINT `wc_registration_tb_wc_reg_request_cd_foreign` FOREIGN KEY (`WC_REG_REQUEST_CD`) REFERENCES `wc_request_reg_tb` (`WC_REQ_CODE`)
+  CONSTRAINT `wc_registration_tb_wc_reg_request_cd_foreign` FOREIGN KEY (`WC_REG_REQUEST_CD`) REFERENCES `wc_request_reg_tb` (`WC_REQ_CODE`),
+  CONSTRAINT `wc_reg_allergy_context_check` CHECK (((`WC_REG_HAS_ALLERGIES` is null) or ((`WC_REG_HAS_ALLERGIES` = 1) and (nullif(trim(`WC_REG_ALLERGIES_DESCRIPTION`),_utf8mb4'') is not null)) or ((`WC_REG_HAS_ALLERGIES` = 0) and (`WC_REG_ALLERGIES_DESCRIPTION` is null))))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='التسجيل السريري للمريض في العيادة بعد قبول الطلب';
 
 -- Data for `wc_registration_tb`
@@ -368,7 +375,10 @@ CREATE TABLE `wc_daily_review_tb` (
   `WC_DREV_ENTRY_USER_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المستخدم مدخل التقييم اليومي (FK -> PER_USERS_TB)',
   `WC_DREV_OVERALL_STATUS` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'التقييم العام الشامل لحالة المريض بالزيارة',
   `WC_DREV_GENERAL_NOTES` text COLLATE utf8mb4_unicode_ci COMMENT 'ملاحظات الممرض العامة أثناء الزيارة',
+  `WC_DREV_SUBMISSION_KEY` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'مفتاح الإرسال الفريد لمنع تكرار حفظ الزيارة نفسها (فارغ للسجلات القديمة)',
   PRIMARY KEY (`WC_DREV_CODE`),
+  UNIQUE KEY `wc_drev_scheduled_review_unique` (`WC_DREV_SCHEDULED_REVIEW_CD`),
+  UNIQUE KEY `wc_drev_submission_key_unique` (`WC_DREV_SUBMISSION_KEY`),
   KEY `wc_daily_review_tb_wc_drev_registration_cd_index` (`WC_DREV_REGISTRATION_CD`),
   KEY `wc_daily_review_tb_wc_drev_scheduled_review_cd_index` (`WC_DREV_SCHEDULED_REVIEW_CD`),
   KEY `wc_daily_review_tb_wc_drev_nurse_cd_index` (`WC_DREV_NURSE_CD`),
@@ -436,12 +446,14 @@ CREATE TABLE `wc_wound_photo_tb` (
   `WC_PHOTO_TAKEN_AT` datetime NOT NULL COMMENT 'تاريخ ووقت التقاط الصورة السريرية',
   `WC_PHOTO_NURSE_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'الممرض/ة المسؤول/ة عن التقاط الصورة (FK -> PER_EMPLOYEE_TB)',
   `WC_PHOTO_ENTRY_USER_CD` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المستخدم الذي أدخل سجل الصورة في النظام (FK -> PER_USERS_TB)',
+  `WC_PHOTO_ASSESSMENT_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'التقييم المنظم الذي التُقطت فيه الصورة (FK -> WC_WOUND_ASSESSMENT_TB، فارغ للسجلات القديمة)',
   PRIMARY KEY (`WC_PHOTO_CODE`),
   KEY `wc_wound_photo_tb_wc_photo_reg_diagnosis_cd_index` (`WC_PHOTO_REG_DIAGNOSIS_CD`),
   KEY `wc_wound_photo_tb_wc_photo_daily_review_detail_cd_index` (`WC_PHOTO_DAILY_REVIEW_DETAIL_CD`),
   KEY `wc_wound_photo_tb_wc_photo_stage_index` (`WC_PHOTO_STAGE`),
   KEY `wc_wound_photo_tb_wc_photo_nurse_cd_index` (`WC_PHOTO_NURSE_CD`),
   KEY `wc_wound_photo_tb_wc_photo_entry_user_cd_index` (`WC_PHOTO_ENTRY_USER_CD`),
+  KEY `wc_wound_photo_tb_wc_photo_assessment_cd_index` (`WC_PHOTO_ASSESSMENT_CD`),
   CONSTRAINT `wc_wound_photo_tb_wc_photo_daily_review_detail_cd_foreign` FOREIGN KEY (`WC_PHOTO_DAILY_REVIEW_DETAIL_CD`) REFERENCES `wc_review_detail_tb` (`WC_REVD_CODE`) ON DELETE SET NULL,
   CONSTRAINT `wc_wound_photo_tb_wc_photo_entry_user_cd_foreign` FOREIGN KEY (`WC_PHOTO_ENTRY_USER_CD`) REFERENCES `per_users_tb` (`PER_USER_CODE`),
   CONSTRAINT `wc_wound_photo_tb_wc_photo_nurse_cd_foreign` FOREIGN KEY (`WC_PHOTO_NURSE_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`),
