@@ -228,7 +228,7 @@ class PatientMedicalRecordTest extends TestCase
         $response->assertSee('ملغى تلقائياً');
         $response->assertSee('ضماد اختبار');
         $response->assertSee('علاج اختبار');
-        $response->assertSee('تحسن ومتابعة');
+        $response->assertSee('Improved – Follow-up');
     }
 
     public function test_empty_registration_sections_have_independent_empty_states(): void

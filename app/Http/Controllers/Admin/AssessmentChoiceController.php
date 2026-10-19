@@ -24,6 +24,7 @@ class AssessmentChoiceController extends Controller
     public function update(UpdateAssessmentChoiceRequest $request, WcAssessmentChoice $assessmentChoice): RedirectResponse
     {
         $assessmentChoice->update([
+            'WC_ACH_LABEL_EN' => trim($request->validated('label_en')),
             'WC_ACH_LABEL_AR' => trim($request->validated('label_ar')),
             'WC_ACH_DISPLAY_ORDER' => $request->integer('display_order'),
         ]);

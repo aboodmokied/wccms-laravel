@@ -44,11 +44,7 @@ class StoreWoundDiagnosisRequest extends FormRequest
     {
         return [
             'clinical_nurse_code' => 'الممرض السريري',
-            'assessment.wound_type_code' => 'نوع الجرح',
-            'assessment.diagnosis_code' => 'التشخيص',
-            'assessment.length_mm' => 'طول الجرح',
-            'assessment.width_mm' => 'عرض الجرح',
-            'assessment.depth_mm' => 'عمق الجرح',
+            ...$this->woundAssessmentAttributes('assessment'),
         ];
     }
 }

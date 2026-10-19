@@ -60,7 +60,7 @@ class ReportController extends Controller
 
                 // Daily Reviews Table
                 fputcsv($handle, ['تقييمات المزيارات اليومية:']);
-                fputcsv($handle, ['رمز التقييم', 'التاريخ', 'نتيجة التقييم', 'الممرض', 'ملاحظات']);
+                fputcsv($handle, ['رمز التقييم', 'التاريخ', __('clinical.fields.overall_outcome'), 'الممرض', 'ملاحظات']);
                 if (empty($reg['daily_reviews'])) {
                     fputcsv($handle, ['لا توجد زيارات تقييم يومية سجلت لهذا التسجيل']);
                 } else {
@@ -68,7 +68,7 @@ class ReportController extends Controller
                         fputcsv($handle, [
                             $rev['code'],
                             $rev['date'],
-                            $rev['status_eval'],
+                            $rev['status_label'],
                             $rev['nurse'],
                             $rev['notes'],
                         ]);

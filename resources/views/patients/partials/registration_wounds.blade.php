@@ -1,7 +1,7 @@
 <section class="patient-clinical-section" aria-labelledby="wounds-{{ $registration->WC_REG_CODE }}-title">
     <header class="patient-clinical-section-heading">
         <div>
-            <span class="patient-clinical-kicker">التشخيصات والصور الأولية</span>
+            <span class="patient-clinical-kicker"><bdi>{{ __('clinical.fields.diagnosis') }}</bdi> والصور الأولية</span>
             <h3 id="wounds-{{ $registration->WC_REG_CODE }}-title">الجروح المسجلة</h3>
         </div>
         <span class="patient-section-count">{{ $registration->diagnoses->count() }}</span>

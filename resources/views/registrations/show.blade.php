@@ -199,7 +199,7 @@
                         </li>
                         @if($registration->procedure)
                             <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
-                                <span class="text-muted"><i class="bi bi-activity me-2"></i>الإجراء المتبع:</span>
+                                <span class="text-muted"><i class="bi bi-activity me-2"></i><bdi>{{ __('clinical.fields.procedure') }}</bdi>:</span>
                                 <span class="fw-semibold text-dark">{{ $registration->procedure->WC_PROC_NAME }}</span>
                             </li>
                         @endif
@@ -218,7 +218,7 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex align-items-center gap-2">
                         <i class="bi bi-journal-text text-warning fs-5"></i>
-                        <h3 class="card-title fs-6 mb-0 fw-bold text-dark">ملاحظات التاريخ المرضي (PMH)</h3>
+                        <h3 class="card-title fs-6 mb-0 fw-bold text-dark"><bdi>{{ __('clinical.fields.pmh_notes') }}</bdi></h3>
                     </div>
                     <div class="card-body p-3">
                         <p class="text-dark fs-7 mb-0 lh-base" style="white-space: pre-line;">{{ $registration->WC_REG_PMH_NOTES }}</p>
@@ -248,8 +248,8 @@
                             <thead class="bg-light-subtle border-bottom">
                                 <tr class="text-muted fw-bold fs-7">
                                     <th class="ps-4">#</th>
-                                    <th>نوع الجرح (Wound Type)</th>
-                                    <th>التشخيص السريري (Diagnosis)</th>
+                                    <th><bdi>{{ __('clinical.fields.wound_type') }}</bdi></th>
+                                    <th><bdi>{{ __('clinical.fields.diagnosis') }}</bdi></th>
                                     <th>الممرض الفاحص</th>
                                     <th class="pe-4 text-end">التوثيق بواسطة</th>
                                 </tr>

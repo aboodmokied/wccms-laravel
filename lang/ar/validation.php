@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * Arabic validation messages. Medical field names come from the form requests' attributes (lang/ar/clinical.php),
+ * so a message reads e.g. «حقل Exudate Amount مطلوب.» (spec 014).
+ */
+return [
+    'accepted' => 'يجب قبول حقل :attribute.',
+    'after' => 'يجب أن يكون حقل :attribute تاريخاً بعد :date.',
+    'after_or_equal' => 'يجب أن يكون حقل :attribute تاريخاً بعد :date أو مساوياً له.',
+    'array' => 'يجب أن يكون حقل :attribute قائمة.',
+    'before' => 'يجب أن يكون حقل :attribute تاريخاً قبل :date.',
+    'before_or_equal' => 'يجب أن يكون حقل :attribute تاريخاً قبل :date أو مساوياً له.',
+    'between' => [
+        'array' => 'يجب أن يحتوي حقل :attribute على عدد عناصر بين :min و :max.',
+        'file' => 'يجب أن يكون حجم حقل :attribute بين :min و :max كيلوبايت.',
+        'numeric' => 'يجب أن تكون قيمة حقل :attribute بين :min و :max.',
+        'string' => 'يجب أن يكون طول حقل :attribute بين :min و :max حرفاً.',
+    ],
+    'boolean' => 'يجب أن تكون قيمة حقل :attribute صحيحة أو خاطئة.',
+    'date' => 'حقل :attribute ليس تاريخاً صحيحاً.',
+    'date_format' => 'حقل :attribute لا يطابق الصيغة :format.',
+    'decimal' => 'يجب أن يحتوي حقل :attribute على :decimal منازل عشرية.',
+    'distinct' => 'حقل :attribute يحتوي على قيمة مكررة.',
+    'email' => 'يجب أن يكون حقل :attribute بريداً إلكترونياً صحيحاً.',
+    'exists' => 'القيمة المحددة في حقل :attribute غير صالحة.',
+    'file' => 'يجب أن يكون حقل :attribute ملفاً.',
+    'gt' => [
+        'array' => 'يجب أن يحتوي حقل :attribute على أكثر من :value عناصر.',
+        'file' => 'يجب أن يكون حجم حقل :attribute أكبر من :value كيلوبايت.',
+        'numeric' => 'يجب أن تكون قيمة حقل :attribute أكبر من :value.',
+        'string' => 'يجب أن يكون طول حقل :attribute أكثر من :value حرفاً.',
+    ],
+    'gte' => [
+        'array' => 'يجب أن يحتوي حقل :attribute على :value عناصر أو أكثر.',
+        'file' => 'يجب أن يكون حجم حقل :attribute :value كيلوبايت أو أكثر.',
+        'numeric' => 'يجب أن تكون قيمة حقل :attribute :value أو أكثر.',
+        'string' => 'يجب أن يكون طول حقل :attribute :value حرفاً أو أكثر.',
+    ],
+    'image' => 'يجب أن يكون حقل :attribute صورة.',
+    'in' => 'القيمة المحددة في حقل :attribute غير صالحة.',
+    'integer' => 'يجب أن يكون حقل :attribute عدداً صحيحاً.',
+    'lt' => [
+        'array' => 'يجب أن يحتوي حقل :attribute على أقل من :value عناصر.',
+        'file' => 'يجب أن يكون حجم حقل :attribute أقل من :value كيلوبايت.',
+        'numeric' => 'يجب أن تكون قيمة حقل :attribute أقل من :value.',
+        'string' => 'يجب أن يكون طول حقل :attribute أقل من :value حرفاً.',
+    ],
+    'max' => [
+        'array' => 'يجب ألا يحتوي حقل :attribute على أكثر من :max عناصر.',
+        'file' => 'يجب ألا يتجاوز حجم حقل :attribute :max كيلوبايت.',
+        'numeric' => 'يجب ألا تتجاوز قيمة حقل :attribute :max.',
+        'string' => 'يجب ألا يتجاوز طول حقل :attribute :max حرفاً.',
+    ],
+    'mimes' => 'يجب أن يكون حقل :attribute ملفاً من نوع: :values.',
+    'mimetypes' => 'يجب أن يكون حقل :attribute ملفاً من نوع: :values.',
+    'min' => [
+        'array' => 'يجب أن يحتوي حقل :attribute على :min عناصر على الأقل.',
+        'file' => 'يجب أن يكون حجم حقل :attribute :min كيلوبايت على الأقل.',
+        'numeric' => 'يجب أن تكون قيمة حقل :attribute :min على الأقل.',
+        'string' => 'يجب أن يكون طول حقل :attribute :min حرفاً على الأقل.',
+    ],
+    'numeric' => 'يجب أن يكون حقل :attribute رقماً.',
+    'present' => 'يجب أن يكون حقل :attribute موجوداً.',
+    'prohibited' => 'حقل :attribute غير مسموح به.',
+    'regex' => 'صيغة حقل :attribute غير صحيحة.',
+    'required' => 'حقل :attribute مطلوب.',
+    'required_if' => 'حقل :attribute مطلوب عندما تكون قيمة :other هي :value.',
+    'required_unless' => 'حقل :attribute مطلوب ما لم تكن قيمة :other ضمن :values.',
+    'required_with' => 'حقل :attribute مطلوب عند وجود :values.',
+    'required_without' => 'حقل :attribute مطلوب عند عدم وجود :values.',
+    'size' => [
+        'array' => 'يجب أن يحتوي حقل :attribute على :size عناصر.',
+        'file' => 'يجب أن يكون حجم حقل :attribute :size كيلوبايت.',
+        'numeric' => 'يجب أن تكون قيمة حقل :attribute :size.',
+        'string' => 'يجب أن يكون طول حقل :attribute :size حرفاً.',
+    ],
+    'string' => 'يجب أن يكون حقل :attribute نصاً.',
+    'unique' => 'قيمة حقل :attribute مستخدمة من قبل.',
+    'uploaded' => 'فشل رفع حقل :attribute.',
+    'uuid' => 'يجب أن يكون حقل :attribute معرّفاً صحيحاً.',
+
+    'custom' => [],
+
+    'attributes' => [],
+];

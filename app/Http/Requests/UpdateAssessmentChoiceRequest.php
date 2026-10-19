@@ -23,8 +23,21 @@ class UpdateAssessmentChoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'label_en' => ['required', 'string', 'max:150'],
             'label_ar' => ['required', 'string', 'max:150'],
             'display_order' => ['required', 'integer', 'min:0', 'max:32767'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'label_en' => 'الاسم الإنجليزي',
+            'label_ar' => 'التسمية العربية',
+            'display_order' => 'الترتيب',
         ];
     }
 }

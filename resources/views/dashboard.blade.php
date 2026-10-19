@@ -115,7 +115,7 @@
         <x-card title="توزيع نتائج التقييمات السريرية" icon="bi-pie-chart-fill" subtitle="تحليل حالات المرضى والنتائج التقييمية">
             <div class="mb-3">
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>تحسن وتم الخروج</span>
+                    <span class="fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>{{ __('clinical.outcome_groups.DISCHARGED') }}</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['DISCHARGED']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['DISCHARGED']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -125,7 +125,7 @@
 
             <div class="mb-3">
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-primary"><i class="bi bi-arrow-repeat me-1"></i>تحسن يحتاج متابعة</span>
+                    <span class="fw-semibold text-primary"><i class="bi bi-arrow-repeat me-1"></i>{{ __('clinical.outcome_groups.FOLLOWUP') }}</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['FOLLOWUP']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['FOLLOWUP']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -135,7 +135,7 @@
 
             <div class="mb-3">
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill me-1"></i>تدهور في الحالة</span>
+                    <span class="fw-semibold text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ __('clinical.outcome_groups.WORSENED') }}</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['WORSENED']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['WORSENED']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">
@@ -145,7 +145,7 @@
 
             <div>
                 <div class="d-flex justify-content-between small mb-1">
-                    <span class="fw-semibold text-danger"><i class="bi bi-x-circle-fill me-1"></i>حالات وفاة</span>
+                    <span class="fw-semibold text-danger"><i class="bi bi-x-circle-fill me-1"></i>{{ __('clinical.outcome_groups.DECEASED') }}</span>
                     <span class="text-muted">{{ $kpis['outcome_distribution']['DECEASED']['count'] ?? 0 }} حالات ({{ $kpis['outcome_distribution']['DECEASED']['percentage'] ?? 0 }}%)</span>
                 </div>
                 <div class="progress" style="height: 10px;">

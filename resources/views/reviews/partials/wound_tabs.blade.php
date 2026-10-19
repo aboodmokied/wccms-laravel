@@ -45,7 +45,7 @@
                                 <div class="col-12 col-md-6 col-lg-3">
                                     <div class="p-3 border rounded-3 bg-light-subtle h-100">
                                         <span class="d-block text-muted fs-8 mb-1">
-                                            <i class="bi bi-droplet text-primary me-1"></i>نوع الجرح
+                                            <i class="bi bi-droplet text-primary me-1"></i><bdi>{{ __('clinical.fields.wound_type') }}</bdi>
                                         </span>
                                         <span class="fw-bold text-dark fs-7">{{ $diag->woundType?->WC_WTYPE_NAME ?? 'غير محدد' }}</span>
                                     </div>
@@ -55,7 +55,7 @@
                                 <div class="col-12 col-md-6 col-lg-3">
                                     <div class="p-3 border rounded-3 bg-light-subtle h-100">
                                         <span class="d-block text-muted fs-8 mb-1">
-                                            <i class="bi bi-clipboard2-pulse text-primary me-1"></i>التشخيص السريري
+                                            <i class="bi bi-clipboard2-pulse text-primary me-1"></i><bdi>{{ __('clinical.fields.diagnosis') }}</bdi>
                                         </span>
                                         <span class="fw-bold text-dark fs-7">{{ $diag->diagnosis?->WC_DIAG_NAME ?? 'غير محدد' }}</span>
                                     </div>
@@ -65,7 +65,7 @@
                                 <div class="col-12 col-md-6 col-lg-3">
                                     <div class="p-3 border rounded-3 bg-light-subtle h-100">
                                         <span class="d-block text-muted fs-8 mb-1">
-                                            <i class="bi bi-bandaid text-primary me-1"></i>الضمادة الحالية
+                                            <i class="bi bi-bandaid text-primary me-1"></i><bdi>{{ __('clinical.fields.dressing') }}</bdi> (الحالي)
                                         </span>
                                         @if($latestDetail && $latestDetail->dressing)
                                             <span class="fw-bold text-dark fs-7">{{ $latestDetail->dressing->WC_DRESS_NAME }}</span>
@@ -82,7 +82,7 @@
                                 <div class="col-12 col-md-6 col-lg-3">
                                     <div class="p-3 border rounded-3 bg-light-subtle h-100">
                                         <span class="d-block text-muted fs-8 mb-1">
-                                            <i class="bi bi-capsule text-primary me-1"></i>العلاج الموضعي الحالي
+                                            <i class="bi bi-capsule text-primary me-1"></i><bdi>{{ __('clinical.fields.medication') }}</bdi> (الحالي)
                                         </span>
                                         @if($latestDetail && $latestDetail->medication)
                                             <span class="fw-bold text-dark fs-7">{{ $latestDetail->medication->WC_MED_NAME }}</span>
@@ -100,23 +100,23 @@
                                     <div class="col-12">
                                         <div class="p-3 border rounded-3 bg-primary-subtle bg-opacity-20 border-primary-subtle d-flex flex-wrap align-items-center gap-3">
                                             <span class="text-muted fs-8">
-                                                <i class="bi bi-activity text-primary me-1"></i>آخر تقييم لحالة الجرح:
+                                                <i class="bi bi-activity text-primary me-1"></i>آخر <bdi>{{ __('clinical.fields.wound_outcome') }}</bdi>:
                                             </span>
                                             @if($latestDetail->WC_DREVD_OUTCOME_STATUS === 'IMPROVED_DISCHARGE')
                                                 <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fs-8 rounded-pill">
-                                                    <i class="bi bi-check-circle-fill me-1"></i>تحسن ممتاز - مكتمل الشفاء
+                                                    <i class="bi bi-check-circle-fill me-1"></i>{{ __('clinical.wound_outcomes.IMPROVED_DISCHARGE') }}
                                                 </span>
                                             @elseif($latestDetail->WC_DREVD_OUTCOME_STATUS === 'IMPROVED_FOLLOWUP')
                                                 <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1.5 fs-8 rounded-pill">
-                                                    <i class="bi bi-arrow-repeat me-1"></i>تحسن - يحتاج متابعة
+                                                    <i class="bi bi-arrow-repeat me-1"></i>{{ __('clinical.wound_outcomes.IMPROVED_FOLLOWUP') }}
                                                 </span>
                                             @elseif($latestDetail->WC_DREVD_OUTCOME_STATUS === 'WORSENED')
                                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1.5 fs-8 rounded-pill">
-                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>تراجع / زيادة إفرازات
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ __('clinical.wound_outcomes.WORSENED') }}
                                                 </span>
                                             @elseif($latestDetail->WC_DREVD_OUTCOME_STATUS === 'DECEASED')
                                                 <span class="badge bg-dark text-white px-3 py-1.5 fs-8 rounded-pill">
-                                                    <i class="bi bi-x-circle-fill me-1"></i>تلف أنسجة شديد
+                                                    <i class="bi bi-x-circle-fill me-1"></i>{{ __('clinical.wound_outcomes.DECEASED') }}
                                                 </span>
                                             @endif
 

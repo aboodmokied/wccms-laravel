@@ -25,13 +25,13 @@
         @forelse($registration->dailyReviews as $reviewIndex => $review)
             @php
                 $reviewOutcome = match ($review->WC_DREV_OVERALL_STATUS) {
-                    'IMPROVED_SCHEDULED' => ['تحسن مع موعد متابعة', 'info', 'bi-calendar-check'],
-                    'IMPROVED_DISCHARGE' => ['تحسن وتخريج', 'success', 'bi-check-circle'],
-                    'WORSENED_SCHEDULED' => ['تدهور مع موعد متابعة', 'warning', 'bi-exclamation-triangle'],
-                    'WORSENED_ADMISSION' => ['تدهور وتنويم', 'danger', 'bi-hospital'],
-                    'IMPROVED_STAY' => ['تحسن مع استمرار العلاج', 'success', 'bi-graph-up-arrow'],
-                    'WORSENED_STAY' => ['تدهور مع استمرار العلاج', 'warning', 'bi-arrow-repeat'],
-                    'DEATH' => ['وفاة', 'secondary', 'bi-x-circle'],
+                    'IMPROVED_SCHEDULED' => [__('clinical.overall_outcomes.IMPROVED_SCHEDULED'), 'info', 'bi-calendar-check'],
+                    'IMPROVED_DISCHARGE' => [__('clinical.overall_outcomes.IMPROVED_DISCHARGE'), 'success', 'bi-check-circle'],
+                    'WORSENED_SCHEDULED' => [__('clinical.overall_outcomes.WORSENED_SCHEDULED'), 'warning', 'bi-exclamation-triangle'],
+                    'WORSENED_ADMISSION' => [__('clinical.overall_outcomes.WORSENED_ADMISSION'), 'danger', 'bi-hospital'],
+                    'IMPROVED_STAY' => [__('clinical.overall_outcomes.IMPROVED_STAY'), 'success', 'bi-graph-up-arrow'],
+                    'WORSENED_STAY' => [__('clinical.overall_outcomes.WORSENED_STAY'), 'warning', 'bi-arrow-repeat'],
+                    'DEATH' => [__('clinical.overall_outcomes.DEATH'), 'secondary', 'bi-x-circle'],
                     default => [$review->WC_DREV_OVERALL_STATUS ?: 'غير محدد', 'secondary', 'bi-dash-circle'],
                 };
                 $isScheduledReview = filled($review->WC_DREV_SCHEDULED_REVIEW_CD) && $review->scheduledReview;
@@ -100,10 +100,10 @@
                         @forelse($review->details as $detail)
                             @php
                                 $detailOutcome = match ($detail->WC_DREVD_STATUS) {
-                                    'IMPROVED_FOLLOWUP' => ['تحسن ومتابعة', 'success'],
-                                    'IMPROVED_DISCHARGE' => ['مكتمل الشفاء', 'success'],
-                                    'WORSENED' => ['تراجع', 'warning'],
-                                    'DECEASED' => ['تلف أنسجة شديد', 'danger'],
+                                    'IMPROVED_FOLLOWUP' => [__('clinical.wound_outcomes.IMPROVED_FOLLOWUP'), 'success'],
+                                    'IMPROVED_DISCHARGE' => [__('clinical.wound_outcomes.IMPROVED_DISCHARGE'), 'success'],
+                                    'WORSENED' => [__('clinical.wound_outcomes.WORSENED'), 'warning'],
+                                    'DECEASED' => [__('clinical.wound_outcomes.DECEASED'), 'danger'],
                                     default => [$detail->WC_DREVD_STATUS ?: 'غير محدد', 'secondary'],
                                 };
                                 $baselinePhoto = $showBaselinePhotos
@@ -117,7 +117,7 @@
                                 <article class="clinical-wound-review h-100">
                                     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
                                         <div>
-                                            <span class="text-muted small d-block mb-1">الجرح والتشخيص</span>
+                                            <span class="text-muted small d-block mb-1"><bdi>{{ __('clinical.fields.wound_type') }} / {{ __('clinical.fields.diagnosis') }}</bdi></span>
                                             <strong>{{ $detail->regDiagnosis?->woundType?->WC_WTYPE_NAME ?? 'جرح غير محدد' }}</strong>
                                             <span class="text-muted"> · {{ $detail->regDiagnosis?->diagnosis?->WC_DIAG_NAME ?? 'دون تشخيص' }}</span>
                                         </div>
@@ -130,22 +130,22 @@
 
                                     <dl class="clinical-review-details mb-0">
                                         <div>
-                                            <dt>الضمادة</dt>
+                                            <dt><bdi>{{ __('clinical.fields.dressing') }}</bdi></dt>
                                             <dd>{{ $detail->dressing?->WC_DRESS_NAME ?? 'لم تحدد' }}</dd>
                                         </div>
                                         <div>
-                                            <dt>العلاج الموضعي</dt>
+                                            <dt><bdi>{{ __('clinical.fields.medication') }}</bdi></dt>
                                             <dd>{{ $detail->medication?->WC_MED_NAME ?? 'لم يحدد' }}</dd>
                                         </div>
                                         @if($detail->WC_DREVD_WOUND_DESCRIPTION)
                                             <div class="clinical-review-detail-wide">
-                                                <dt>الملاحظة السريرية</dt>
+                                                <dt><bdi>{{ __('clinical.fields.clinical_observation') }}</bdi></dt>
                                                 <dd>{{ $detail->WC_DREVD_WOUND_DESCRIPTION }}</dd>
                                             </div>
                                         @endif
                                         @if($detail->WC_DREVD_WOUND_CHANGES)
                                             <div class="clinical-review-detail-wide">
-                                                <dt>التغير منذ الزيارة السابقة</dt>
+                                                <dt><bdi>{{ __('clinical.fields.wound_changes') }}</bdi></dt>
                                                 <dd>{{ $detail->WC_DREVD_WOUND_CHANGES }}</dd>
                                             </div>
                                         @endif

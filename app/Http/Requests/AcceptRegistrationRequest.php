@@ -51,17 +51,16 @@ class AcceptRegistrationRequest extends FormRequest
             'clinic_nurse_code' => 'الممرض السريري',
             'wct_employee_code' => 'عضو فريق الجروح',
             'doctor_employee_code' => 'الطبيب',
-            'has_allergies' => 'وجود حساسية',
-            'allergies_description' => 'وصف الحساسية',
-            'no_comorbidities' => 'عدم وجود أمراض مزمنة',
-            'pmh_codes' => 'الأمراض المزمنة',
+            'has_allergies' => __('clinical.fields.allergies'),
+            'allergies_description' => __('clinical.fields.allergies_description'),
+            'no_comorbidities' => __('clinical.fields.pmh'),
+            'pmh_codes' => __('clinical.fields.pmh'),
+            'pmh_notes' => __('clinical.fields.pmh_notes'),
             'next_visit_date' => 'تاريخ الزيارة القادمة',
             'follow_up_frequency' => 'تكرار المتابعة',
             'follow_up_objective' => 'هدف المتابعة',
             'diagnoses' => 'الجروح',
-            'diagnoses.*.length_mm' => 'طول الجرح',
-            'diagnoses.*.width_mm' => 'عرض الجرح',
-            'diagnoses.*.depth_mm' => 'عمق الجرح',
+            ...$this->woundAssessmentAttributes('diagnoses.*'),
         ];
     }
 }

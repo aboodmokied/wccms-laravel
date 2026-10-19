@@ -119,7 +119,7 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th>تاريخ التقييم</th>
-                                                <th>نتيجة التقييم</th>
+                                                <th><bdi>{{ __('clinical.fields.overall_outcome') }}</bdi></th>
                                                 <th>الممرض السريري</th>
                                                 <th>الملاحظات والتغيرات السريرية</th>
                                             </tr>
@@ -129,15 +129,8 @@
                                                 <tr>
                                                     <td>{{ $rev['date'] }}</td>
                                                     <td>
-                                                        @if($rev['status_eval'] === 'DISCHARGED')
-                                                            <span class="badge bg-success">تحسن وتم الخروج</span>
-                                                        @elseif($rev['status_eval'] === 'FOLLOWUP')
-                                                            <span class="badge bg-primary">تحسن ومتابعة</span>
-                                                        @elseif($rev['status_eval'] === 'WORSENED')
-                                                            <span class="badge bg-warning text-dark">تدهور</span>
-                                                        @else
-                                                            <span class="badge bg-danger">وفاة</span>
-                                                        @endif
+                                                        @php($outcome = (string) $rev['status_eval'])
+                                                        <span class="badge {{ $outcome === 'DEATH' ? 'bg-danger' : (str_starts_with($outcome, 'IMPROVED') ? 'bg-success' : 'bg-warning text-dark') }}">{{ $rev['status_label'] }}</span>
                                                     </td>
                                                     <td>{{ $rev['nurse'] }}</td>
                                                     <td>{{ $rev['notes'] }}</td>

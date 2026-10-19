@@ -58,6 +58,53 @@ trait ValidatesWoundAssessment
         return $rules;
     }
 
+    /**
+     * English names of the medical fields for validation messages (spec 014): the message stays Arabic and names the
+     * field as the form shows it, e.g. «حقل Exudate Amount مطلوب.».
+     *
+     * @return array<string, string>
+     */
+    protected function woundAssessmentAttributes(string $prefix): array
+    {
+        $fields = [
+            'wound_type_code' => 'wound_type',
+            'diagnosis_code' => 'diagnosis',
+            'wound_status_choice_code' => 'wound_status',
+            'wound_bed_choice_codes' => 'wound_bed',
+            'wound_bed_choice_codes.*' => 'wound_bed',
+            'wound_margin_choice_codes' => 'wound_margin',
+            'wound_margin_choice_codes.*' => 'wound_margin',
+            'exudate_amount_choice_code' => 'exudate_amount',
+            'exudate_type_choice_code' => 'exudate_type',
+            'odor_choice_code' => 'odor',
+            'pain_severity_choice_code' => 'pain_severity',
+            'pain_at_dressing' => 'pain_at_dressing',
+            'fever_choice_code' => 'fever',
+            'nutrition_choice_code' => 'nutrition',
+            'location_choice_code' => 'location',
+            'laterality_choice_code' => 'laterality',
+            'location_notes' => 'location_notes',
+            'length_mm' => 'length_mm',
+            'width_mm' => 'width_mm',
+            'depth_mm' => 'depth_mm',
+            'swab_taken' => 'swab_taken',
+            'dressing_code' => 'dressing',
+            'medication_code' => 'medication',
+            'procedure_code' => 'procedure',
+            'treatment_notes' => 'treatment_notes',
+            'clinical_observation' => 'clinical_observation',
+            'wound_changes' => 'wound_changes',
+            'outcome_status' => 'wound_outcome',
+        ];
+
+        $attributes = [];
+        foreach ($fields as $field => $term) {
+            $attributes["{$prefix}.{$field}"] = __("clinical.fields.{$term}");
+        }
+
+        return $attributes;
+    }
+
     protected function configureWoundAssessmentValidator(Validator $validator, string $collection, bool $initial): void
     {
         $validator->after(function (Validator $validator) use ($collection, $initial) {
@@ -73,15 +120,15 @@ trait ValidatesWoundAssessment
                 $typeCode = $item['exudate_type_choice_code'] ?? null;
 
                 if ($amountCode === $dryCode && filled($typeCode)) {
-                    $validator->errors()->add("{$collection}.{$index}.exudate_type_choice_code", "{$label}: لا يمكن اختيار نوع إفرازات للجرح الجاف.");
+                    $validator->errors()->add("{$collection}.{$index}.exudate_type_choice_code", "{$label}: لا يمكن اختيار ".__('clinical.fields.exudate_type').' عندما يكون '.__('clinical.fields.exudate_amount').' Dry.');
                 }
                 if ($amountCode && $amountCode !== $dryCode && blank($typeCode)) {
-                    $validator->errors()->add("{$collection}.{$index}.exudate_type_choice_code", "{$label}: نوع الإفرازات مطلوب.");
+                    $validator->errors()->add("{$collection}.{$index}.exudate_type_choice_code", "{$label}: ".__('clinical.fields.exudate_type').' مطلوب.');
                 }
 
                 $margins = $item['wound_margin_choice_codes'] ?? [];
                 if ($noneMarginCode && in_array($noneMarginCode, $margins, true) && count($margins) > 1) {
-                    $validator->errors()->add("{$collection}.{$index}.wound_margin_choice_codes", "{$label}: خيار لا توجد علامة لا يجتمع مع علامات أخرى.");
+                    $validator->errors()->add("{$collection}.{$index}.wound_margin_choice_codes", "{$label}: خيار None Observed في ".__('clinical.fields.wound_margin').' لا يجتمع مع خيارات أخرى.');
                 }
 
                 $hasTreatment = filled($item['dressing_code'] ?? null)
@@ -94,15 +141,15 @@ trait ValidatesWoundAssessment
 
                 $statusCode = $item['wound_status_choice_code'] ?? null;
                 if ($initial && $statusCode && $statusCode !== $initialStatusCode) {
-                    $validator->errors()->add("{$collection}.{$index}.wound_status_choice_code", "{$label}: الحالة الأولية يجب أن تكون الزيارة الأولى.");
+                    $validator->errors()->add("{$collection}.{$index}.wound_status_choice_code", "{$label}: ".__('clinical.fields.wound_status').' في التقييم الأولي يجب أن تكون First Visit.');
                 }
                 if (! $initial && $statusCode === $initialStatusCode) {
-                    $validator->errors()->add("{$collection}.{$index}.wound_status_choice_code", "{$label}: الزيارة الأولى غير متاحة في المتابعة.");
+                    $validator->errors()->add("{$collection}.{$index}.wound_status_choice_code", "{$label}: First Visit غير متاحة في المتابعة.");
                 }
 
                 if ($initial && ($item['location_choice_code'] ?? null) === $otherLocationCode
                     && blank($item['location_notes'] ?? null)) {
-                    $validator->errors()->add("{$collection}.{$index}.location_notes", "{$label}: يرجى تحديد الموقع الدقيق عند اختيار أخرى.");
+                    $validator->errors()->add("{$collection}.{$index}.location_notes", "{$label}: يرجى تعبئة ".__('clinical.fields.location_notes').' عند اختيار Other.');
                 }
             }
         });

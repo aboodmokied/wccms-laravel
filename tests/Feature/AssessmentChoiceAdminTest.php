@@ -22,6 +22,7 @@ class AssessmentChoiceAdminTest extends TestCase
 
         $response = $this->withHeader('Authorization', 'Bearer '.$this->token('ADMIN'))
             ->put(route('admin.assessment_choices.update', $choice), [
+                'label_en' => 'Approved Clinical Term',
                 'label_ar' => 'تسمية سريرية معتمدة',
                 'display_order' => 44,
                 'WC_ACH_CATEGORY' => 'TAMPERED',
@@ -30,9 +31,28 @@ class AssessmentChoiceAdminTest extends TestCase
 
         $response->assertRedirect();
         $choice->refresh();
+        $this->assertSame('Approved Clinical Term', $choice->WC_ACH_LABEL_EN);
+        $this->assertSame('Approved Clinical Term', $choice->displayLabel());
         $this->assertSame('تسمية سريرية معتمدة', $choice->WC_ACH_LABEL_AR);
         $this->assertSame(44, $choice->WC_ACH_DISPLAY_ORDER);
         $this->assertSame($identity, [$choice->WC_ACH_CATEGORY, $choice->WC_ACH_KEY]);
+    }
+
+    public function test_rejects_a_choice_saved_without_an_english_name(): void
+    {
+        $this->seed(WcAssessmentChoiceSeeder::class);
+        $choice = WcAssessmentChoice::query()->firstOrFail();
+        $englishName = $choice->WC_ACH_LABEL_EN;
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->token('ADMIN'))
+            ->put(route('admin.assessment_choices.update', $choice), [
+                'label_en' => '',
+                'label_ar' => 'تسمية',
+                'display_order' => 1,
+            ]);
+
+        $response->assertSessionHasErrors(['label_en' => 'حقل الاسم الإنجليزي مطلوب.']);
+        $this->assertSame($englishName, $choice->fresh()->WC_ACH_LABEL_EN);
     }
 
     public function test_non_admin_cannot_manage_choices_and_retired_label_remains_readable(): void

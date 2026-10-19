@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 
 class ReportingService
 {
@@ -73,10 +74,10 @@ class ReportingService
         $totalEvaluations = array_sum($outcomeCounts);
 
         $outcomesMap = [
-            'DISCHARGED' => ['label' => 'تحسن وتم الخروج', 'count' => 0, 'percentage' => 0.0, 'color' => 'success'],
-            'FOLLOWUP' => ['label' => 'تحسن يحتاج متابعة', 'count' => 0, 'percentage' => 0.0, 'color' => 'primary'],
-            'WORSENED' => ['label' => 'تدهور في الحالة', 'count' => 0, 'percentage' => 0.0, 'color' => 'warning'],
-            'DECEASED' => ['label' => 'متوفي', 'count' => 0, 'percentage' => 0.0, 'color' => 'danger'],
+            'DISCHARGED' => ['label' => __('clinical.outcome_groups.DISCHARGED'), 'count' => 0, 'percentage' => 0.0, 'color' => 'success'],
+            'FOLLOWUP' => ['label' => __('clinical.outcome_groups.FOLLOWUP'), 'count' => 0, 'percentage' => 0.0, 'color' => 'primary'],
+            'WORSENED' => ['label' => __('clinical.outcome_groups.WORSENED'), 'count' => 0, 'percentage' => 0.0, 'color' => 'warning'],
+            'DECEASED' => ['label' => __('clinical.outcome_groups.DECEASED'), 'count' => 0, 'percentage' => 0.0, 'color' => 'danger'],
         ];
 
         foreach ($outcomeCounts as $status => $count) {
@@ -139,10 +140,10 @@ class ReportingService
 
         return $reviews->map(function ($rev) {
             $statusLabels = [
-                'DISCHARGED' => 'تحسن وتم الخروج',
-                'FOLLOWUP' => 'تحسن ومتابعة',
-                'WORSENED' => 'تدهور',
-                'DECEASED' => 'وفاة',
+                'DISCHARGED' => __('clinical.outcome_groups.DISCHARGED'),
+                'FOLLOWUP' => __('clinical.outcome_groups.FOLLOWUP'),
+                'WORSENED' => __('clinical.outcome_groups.WORSENED'),
+                'DECEASED' => __('clinical.outcome_groups.DECEASED'),
             ];
 
             return [
@@ -240,6 +241,9 @@ class ReportingService
                             'code' => $rev->WC_DREV_CODE,
                             'date' => $rev->WC_DREV_VISIT_DATE,
                             'status_eval' => $rev->WC_DREV_OVERALL_STATUS,
+                            'status_label' => Lang::has("clinical.overall_outcomes.{$rev->WC_DREV_OVERALL_STATUS}")
+                                ? __("clinical.overall_outcomes.{$rev->WC_DREV_OVERALL_STATUS}")
+                                : (string) $rev->WC_DREV_OVERALL_STATUS,
                             'nurse' => $rev->nurse_name ?? 'غير محدد',
                             'notes' => $rev->WC_DREV_GENERAL_NOTES ?? 'لا توجد ملاحظات',
                         ];

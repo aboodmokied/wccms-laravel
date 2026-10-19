@@ -22,7 +22,8 @@ class WoundAssessmentHistoryTest extends StructuredWoundTestCase
 
         $response->assertOk()
             ->assertSee('التقييم الأولي')
-            ->assertSee('الزيارة الأولى')
+            ->assertSee('First Visit')
+            ->assertDontSee('الزيارة الأولى')
             ->assertSee('20.25')
             ->assertSee('mm')
             ->assertSee('ممرض منظم');

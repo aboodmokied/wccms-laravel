@@ -40,7 +40,7 @@
                 <strong>{{ $registration->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong>
             </span>
             <span>
-                <small>الإجراء</small>
+                <small><bdi>{{ __('clinical.fields.procedure') }}</bdi></small>
                 <strong>{{ $registration->procedure?->WC_PROC_NAME ?? 'غير محدد' }}</strong>
             </span>
             @if($registration->WC_REG_DISCHARGED_AT)
@@ -72,7 +72,7 @@
     <div class="patient-registration-body">
         <div class="patient-registration-overview">
             <div>
-                <span>ملاحظات التاريخ المرضي</span>
+                <span><bdi>{{ __('clinical.fields.pmh_notes') }}</bdi></span>
                 <p>{{ $registration->WC_REG_PMH_NOTES ?: 'لا توجد ملاحظات تاريخ مرضي مسجلة.' }}</p>
             </div>
             <div>

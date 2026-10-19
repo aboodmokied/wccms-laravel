@@ -22,6 +22,8 @@ return [
         'length_mm' => 'Length',
         'width_mm' => 'Width',
         'depth_mm' => 'Depth',
+        'measurements' => 'Measurements',
+        'treatment' => 'Treatment',
         'wound_bed' => 'Wound Bed',
         'wound_margin' => 'Wound Margins',
         'swab_taken' => 'Swab Taken?',
@@ -71,6 +73,14 @@ return [
         'IMPROVED_FOLLOWUP' => 'Improved – Follow-up',
         'WORSENED' => 'Worsened',
         'DECEASED' => 'Deceased',
+    ],
+
+    /** Outcome groups of the dashboard and patient history report (ReportingService). */
+    'outcome_groups' => [
+        'DISCHARGED' => 'Improved – Discharged',
+        'FOLLOWUP' => 'Improved – Follow-up',
+        'WORSENED' => 'Worsened',
+        'DECEASED' => 'Death',
     ],
 
     /** Monthly report Comment column */

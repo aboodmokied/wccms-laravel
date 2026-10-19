@@ -63,10 +63,10 @@ class StoreDailyReviewRequest extends FormRequest
         return [
             'submission_key' => 'مفتاح الإرسال',
             'nurse_code' => 'الممرض السريري',
-            'overall_status' => 'النتيجة الإجمالية',
+            'overall_status' => __('clinical.fields.overall_outcome'),
             'details' => 'تقييمات الجروح',
             'details.*.registration_diagnosis_code' => 'هوية الجرح',
-            'details.*.outcome_status' => 'نتيجة الجرح',
+            ...$this->woundAssessmentAttributes('details.*'),
         ];
     }
 }
