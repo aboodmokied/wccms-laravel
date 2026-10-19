@@ -63,17 +63,12 @@ class WoundAssessmentModelTest extends TestCase
     {
         [$registrationDiagnosis, $employee, $user] = $this->createRegistrationDiagnosis();
 
-        $status = WcAssessmentChoice::create([
-            'WC_ACH_CATEGORY' => 'WOUND_STATUS',
-            'WC_ACH_KEY' => 'FIRST_VISIT',
-            'WC_ACH_LABEL_AR' => 'الزيارة الأولى',
-            'WC_ACH_IS_ACTIVE' => 0,
-            'WC_ACH_DISPLAY_ORDER' => 1,
-        ]);
-        $exudate = $this->choice('EXUDATE_AMOUNT', 'DRY', 'جاف');
-        $odor = $this->choice('ODOR', 'NONE', 'لا توجد رائحة');
-        $pain = $this->choice('PAIN_SEVERITY', 'NONE', 'لا يوجد ألم');
-        $bed = $this->choice('WOUND_BED', 'GRANULATION', 'نسيج حبيبي');
+        $status = $this->installedChoice('WOUND_STATUS', 'FIRST_VISIT');
+        $status->update(['WC_ACH_IS_ACTIVE' => 0]);
+        $exudate = $this->installedChoice('EXUDATE_AMOUNT', 'DRY');
+        $odor = $this->installedChoice('ODOR', 'NONE');
+        $pain = $this->installedChoice('PAIN_SEVERITY', 'NONE');
+        $bed = $this->installedChoice('WOUND_BED', 'GRANULATION');
 
         $assessment = WcWoundAssessment::create([
             'WC_WA_REG_DIAGNOSIS_CD' => $registrationDiagnosis->WC_RDIAG_CODE,
@@ -133,6 +128,17 @@ class WoundAssessmentModelTest extends TestCase
             'WC_ACH_IS_ACTIVE' => 1,
             'WC_ACH_DISPLAY_ORDER' => 1,
         ]);
+    }
+
+    /**
+     * A choice installed by the core migration.
+     */
+    private function installedChoice(string $category, string $key): WcAssessmentChoice
+    {
+        return WcAssessmentChoice::query()
+            ->where('WC_ACH_CATEGORY', $category)
+            ->where('WC_ACH_KEY', $key)
+            ->firstOrFail();
     }
 
     /**
