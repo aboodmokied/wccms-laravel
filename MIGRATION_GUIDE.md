@@ -4,12 +4,14 @@
 
 نفّذ الخطوات بالترتيب. كل خطوة تنتهي بـ **تحقق**؛ لا تنتقل للتي بعدها قبل أن ينجح.
 
+> **لماذا تبدأ بقائمة الفحص:** النظام كُتب دون وصول إلى قاعدة المستشفى. ما لم يُعرف أثناء التطوير (رقم المستشفى الحالي، رموز الجنس، أكواد وظائف الأطباء والتمريض، عدد الموظفين النشطين) يكتشفه `wccms:check-hospital` من القاعدة نفسها أثناء التسليم، ويقول لكل تحذير ماذا تغيّر في `.env`.
+
 | الملف | ما فيه |
 | --- | --- |
 | `wccms_oracle_schema.sql` | المستخدم WCCMS، صلاحيات SELECT على جداول HOS الثمانية، جداول العيادة الـ 20، الفهارس، CHECK، البيانات الأساسية، والقسم 8 (المفاتيح المركّبة إلى HOS، مُعطَّل) |
 | `wccms_oracle_procedures.sql` | الدوال المساعدة لقراءة XML، `FN_WC_EMPLOYEE_EXISTS`، والـ procedures الأربعة بـ PL/SQL لـ 11g |
-| `config/hospital.php` | رقم المستشفى، مخطط وجداول المستشفى، المفاتيح الاختيارية، وقيم الجنس والدخول |
-| `oracle-test/` | عُدّة تشغيل السكربتين على Oracle XE 11g في Docker قبل التسليم |
+| `config/hospital.php` | رقم المستشفى، مخطط وجداول المستشفى، المفاتيح الاختيارية، الموظف النشط، أكواد الوظائف، وأسماء الجنس |
+| `oracle-test/` | تجربة السكربتين: على Oracle XE 11g في Docker (`run.ps1`)، أو على القاعدة الحقيقية (`live_check.sql`) |
 | `app/Services/ClinicalWorkflows/OracleClinicalWorkflowGateway.php` | استدعاء الـ procedures من Laravel (البيانات بصيغة XML) |
 
 ---
@@ -33,7 +35,66 @@ C_HOSPITAL_TB        (H_CURR = 1)
 
 ---
 
-## الخطوة 1: الإعدادات (`.env` الإنتاج)
+## الخطوة 1: قائمة فحص التسليم (`wccms:check-hospital`)
+
+**ما يلزم:** نسخة النظام على الخادم بعد `composer install`، مع oci8 وحزمة Oracle (الخطوة 5؛ إن لم يكن الخادم جاهزاً فجهّزه أولاً ثم عُد هنا)، و `.env` يتصل بقاعدة المستشفى بحساب يقرأ جداول `HOS`. قبل إنشاء المستخدم `WCCMS` (الخطوة 6) استعمل أي حساب قراءة لديك، كحساب الـ DBA؛ وبعدها أعد الفحص بالمستخدم `WCCMS` نفسه (الخطوة 7).
+
+```ini
+DB_CONNECTION=oracle
+DB_HOST=<خادم Oracle>
+DB_PORT=1521
+DB_SERVICE_NAME=<service name>
+DB_USERNAME=<حساب يقرأ HOS>
+DB_PASSWORD=<كلمة مروره>
+DB_CHARSET=AL32UTF8
+DB_SERVER_VERSION=11g
+ORA_MAX_NAME_LEN=30
+
+HOSPITAL_NO=1
+HOSPITAL_SCHEMA=HOS
+CACHE_STORE=file
+```
+
+```bash
+php artisan config:clear
+php artisan wccms:check-hospital
+```
+
+الفحص للقراءة فقط، لا يغيّر شيئاً في القاعدة، ولا يوقف النظام. يطبع بالعربية، ويكتب كل نتيجة أيضاً في `storage/logs/laravel.log`:
+
+1. **المستشفى:** `HOSPITAL_NO` المستخدم، والمستشفى الحالي في `C_HOSPITAL_TB WHERE H_CURR = 1` برقمه واسمه، وهل يتطابقان.
+2. **رموز الجنس:** كل رمز في `C_SEX_TB` لهذا المستشفى باسميه، وتصنيفه (ذكر / أنثى / غير معروف). التصنيف بمطابقة `SEX_NAME_EN` حرفياً، بلا تخمين من الرمز (كود المستشفى نفسه متناقض: 1 = أنثى في 12 موضعاً و 1 = ذكر في موضعين).
+3. **وظائف الأطباء:** كل كود في `HOSPITAL_DOCTOR_JOB_CODES` (الافتراضي 2) باسمه في `C_JOB_TB`، فيظهر الكود الخطأ فوراً.
+4. **وظائف التمريض:** الأكواد من `HOSPITAL_NURSE_JOB_CODES`؛ أو، إن كان فارغاً، الأكواد التي اكتُشفت تلقائياً من أسماء الوظائف في `C_JOB_TB` (تمريض، ممرض، ممرضة، Nurse، Nursing)، بأسمائها، مع السطر الجاهز لتثبيتها في `.env`.
+5. **الموظفون النشطون:** قاعدة "الموظف النشط" المطبّقة، وعدد الأطباء النشطين والممرضين النشطين في القوائم.
+6. **كل الوظائف:** قائمة `C_JOB_TB` كاملة لهذا المستشفى، تظهر عند أي تحذير في الوظائف لتختار منها الأكواد.
+7. **التحذيرات:** عددها، وتحت كل تحذير سطر «الحل».
+
+**ماذا تغيّر في `.env` لكل تحذير:**
+
+| التحذير | التغيير |
+| --- | --- |
+| عدم تطابق: `HOSPITAL_NO` المضبوط هو X، لكن `C_HOSPITAL_TB` يقول إن القاعدة للمستشفى Y | `HOSPITAL_NO=Y` إن كانت هذه قاعدة المستشفى Y؛ وإن كان المقصود X فالاتصال (`DB_*`) على القاعدة الخطأ. |
+| لا يوجد صف فيه `H_CURR = 1`، أو يوجد أكثر من صف | لا يُستنتج آلياً: حدّد رقم المستشفى من `C_HOSPITAL_TB` مع مسؤول القاعدة واضبط `HOSPITAL_NO`. |
+| تعذرت قراءة `HOS.<جدول>` | ليس في `.env`: نفّذ `GRANT SELECT` على الجدول للحساب المستخدم (القسم 2 من `wccms_oracle_schema.sql`)، وتأكد من `HOSPITAL_SCHEMA=HOS`. |
+| رموز جنس لا يطابق `SEX_NAME_EN` فيها `Male` أو `Female` تماماً | إن كان الرمز ذكراً أو أنثى فعلاً بكتابة أخرى (مثل `MALE`): `HOSPITAL_SEX_MALE_NAME_EN=MALE` (أو `HOSPITAL_SEX_FEMALE_NAME_EN=...`) بالكتابة نفسها حرفياً. وإلا فهو ليس ذكراً ولا أنثى ويبقى «Unknown» عن قصد. |
+| `HOSPITAL_DOCTOR_JOB_CODES` فارغ، أو أكواد وظائف الأطباء غير موجودة | `HOSPITAL_DOCTOR_JOB_CODES=<أكواد الأطباء من قسم «كل الوظائف»>`، مفصولة بفواصل. |
+| لم توجد في `C_JOB_TB` وظيفة تمريض بالأسماء، أو تعذرت قراءته | `HOSPITAL_NURSE_JOB_CODES=<أكواد التمريض من قسم «كل الوظائف»>`. إلى أن يُضبط، تعرض حقول الممرض وفريق الجروح كل الموظفين النشطين، مع تنبيه ظاهر في الشاشات وتحذير في السجل. |
+| أكواد وظائف الممرضين غير موجودة | صحّح `HOSPITAL_NURSE_JOB_CODES`. |
+| لا يوجد أي موظف نشط في قوائم الأطباء أو الممرضين | راجع أكواد الوظائف أعلاه أولاً، ثم `HOSPITAL_EMP_ACTIVE` (شرط `EMP_ACTIVE`؛ فارغ = بلا شرط) و `HOSPITAL_EMP_REC_CD` (شرط `EMP_REC_CD`؛ فارغ = بلا شرط). |
+| تعذر عدّ الموظفين النشطين | `GRANT SELECT` على `HOS.EMPLOYEE_TB`، ووجود الأعمدة `EMP_ACTIVE` و `EMP_REC_CD` و `EMP_JOB_CD`. |
+
+ليست تحذيراً لكن راجعها: إن ظهر «اكتُشفت وظائف التمريض تلقائياً»، اقرأ الأسماء المكتشفة. إن كانت كلها وظائف تمريض فانسخ السطر المقترح `HOSPITAL_NURSE_JOB_CODES=...` إلى `.env` (يثبّتها ولا يعود الاكتشاف يعمل)؛ وإن كان فيها ما ليس تمريضاً فاكتب الأكواد الصحيحة فقط. راجع كذلك عدد الأطباء والممرضين: رقم بعيد عن الواقع يعني أكواداً أو شرط نشاط خاطئاً.
+
+بعد كل تعديل في `.env`: `php artisan config:clear` ثم أعد الفحص.
+
+الفحص يعمل أيضاً تلقائياً مرة يومياً لكل رقم مستشفى بعد أول استجابة ويب، فيبقى السجل يذكر أي تغيّر لاحق.
+
+**تحقق:** آخر قسم يقول `التحذيرات: 0`، والأسماء والأعداد المطبوعة منطقية.
+
+---
+
+## الخطوة 2: الإعدادات (`.env` الإنتاج)
 
 ```ini
 DB_CONNECTION=oracle
@@ -51,7 +112,12 @@ HOSPITAL_NO=1
 HOSPITAL_SCHEMA=HOS
 HOSPITAL_FOREIGN_KEYS=false
 HOSPITAL_DOCTOR_JOB_CODES=2
-HOSPITAL_NURSE_JOB_CODES=<أكواد التمريض من C_JOB_TB>
+HOSPITAL_NURSE_JOB_CODES=<من الخطوة 1>
+HOSPITAL_EMP_ACTIVE=1
+HOSPITAL_EMP_REC_CD=1
+HOSPITAL_EMP_REC_CD_LISTS=doctors
+HOSPITAL_SEX_MALE_NAME_EN=Male
+HOSPITAL_SEX_FEMALE_NAME_EN=Female
 
 SESSION_DRIVER=file
 CACHE_STORE=file
@@ -60,28 +126,31 @@ QUEUE_CONNECTION=sync
 
 | المتغير | المعنى |
 | --- | --- |
-| `HOSPITAL_NO` | رقم المستشفى الذي يعمل له WCCMS. الافتراضي 1 (مجمع الشفاء الطبي). مصدره في كود المستشفى نفسه: الـ trigger `HOS.LAB_ORDER_TB_MREF` والـ procedure `HOS.GET_PATIENT_LOCATION`. يُكتب في السجل عند كل فحص بدء التشغيل (الخطوة 6). |
+| `HOSPITAL_NO` | رقم المستشفى الذي يعمل له WCCMS. الافتراضي 1 (مجمع الشفاء الطبي). مصدره في كود المستشفى نفسه: الـ trigger `HOS.LAB_ORDER_TB_MREF` والـ procedure `HOS.GET_PATIENT_LOCATION`. تتحقق منه الخطوة 1 مقابل `C_HOSPITAL_TB`. |
 | `HOSPITAL_SCHEMA` | مخطط جداول المستشفى. بوجوده تُقرأ الجداول كـ `HOS.MR_PATIENT_TB`... على جهاز التطوير يبقى فارغاً فتُستخدم النسخ المحلية التي ينشئها الـ migration. |
-| `HOSPITAL_FOREIGN_KEYS` | `true` فقط إذا نُفّذ القسم 8 من السكربت (الخطوة 5.4). لا يغيّر سلوك التطبيق على Oracle، فالتطبيق يفحص كل رابط قبل الحفظ في الحالتين. |
-| `HOSPITAL_DOCTOR_JOB_CODES` | أكواد `C_JOB_TB.JOB_CODE` (مفصولة بفواصل) لحقول الطبيب. الافتراضي 2: هو ما تصفّي به procedures المستشفى نفسه قوائم الأطباء (`GET_DOCTORS_PROC` و `GET_DOCTORS_NAMES`: `EMP_JOB_CD = 2`). |
-| `HOSPITAL_NURSE_JOB_CODES` | أكواد وظائف التمريض لحقول الممرض. **غير معروفة بعد**: لا يظهر أي كود تمريض في كود المستشفى. خذها من `SELECT JOB_CODE, JOB_NAME_AR FROM HOS.C_JOB_TB WHERE HOS_NO = 1`. ما دامت فارغة، تعرض حقول الممرض وفريق الجروح كل الموظفين النشطين ويحذّر الفحص (الخطوة 6). حقل فريق الجروح يعرض الأطباء والممرضين معاً. |
+| `HOSPITAL_FOREIGN_KEYS` | `true` فقط إذا نُفّذ القسم 8 من السكربت (الخطوة 6.4). لا يغيّر سلوك التطبيق على Oracle، فالتطبيق يفحص كل رابط قبل الحفظ في الحالتين. |
+| `HOSPITAL_DOCTOR_JOB_CODES` | أكواد `C_JOB_TB.JOB_CODE` (مفصولة بفواصل) لحقول الطبيب. الافتراضي 2: هو ما تصفّي به procedures المستشفى نفسه قوائم الأطباء (`GET_DOCTORS_PROC` و `GET_DOCTORS_NAMES`: `EMP_JOB_CD = 2`). الخطوة 1 تطبع اسم كل كود. |
+| `HOSPITAL_NURSE_JOB_CODES` | أكواد وظائف التمريض. **فارغ:** تُكتشف أثناء التشغيل من أسماء الوظائف في `C_JOB_TB` (تمريض، ممرض، ممرضة، Nurse، Nursing)، ويُكتب في السجل ما اختير بأكواده وأسمائه. **مضبوط:** يُستعمل كما هو ويلغي الاكتشاف. الأفضل تثبيته بعد مراجعة الخطوة 1. حقل فريق الجروح يعرض الأطباء والممرضين معاً. |
+| `HOSPITAL_EMP_ACTIVE` | شرط `EMP_ACTIVE = 1` على كل القوائم (كما في `HOS_USERS_VW` الخاص بالمستخدمين). فارغ = بلا هذا الشرط. |
+| `HOSPITAL_EMP_REC_CD` و `HOSPITAL_EMP_REC_CD_LISTS` | شرط `EMP_REC_CD = 1`، وهو ما تستعمله قوائم الموظفين في نظام المستشفى نفسه (68 موضعاً، منها `GET_DOCTORS_NAMES`). `doctors`: على قوائم الأطباء فقط؛ `all`: على كل القوائم. فارغ = بلا هذا الشرط. |
+| `HOSPITAL_SEX_MALE_NAME_EN` و `HOSPITAL_SEX_FEMALE_NAME_EN` | قيمة `SEX_NAME_EN` الحرفية للذكر وللأنثى في `C_SEX_TB`. |
 | `DB_SERVER_VERSION=11g` و `ORA_MAX_NAME_LEN=30` | يمنعان yajra من استعمال `FETCH FIRST` ومن أسماء أطول من 30 حرفاً، وهما غير موجودين في 11g. |
 
 `SESSION_DRIVER` و `CACHE_STORE` و `QUEUE_CONNECTION` بهذه القيم حتى لا يحتاج Laravel جداوله (`sessions`، `cache`، `jobs`) في Oracle.
 
-بقية القيم في `config/hospital.php` (لا تحتاج تعديلاً عادة): عمود الطبيب `ADMISSION_ENTER_DOC_CD`، عمود القسم `INPATIENT_SUP_LOC_CD`، الإقامة غير الملغاة `INPATIENT_CANCELED = 0`، الموظف الفعّال `EMP_ACTIVE = 1`، وأسماء الجنس `Male` / `Female`.
+بقية القيم في `config/hospital.php` (لا تحتاج تعديلاً عادة): عمود الطبيب `ADMISSION_ENTER_DOC_CD`، عمود القسم `INPATIENT_SUP_LOC_CD`، الإقامة غير الملغاة `INPATIENT_CANCELED = 0`، وكلمات اكتشاف التمريض.
 
 ---
 
-## الخطوة 2: كيف يُعزَل مستشفى عن آخر
+## الخطوة 3: كيف يُعزَل مستشفى عن آخر
 
-**كل قراءة من جداول المستشفى مقيّدة بـ `HOS_NO = HOSPITAL_NO`، بلا استثناء:** المرضى، الموظفون، الدخولات، الإقامات، الأقسام، الجنس، المسميات الوظيفية. القيد global scope على كل Model (`App\Models\Concerns\HospitalTable`)، فيشمل البحث والعلاقات والقوائم والتقارير والتصدير. الاستثناء الوحيد المقصود: فحص بدء التشغيل يقرأ `C_HOSPITAL_TB WHERE H_CURR = 1` ليعرف لأي مستشفى هذه القاعدة.
+**كل قراءة من جداول المستشفى مقيّدة بـ `HOS_NO = HOSPITAL_NO`، بلا استثناء:** المرضى، الموظفون، الدخولات، الإقامات، الأقسام، الجنس، المسميات الوظيفية. القيد global scope على كل Model (`App\Models\Concerns\HospitalTable`)، فيشمل البحث والعلاقات والقوائم والتقارير والتصدير واكتشاف وظائف التمريض. الاستثناء الوحيد المقصود: قائمة الفحص تقرأ `C_HOSPITAL_TB WHERE H_CURR = 1` لتعرف لأي مستشفى هذه القاعدة.
 
 **جداول المستشفى للقراءة فقط، في كل بيئة:** أي حفظ أو تعديل أو حذف عبر Models المستشفى يُرفض باستثناء `HospitalTableReadOnly` قبل أن يصل إلى القاعدة، بكل الطرق (`save` و `update` و `delete` و `insert` و `upsert` و `increment` و `truncate`، ومع تعطيل الأحداث أيضاً). النسخ المحلية في التطوير والاختبار تُملأ عبر `App\Support\LocalHospitalCopy` فقط، وهو يرفض العمل عند ضبط `HOSPITAL_SCHEMA`. يثبت ذلك `tests/Feature/HospitalTablesReadOnlyTest.php`.
 
 **جداول العيادة** مقيّدة بعمود `HOS_NO` الخاص بها (`App\Models\Concerns\BelongsToHospital`)؛ الجداول التي بلا عمود (مثل المواعيد) تُقرأ عبر التسجيل التابعة له.
 
-**قبل كل حفظ** يتحقق التطبيق أن كل رمز مريض أو موظف موجود في المستشفى المضبوط، وإلا رفض الحفظ برسالة واضحة. والـ procedures تفعل الشيء نفسه (`INVALID_EMPLOYEE`). قواعد التحقق في النماذج (`App\Rules\HospitalPatientExists` و `HospitalEmployeeExists`) تمر عبر الـ Models، لأن قاعدة `exists:` في Laravel تتجاوز الـ scope.
+**قبل كل حفظ** يتحقق التطبيق أن كل رمز مريض أو موظف موجود في المستشفى المضبوط، وإلا رفض الحفظ برسالة واضحة. والـ procedures تفعل الشيء نفسه (`INVALID_EMPLOYEE`). قواعد التحقق في النماذج (`App\Rules\HospitalPatientExists` و `HospitalEmployeeExists`) تمر عبر الـ Models، لأن قاعدة `exists:` في Laravel تتجاوز الـ scope. وحقول الطبيب والممرض وفريق الجروح تقبل فقط موظفاً من وظائف الحقل.
 
 **المفاتيح الأجنبية المركّبة إلى HOS** حسب المحرك:
 
@@ -96,9 +165,11 @@ QUEUE_CONNECTION=sync
 
 ---
 
-## الخطوة 3: تجربة السكربتين على Oracle XE 11g قبل التسليم
+## الخطوة 4: تجربة السكربتين على Oracle 11g (إلزامية قبل التشغيل الفعلي)
 
-السكربتان لم يُشغَّلا على Oracle بعد. لا تسلّمهما قبل أن تنجح هذه الخطوة. العُدّة في `oracle-test/` وتحتاج Docker فقط:
+السكربتان لم يُشغَّلا على Oracle أثناء التطوير. **لا يُشغَّل النظام فعلياً قبل أن ينجح أحد الاختبارين التاليين، والأفضل الاثنان:**
+
+**4.1 على Oracle XE 11g في Docker** (أي جهاز فيه Docker؛ لا يمس قاعدة المستشفى):
 
 ```powershell
 cd oracle-test
@@ -108,28 +179,30 @@ powershell -ExecutionPolicy Bypass -File .\run.ps1 -WithForeignKeys   # ومعه
 
 (على Linux/macOS: `./run.sh` و `./run.sh --with-fk`.)
 
-العُدّة تشغّل `gvenzl/oracle-xe:11`، وتنشئ مخطط `HOS` تجريبياً فيه مستشفيان يشتركان في الرموز (ولا شيء من بيانات المستشفى الحقيقية)، ثم تنفّذ السكربتين، ثم `03_smoke_test.sql` الذي يجرّب كل procedure ويطبع PASS/FAIL لكل فحص. التفاصيل في `oracle-test/README.md`.
+العُدّة تشغّل `gvenzl/oracle-xe:11`، وتنشئ مخطط `HOS` تجريبياً فيه مستشفيان يشتركان في الرموز (ولا شيء من بيانات المستشفى الحقيقية)، ثم تنفّذ السكربتين، ثم اختبار الدخان الذي يجرّب كل procedure ويطبع PASS/FAIL لكل فحص. التفاصيل في `oracle-test/README.md`.
 
-**تحقق:** آخر سطر `SMOKE TEST: PASS`، ولا كائنات INVALID.
+**4.2 الفحوص نفسها على القاعدة الحقيقية:** `oracle-test/live_check.sql`، بعد تنفيذ السكربتين في الخطوة 6 (انظر 6.5). يغني عن 4.1 إن لم يتوفر Docker.
 
-حدود التجربة: XE 11g يعمل بـ AL32UTF8، فسلوك قاعدة المستشفى بـ AR8MSWIN1256 (حروف خارج العربية/اللاتينية، مثل الرموز التعبيرية، تصبح `?`) لا يُختبر هنا.
+**تحقق:** آخر سطر `SMOKE TEST: PASS`، ولا كائنات INVALID. أي `FAIL` يوقف التسليم.
+
+حدود تجربة Docker: XE 11g يعمل بـ AL32UTF8، فسلوك قاعدة المستشفى بـ AR8MSWIN1256 (حروف خارج العربية/اللاتينية، مثل الرموز التعبيرية، تصبح `?`) لا يُختبر فيها؛ `live_check.sql` على القاعدة الحقيقية يختبره.
 
 ---
 
-## الخطوة 4: تجهيز الخادم والاتصال
+## الخطوة 5: تجهيز الخادم والاتصال
 
-**4.1 Oracle Instant Client و oci8:** ثبّت Instant Client وأضف مجلده إلى `PATH` (Windows) أو `LD_LIBRARY_PATH` (Linux). على Windows: `extension=oci8_19` في `php.ini`؛ على Linux: `pecl install oci8`. أعد تشغيل الخادم.
+**5.1 Oracle Instant Client و oci8:** ثبّت Instant Client وأضف مجلده إلى `PATH` (Windows) أو `LD_LIBRARY_PATH` (Linux). على Windows: `extension=oci8_19` في `php.ini`؛ على Linux: `pecl install oci8`. أعد تشغيل الخادم.
 
 **تحقق:** `php -m` يُظهر `oci8`.
 
-**4.2 الحزمة:**
+**5.2 الحزمة:**
 
 ```bash
 composer require yajra/laravel-oci8:^13
 php artisan vendor:publish --tag=oracle
 ```
 
-**4.3 `config/oracle.php`:**
+**5.3 `config/oracle.php`:**
 
 ```php
 'options' => [
@@ -143,9 +216,9 @@ php artisan vendor:publish --tag=oracle
 
 `CASE_NATURAL` ضروري: القيمة الافتراضية `CASE_LOWER` تجعل كل الأعمدة (`MRP_FIRST_NAME_AR`...) فارغة في الشاشات دون أي خطأ.
 
-**4.4 الأحرف الكبيرة في الـ aliases:** Oracle يُرجع كل اسم غير مقتبس بأحرف كبيرة. القاعدة في الكود: داخل `DB::raw` / `selectRaw` ضع الـ alias بين علامتي تنصيص مزدوجتين (`DB::raw('COUNT(*) as "total"')`)، وفي `select('col as ALIAS')` و `withCount('rel as REL_COUNT')` اكتبه بأحرف كبيرة واقرأه كذلك.
+**5.4 الأحرف الكبيرة في الـ aliases:** Oracle يُرجع كل اسم غير مقتبس بأحرف كبيرة. القاعدة في الكود: داخل `DB::raw` / `selectRaw` ضع الـ alias بين علامتي تنصيص مزدوجتين (`DB::raw('COUNT(*) as "total"')`)، وفي `select('col as ALIAS')` و `withCount('rel as REL_COUNT')` اكتبه بأحرف كبيرة واقرأه كذلك.
 
-**تحقق (بعد الخطوة 5):**
+**تحقق:**
 
 ```bash
 php artisan config:clear
@@ -157,11 +230,11 @@ php artisan tinker
 
 ---
 
-## الخطوة 5: تنفيذ سكربتات SQL
+## الخطوة 6: تنفيذ سكربتات SQL
 
 > **لا تشغّل `php artisan migrate` ولا `php artisan db:seed` على الإنتاج أبداً.** الـ migration للتطوير والاختبارات فقط، وينشئ نسخاً محلية من جداول المستشفى.
 
-**5.1 الـ placeholders:** استبدل `{{WCCMS_PASSWORD}}` و `{{WCCMS_TABLESPACE}}` في `wccms_oracle_schema.sql`.
+**6.1 الـ placeholders:** استبدل `{{WCCMS_PASSWORD}}` و `{{WCCMS_TABLESPACE}}` في `wccms_oracle_schema.sql`.
 
 **تحقق:** هذا الأمر لا يُرجع شيئاً:
 
@@ -169,7 +242,7 @@ php artisan tinker
 grep -nE "\{\{[A-Z_]+\}\}" wccms_oracle_schema.sql wccms_oracle_procedures.sql
 ```
 
-**5.2 الجداول** (DBA، بـ SQL*Plus مع `NLS_LANG=AMERICAN_AMERICA.AL32UTF8` حتى يُحفظ النص العربي سليماً):
+**6.2 الجداول** (DBA، بـ SQL*Plus مع `NLS_LANG=AMERICAN_AMERICA.AL32UTF8` حتى يُحفظ النص العربي سليماً):
 
 ```sql
 @wccms_oracle_schema.sql
@@ -177,7 +250,7 @@ grep -nE "\{\{[A-Z_]+\}\}" wccms_oracle_schema.sql wccms_oracle_procedures.sql
 
 الملف يتوقف عند أول خطأ. إذا رفض Oracle أسطر `GRANT SELECT ON HOS.*` (ORA-01031) فيجب أن ينفّذها مالك المخطط `HOS`، ثم يُكمل الباقي.
 
-**5.3 الـ procedures:**
+**6.3 الـ procedures:**
 
 ```sql
 @wccms_oracle_procedures.sql
@@ -193,31 +266,41 @@ SELECT COUNT(*) FROM WCCMS.WC_ASSESSMENT_CHOICE_TB;                             
 
 إذا ظهر كائن INVALID: `SHOW ERRORS PROCEDURE WCCMS.<الاسم>` يعرض السطر والسبب.
 
-**5.4 (اختياري) المفاتيح المركّبة إلى HOS:** فقط إذا تحقق الشرطان في الخطوة 2. أزل التعليق عن القسم 8 في آخر `wccms_oracle_schema.sql` ونفّذه (يحتاج `GRANT REFERENCES` من مالك `HOS`)، ثم اضبط `HOSPITAL_FOREIGN_KEYS=true`. إن فشل أي مفتاح بـ ORA-02298 فهناك صفوف عيادة ترمز لمريض/موظف غير موجود: صحّحها أولاً.
+**6.4 (اختياري) المفاتيح المركّبة إلى HOS:** فقط إذا تحقق الشرطان في الخطوة 3. أزل التعليق عن القسم 8 في آخر `wccms_oracle_schema.sql` ونفّذه (يحتاج `GRANT REFERENCES` من مالك `HOS`)، ثم اضبط `HOSPITAL_FOREIGN_KEYS=true`. إن فشل أي مفتاح بـ ORA-02298 فهناك صفوف عيادة ترمز لمريض/موظف غير موجود: صحّحها أولاً.
+
+**6.5 (إلزامي) فحص الإجراءات على القاعدة الحقيقية، قبل التشغيل الفعلي:** بالمستخدم `WCCMS`، من مجلد `oracle-test`:
+
+```powershell
+cd oracle-test
+$env:NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8'
+sqlplus WCCMS/<كلمة المرور>@//<الخادم>:1521/<service> "@live_check.sql" <HOSPITAL_NO> <EMP_SERIAL لممرض> <MRP_PATREC_CODE لمريض>
+```
+
+- الموظف: أي موظف نشط في هذا المستشفى **ليس له حساب WCCMS بعد** (يمكن اختياره من قائمة الممرضين التي تعدّها الخطوة 1).
+- المريض: أي مريض من هذا المستشفى.
+- الفحوص نفسها التي في Docker: قراءة جداول HOS الثمانية، قبول تحويل بجرح وصورة، إضافة جرح، مراجعتان (والثانية بالمفتاح نفسه لا تتكرر)، تخريج، ورفض الموظف غير الموجود والطلب المقبول سابقاً.
+- **لا يبقى شيء في القاعدة:** الإجراءات لا تنفّذ COMMIT أبداً، والسكربت ينتهي بـ ROLLBACK، حتى عند الخطأ.
+
+**تحقق:** `SMOKE TEST: PASS`. أي `FAIL` يوقف التسليم.
 
 ---
 
-## الخطوة 6: فحص بدء التشغيل
+## الخطوة 7: قائمة الفحص بالمستخدم WCCMS
+
+اضبط `.env` كما في الخطوة 2 (`DB_USERNAME=WCCMS`)، ثم:
 
 ```bash
+php artisan config:clear
 php artisan wccms:check-hospital
 ```
 
-فحص للقراءة فقط، لا يوقف النظام أبداً، ويكتب كل نتيجة في `storage/logs/laravel.log`:
+هذه المرة يثبت الفحص أيضاً أن صلاحيات `WCCMS` على جداول `HOS` كاملة.
 
-1. رقم المستشفى المستخدم (`HOSPITAL_NO`).
-2. يقرأ `HOS.C_HOSPITAL_TB WHERE H_CURR = 1`. إن اختلف `H_CODE` عن `HOSPITAL_NO` يكتب تحذيراً بالرقمين. إن تعذرت القراءة يكتب ذلك ويستمر.
-3. يقرأ `C_SEX_TB` للمستشفى المضبوط. أي رمز ليس `SEX_NAME_EN` فيه `Male` أو `Female` تماماً (أو فارغ) يُذكر في تحذير برمزه؛ مرضاه يظهرون «Unknown» في التقارير. لا تخمين للجنس من الرمز (كود المستشفى نفسه متناقض: 1 = أنثى في 12 موضعاً و 1 = ذكر في موضعين).
-
-4. يذكر وظائف `C_JOB_TB` التي تملأ قوائم الأطباء والممرضين بأسمائها، ويحذّر من كود غير موجود في `C_JOB_TB` لهذا المستشفى، أو من دور بلا أكواد (`HOSPITAL_NURSE_JOB_CODES` فارغ).
-
-الفحص يعمل أيضاً تلقائياً مرة يومياً لكل رقم مستشفى، بعد إرسال أول استجابة ويب، فلا يبطئ أي طلب.
-
-**تحقق:** لا تحذيرات، أو تحذيرات مفهومة وموثّقة.
+**تحقق:** `التحذيرات: 0`، والنتائج نفسها التي ظهرت في الخطوة 1.
 
 ---
 
-## الخطوة 7: الدخول والصلاحيات
+## الخطوة 8: الدخول والصلاحيات
 
 - **من يدخل يقرّره نظام المستشفى.** الدخول بـ JWT منه، و `PER_USER_USERNAME` يساوي `sub` في التوكن.
 - **الحساب يُنشأ عند أول دخول** في `WC_USERS_TB`، مفعّلاً.
@@ -228,7 +311,7 @@ php artisan wccms:check-hospital
 
 ---
 
-## الخطوة 8: اختبار المسارات وتشغيل النظام
+## الخطوة 9: اختبار المسارات وتشغيل النظام
 
 ```bash
 php artisan config:cache
@@ -238,9 +321,10 @@ php artisan view:cache
 
 نفّذ بالترتيب، وراقب `storage/logs/laravel.log`:
 
-- [ ] `wccms:check-hospital` بلا تحذير غير مفهوم.
+- [ ] `oracle-test/run.ps1` أو `live_check.sql`: `SMOKE TEST: PASS` (الخطوتان 4 و 6.5).
+- [ ] `wccms:check-hospital`: `التحذيرات: 0` (الخطوة 7).
 - [ ] ربط مستخدم بموظف من شاشة المستخدمين؛ القائمة فيها موظفو هذا المستشفى الفعّالون فقط (كل الوظائف، فالحساب قد يكون لأي موظف).
-- [ ] حقول الطبيب تعرض الأطباء فقط، وحقول الممرض الممرضين فقط، وحقل فريق الجروح الاثنين معاً.
+- [ ] حقول الطبيب تعرض الأطباء فقط، وحقول الممرض الممرضين فقط، وحقل فريق الجروح الاثنين معاً، ولا يظهر تنبيه «تعرض كل الموظفين النشطين».
 - [ ] البحث عن مريض برقم الوثيقة (`MRP_ID`)، وبرقم الملف (`MRP_PATREC_CODE`)، وبجزء من الاسم: النتائج من هذا المستشفى فقط.
 - [ ] البحث بنص فيه حروف في خانة رقمية لا يُظهر خطأ `ORA-01722`.
 - [ ] شاشة الطلب تعرض قسم المريض الحالي وطبيبه وتاريخ دخوله (من `ADMISSION_PATIENT_TB` و `INPATIENT_ADM_TB`).
@@ -261,15 +345,18 @@ php artisan view:cache
 
 | الخطأ | السبب | الحل |
 | --- | --- | --- |
-| كل الحقول فارغة في الشاشات بلا خطأ | `ATTR_CASE` ما زال `CASE_LOWER` | الخطوة 4.3 ثم `php artisan config:clear` |
-| `ORA-00942: table or view does not exist` | `HOSPITAL_SCHEMA` خطأ، أو لا يوجد `GRANT SELECT` على جدول HOS | الخطوة 1 والخطوة 5.2 |
-| `ORA-00933` أو `ORA-00923` في استعلام فيه حدّ للصفوف | `DB_SERVER_VERSION` ليس `11g` (يُولَّد `FETCH FIRST`) | الخطوة 1 |
-| `ORA-00972: identifier is too long` | `ORA_MAX_NAME_LEN` ليس 30 | الخطوة 1 |
+| كل الحقول فارغة في الشاشات بلا خطأ | `ATTR_CASE` ما زال `CASE_LOWER` | الخطوة 5.3 ثم `php artisan config:clear` |
+| `ORA-00942: table or view does not exist` | `HOSPITAL_SCHEMA` خطأ، أو لا يوجد `GRANT SELECT` على جدول HOS | الخطوة 2 والخطوة 6.2، ثم `wccms:check-hospital` |
+| `ORA-00933` أو `ORA-00923` في استعلام فيه حدّ للصفوف | `DB_SERVER_VERSION` ليس `11g` (يُولَّد `FETCH FIRST`) | الخطوة 2 |
+| `ORA-00972: identifier is too long` | `ORA_MAX_NAME_LEN` ليس 30 | الخطوة 2 |
+| تنبيه في الشاشة: «قوائم الممرضين... تعرض كل الموظفين النشطين» | لم تُعرف أكواد وظائف التمريض (لا `HOSPITAL_NURSE_JOB_CODES` ولا وظيفة باسم تمريض في `C_JOB_TB`) | الخطوة 1: اضبط `HOSPITAL_NURSE_JOB_CODES` |
+| قائمة الأطباء أو الممرضين فارغة | أكواد خطأ، أو شرط `EMP_ACTIVE` / `EMP_REC_CD` لا يطابق بيانات المستشفى | الخطوة 1: قسم «الموظفون النشطون» وتحذيره |
 | «الرمز ... غير موجود في المستشفى رقم ...» | رمز مريض أو موظف من مستشفى آخر أو غير موجود | مقصود: العزل بين المستشفيات |
+| «الموظف المحدد ... ليس من الأطباء» (أو الممرضين) | الموظف ليس من وظائف الحقل | اختر من القائمة؛ أو صحّح أكواد الوظائف (الخطوة 1) |
 | بيانات مستشفى آخر لا تظهر إطلاقاً | `HOSPITAL_NO` يشير لمستشفى آخر | راجع تحذير `wccms:check-hospital` |
 | `ORA-20001: INVALID_EMPLOYEE` | موظف غير موجود في مستشفى السجل | اختر موظفاً من القائمة |
 | `ORA-20001: <رمز آخر>` | تحقق داخل procedure رفض البيانات (مثل `REQUEST_ALREADY_DECIDED`) | الرمز يقول السبب؛ العملية كاملة أُلغيت |
 | `ORA-02291: parent key not found` | المفاتيح المركّبة مفعّلة والرمز غير موجود في HOS | تحقق من الرمز |
-| `ORA-02292` عند الحذف في نظام المستشفى | المفاتيح المركّبة مفعّلة وسجل العيادة يشير لهذا المريض أو الموظف | مقصود؛ انظر الخطوة 2 |
+| `ORA-02292` عند الحذف في نظام المستشفى | المفاتيح المركّبة مفعّلة وسجل العيادة يشير لهذا المريض أو الموظف | مقصود؛ انظر الخطوة 3 |
 | نص عربي يظهر `???` | `NLS_LANG` ليس AL32UTF8 عند تشغيل السكربت | أعد التشغيل بالإعداد الصحيح |
 | «بيانات التقييم أطول من المسموح» | XML المراجعة أكبر من 32 KB (حد معامل PL/SQL) | ملاحظات أقصر |

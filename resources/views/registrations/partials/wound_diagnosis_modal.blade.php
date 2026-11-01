@@ -4,6 +4,7 @@
         <form method="POST" enctype="multipart/form-data" action="{{ route('registrations.diagnoses.store', $registration->WC_REG_CODE) }}">@csrf
             <div class="modal-body">
                 <div class="row g-3 mb-4">
+                    @include('partials.staff_lists_notice')
                     <div class="col-md-4"><label class="form-label fw-semibold">الممرض السريري</label><select class="form-select" name="clinical_nurse_code" required><option value="">اختر</option>@foreach($nurses as $item)<option value="{{ $item->EMP_SERIAL }}">{{ $item->full_name }}</option>@endforeach</select></div>
                     <div class="col-md-4"><label class="form-label fw-semibold">عضو فريق الجروح</label><select class="form-select" name="wct_employee_code"><option value="">بدون</option>@foreach($woundCareTeam as $item)<option value="{{ $item->EMP_SERIAL }}">{{ $item->full_name }}</option>@endforeach</select></div>
                     <div class="col-md-4"><label class="form-label fw-semibold">الطبيب</label><select class="form-select" name="doctor_employee_code"><option value="">بدون</option>@foreach($doctors as $item)<option value="{{ $item->EMP_SERIAL }}">{{ $item->full_name }}</option>@endforeach</select></div>

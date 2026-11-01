@@ -57,55 +57,95 @@ class Employee extends Model
         return Attribute::get(fn (): ?string => $this->job?->JOB_NAME_AR);
     }
 
+    /**
+     * At work by the same rule as scopeActive().
+     */
     protected function isActive(): Attribute
     {
-        return Attribute::get(fn (): bool => (int) $this->EMP_ACTIVE === (int) config('hospital.employees.active_value'));
+        return Attribute::get(function (): bool {
+            $active = self::activeValue();
+            $record = self::recordStatusForAllLists();
+
+            return ($active === null || (int) $this->EMP_ACTIVE === $active)
+                && ($record === null || (int) $this->EMP_REC_CD === $record);
+        });
     }
 
     /**
-     * Employees at work, for the pick lists. History screens keep showing inactive employees through relations.
+     * Employees at work, for the pick lists: EMP_ACTIVE = hospital.employees.active_value, plus
+     * EMP_REC_CD = hospital.employees.record_status when HOSPITAL_EMP_REC_CD_LISTS=all (the doctor role always adds
+     * it). History screens keep showing inactive employees through relations.
      */
     public function scopeActive(Builder $query): void
     {
-        $query->where('EMP_ACTIVE', config('hospital.employees.active_value'));
-    }
+        if (($active = self::activeValue()) !== null) {
+            $query->where('EMP_ACTIVE', $active);
+        }
 
-    /**
-     * Employees whose job (EMP_JOB_CD) is one of the role's C_JOB_TB codes; no filter when none are configured.
-     */
-    public function scopeInRole(Builder $query, EmployeeRole $role): void
-    {
-        $codes = $role->jobCodes();
-
-        if ($codes !== []) {
-            $query->whereIn('EMP_JOB_CD', $codes);
+        if (($record = self::recordStatusForAllLists()) !== null) {
+            $query->where('EMP_REC_CD', $record);
         }
     }
 
     /**
-     * The active employees of the clinic's pick lists, one list per role, read in one query.
+     * Employees of the role: its C_JOB_TB jobs, and for doctors EMP_REC_CD (App\Enums\EmployeeRole).
+     */
+    public function scopeInRole(Builder $query, EmployeeRole $role): void
+    {
+        $role->constrain($query);
+    }
+
+    /**
+     * The active employees of the clinic's pick lists, one list per role, read in one query, and the labels of the
+     * roles whose job codes are unknown (their lists hold every active employee; the forms say so).
      *
-     * @return array{nurses: Collection<int, self>, doctors: Collection<int, self>, woundCareTeam: Collection<int, self>}
+     * @return array{nurses: Collection<int, self>, doctors: Collection<int, self>, woundCareTeam: Collection<int, self>, unfilteredRoles: list<string>}
      */
     public static function pickLists(): array
     {
         $roles = ['nurses' => EmployeeRole::Nurse, 'doctors' => EmployeeRole::Doctor, 'woundCareTeam' => EmployeeRole::WoundCareTeam];
-        $anyJob = collect($roles)->contains(fn (EmployeeRole $role): bool => $role->jobCodes() === []);
 
         $employees = static::query()
             ->active()
-            ->when(! $anyJob, fn (Builder $query) => $query->whereIn(
-                'EMP_JOB_CD',
-                collect($roles)->flatMap(fn (EmployeeRole $role): array => $role->jobCodes())->unique()->values()->all()
-            ))
+            ->inRole(EmployeeRole::WoundCareTeam)
             ->orderedByName()
             ->with('job')
             ->get();
 
-        return array_map(
-            fn (EmployeeRole $role): Collection => $employees->filter(fn (self $employee): bool => $role->includes($employee))->values(),
-            $roles
-        );
+        return [
+            ...array_map(
+                fn (EmployeeRole $role): Collection => $employees->filter(fn (self $employee): bool => $role->includes($employee))->values(),
+                $roles
+            ),
+            'unfilteredRoles' => self::unfilteredRoleLabels(...array_values($roles)),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function unfilteredRoleLabels(EmployeeRole ...$roles): array
+    {
+        return array_values(array_map(
+            fn (EmployeeRole $role): string => $role->label(),
+            array_filter($roles, fn (EmployeeRole $role): bool => $role->isUnfiltered())
+        ));
+    }
+
+    private static function activeValue(): ?int
+    {
+        $value = config('hospital.employees.active_value');
+
+        return $value === null || $value === '' ? null : (int) $value;
+    }
+
+    private static function recordStatusForAllLists(): ?int
+    {
+        $value = config('hospital.employees.record_status');
+
+        return $value === null || $value === '' || config('hospital.employees.record_status_lists') !== 'all'
+            ? null
+            : (int) $value;
     }
 
     public function scopeOrderedByName(Builder $query): void

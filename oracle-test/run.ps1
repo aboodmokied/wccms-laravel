@@ -50,6 +50,7 @@ Copy-Prepared (Join-Path $PSScriptRoot '01_hos_stub.sql') 'build/01_hos_stub.sql
 Copy-Prepared (Join-Path $Root 'wccms_oracle_schema.sql') 'build/02_wccms_oracle_schema.sql'
 Copy-Prepared (Join-Path $Root 'wccms_oracle_procedures.sql') 'build/02_wccms_oracle_procedures.sql'
 Copy-Prepared (Join-Path $PSScriptRoot '03_smoke_test.sql') 'build/03_smoke_test.sql'
+Copy-Prepared (Join-Path $PSScriptRoot '03_smoke_stub.sql') 'build/03_smoke_stub.sql'
 Copy-Prepared (Join-Path $PSScriptRoot '05_fk_check.sql') 'build/05_fk_check.sql'
 
 $left = Select-String -Path (Join-Path $PSScriptRoot 'build/*.sql') -Pattern '\{\{[A-Z_]+\}\}' -CaseSensitive
@@ -83,7 +84,7 @@ Invoke-Sql 'system' $OraclePassword 'build/01_hos_stub.sql'
 Invoke-Sql 'system' $OraclePassword 'build/02_wccms_oracle_schema.sql'
 Invoke-Sql 'system' $OraclePassword 'build/02_wccms_oracle_procedures.sql'
 if ($WithForeignKeys) { Invoke-Sql 'system' $OraclePassword 'build/04_enable_fk.sql' }
-Invoke-Sql 'wccms' $WccmsPassword 'build/03_smoke_test.sql'
+Invoke-Sql 'wccms' $WccmsPassword 'build/03_smoke_stub.sql'
 if ($WithForeignKeys) { Invoke-Sql 'wccms' $WccmsPassword 'build/05_fk_check.sql' }
 
 Write-Host ''

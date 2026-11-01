@@ -46,6 +46,7 @@ prepare 01_hos_stub.sql build/01_hos_stub.sql
 prepare "$ROOT/wccms_oracle_schema.sql" build/02_wccms_oracle_schema.sql
 prepare "$ROOT/wccms_oracle_procedures.sql" build/02_wccms_oracle_procedures.sql
 prepare 03_smoke_test.sql build/03_smoke_test.sql
+prepare 03_smoke_stub.sql build/03_smoke_stub.sql
 prepare 05_fk_check.sql build/05_fk_check.sql
 
 if grep -nE '\{\{[A-Z_]+\}\}' build/*.sql; then
@@ -77,7 +78,7 @@ sql system "$ORACLE_PASSWORD" build/02_wccms_oracle_procedures.sql
 if [ "$WITH_FK" = "1" ]; then
     sql system "$ORACLE_PASSWORD" build/04_enable_fk.sql
 fi
-sql wccms "$WCCMS_PASSWORD" build/03_smoke_test.sql
+sql wccms "$WCCMS_PASSWORD" build/03_smoke_stub.sql
 if [ "$WITH_FK" = "1" ]; then
     sql wccms "$WCCMS_PASSWORD" build/05_fk_check.sql
 fi

@@ -30,6 +30,7 @@ class EmployeeFactory extends Factory
             'EMP_LAST_NAME_AR' => fake()->randomElement(['العلي', 'الأغا', 'شبير', 'الفرا']),
             'EMP_JOB_CD' => null,
             'EMP_ACTIVE' => config('hospital.employees.active_value'),
+            'EMP_REC_CD' => 1,
         ];
     }
 

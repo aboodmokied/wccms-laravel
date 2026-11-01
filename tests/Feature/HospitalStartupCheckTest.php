@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\HospitalInfo;
 use App\Models\JobLookup;
 use App\Models\SexLookup;
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
+/**
+ * wccms:check-hospital, the deployment checklist: read only, never stops WCCMS, every warning with its fix.
+ */
 class HospitalStartupCheckTest extends TestCase
 {
     use RefreshDatabase;
@@ -18,25 +22,43 @@ class HospitalStartupCheckTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['hospital.hospital_no' => 1]);
+        config([
+            'hospital.hospital_no' => 1,
+            'hospital.employees.job_codes' => ['doctors' => '2', 'nurses' => ''],
+        ]);
     }
 
-    public function test_logs_the_hospital_number_and_confirms_a_matching_current_hospital(): void
+    public function test_a_complete_hospital_gives_no_warning_and_logs_every_finding(): void
     {
-        $this->hospital(1, 'مجمع الشفاء الطبي', current: true);
-        $this->hospital(2, 'مستشفى الرنتيسي', current: false);
-        SexLookup::factory()->create();
-        SexLookup::factory()->female()->create();
-        config(['hospital.employees.job_codes' => ['doctors' => '2', 'nurses' => '31']]);
-        $this->job(2, 'طبيب');
-        $this->job(31, 'ممرض');
+        $this->completeHospital();
         Log::spy();
 
         $findings = app(HospitalStartupCheck::class)->run();
 
         $this->assertSame([], $this->warnings($findings));
+        $this->assertFinding($findings, 'HOSPITAL_NO=1');
+        $this->assertFinding($findings, '1 — مجمع الشفاء الطبي');
         Log::shouldHaveReceived('log')->withArgs(fn (string $level, string $message) => $level === 'info' && str_contains($message, 'HOSPITAL_NO=1'));
         Log::shouldNotHaveReceived('log', ['warning', \Mockery::any()]);
+    }
+
+    public function test_the_command_prints_the_checklist_in_arabic(): void
+    {
+        $this->completeHospital();
+
+        $this->artisan('wccms:check-hospital')
+            ->expectsOutputToContain('قائمة فحص التسليم')
+            ->expectsOutputToContain('المستشفى الحالي في C_HOSPITAL_TB (H_CURR = 1): 1 — مجمع الشفاء الطبي')
+            ->expectsOutputToContain("الرمز 1: انثى / 'Female' — التصنيف: أنثى")
+            ->expectsOutputToContain("الرمز 2: ذكر / 'Male' — التصنيف: ذكر")
+            ->expectsOutputToContain('قوائم الأطباء (من الإعداد HOSPITAL_DOCTOR_JOB_CODES) تعرض الوظائف: 2 (طبيب / Doctor)')
+            ->expectsOutputToContain('اكتُشفت وظائف التمريض تلقائياً بالأسماء (تمريض، ممرض، ممرضة، Nurse، Nursing): 31 (ممرض / Nurse)')
+            ->expectsOutputToContain('HOSPITAL_NURSE_JOB_CODES=31')
+            ->expectsOutputToContain('EMP_REC_CD = 1 في قوائم الأطباء')
+            ->expectsOutputToContain('عدد الأطباء النشطين: 1')
+            ->expectsOutputToContain('عدد الممرضين النشطين: 1')
+            ->expectsOutputToContain('التحذيرات: 0')
+            ->assertSuccessful();
     }
 
     public function test_warns_naming_both_numbers_when_the_database_belongs_to_another_hospital(): void
@@ -44,9 +66,10 @@ class HospitalStartupCheckTest extends TestCase
         $this->hospital(1, 'مجمع الشفاء الطبي', current: false);
         $this->hospital(5, 'مجمع ناصر الطبي', current: true);
 
-        $warnings = $this->warnings(app(HospitalStartupCheck::class)->run());
+        $warning = $this->warningContaining(app(HospitalStartupCheck::class)->run(), 'HOSPITAL_NO المضبوط هو 1');
 
-        $this->assertCount(1, array_filter($warnings, fn (string $m) => str_contains($m, 'HOSPITAL_NO المضبوط هو 1') && str_contains($m, 'للمستشفى 5')));
+        $this->assertStringContainsString('للمستشفى 5', $warning['message']);
+        $this->assertStringContainsString('HOSPITAL_NO=5', $warning['fix']);
     }
 
     public function test_keeps_running_and_logs_when_the_hospitals_table_cannot_be_read(): void
@@ -56,60 +79,92 @@ class HospitalStartupCheckTest extends TestCase
 
         $this->artisan('wccms:check-hospital')
             ->expectsOutputToContain('تعذرت قراءة NO_SUCH_HOSPITAL_TB')
+            ->expectsOutputToContain('GRANT SELECT')
             ->assertSuccessful();
 
         Log::shouldHaveReceived('log')->withArgs(fn (string $level, string $message) => $level === 'warning' && str_contains($message, 'NO_SUCH_HOSPITAL_TB'));
     }
 
-    public function test_warns_with_the_codes_whose_english_sex_name_is_not_exactly_male_or_female(): void
+    public function test_lists_every_sex_code_and_warns_about_the_ones_not_exactly_male_or_female(): void
     {
         $this->hospital(1, 'مجمع الشفاء الطبي', current: true);
-        SexLookup::factory()->create(['SEX_CODE' => 1, 'SEX_NAME_EN' => 'Female']);
-        SexLookup::factory()->create(['SEX_CODE' => 2, 'SEX_NAME_EN' => 'MALE']);
+        SexLookup::factory()->create(['SEX_CODE' => 1, 'SEX_NAME_AR' => 'انثى', 'SEX_NAME_EN' => 'Female']);
+        SexLookup::factory()->create(['SEX_CODE' => 2, 'SEX_NAME_AR' => 'ذكر', 'SEX_NAME_EN' => 'MALE']);
         SexLookup::factory()->create(['SEX_CODE' => 3, 'SEX_NAME_EN' => null]);
         // Another hospital's odd codes are not this hospital's problem.
         SexLookup::factory()->forHospital(2)->create(['SEX_CODE' => 7, 'SEX_NAME_EN' => 'x']);
 
-        $warnings = array_values(array_filter(
-            $this->warnings(app(HospitalStartupCheck::class)->run()),
-            fn (string $m) => str_contains($m, 'SEX_NAME_EN')
-        ));
+        $findings = app(HospitalStartupCheck::class)->run();
+        $warning = $this->warningContaining($findings, 'SEX_NAME_EN');
 
-        $this->assertCount(1, $warnings);
-        $this->assertStringContainsString("2 (SEX_NAME_EN='MALE')", $warnings[0]);
-        $this->assertStringContainsString('3 (SEX_NAME_EN=NULL)', $warnings[0]);
-        $this->assertStringNotContainsString('1 (', $warnings[0]);
-        $this->assertStringNotContainsString('7 (', $warnings[0]);
+        $this->assertStringContainsString("2 (SEX_NAME_EN='MALE')", $warning['message']);
+        $this->assertStringContainsString('3 (SEX_NAME_EN=NULL)', $warning['message']);
+        $this->assertStringNotContainsString('1 (', $warning['message']);
+        $this->assertStringNotContainsString('7 (', $warning['message']);
+        $this->assertStringContainsString('HOSPITAL_SEX_MALE_NAME_EN', $warning['fix']);
+        $this->assertFinding($findings, "الرمز 1: انثى / 'Female' — التصنيف: أنثى");
+        $this->assertFinding($findings, "الرمز 2: ذكر / 'MALE' — التصنيف: غير معروف");
     }
 
     public function test_warns_when_no_hospital_is_marked_current(): void
     {
         $this->hospital(1, 'مجمع الشفاء الطبي', current: false);
 
-        $warnings = $this->warnings(app(HospitalStartupCheck::class)->run());
-
-        $this->assertNotEmpty(array_filter($warnings, fn (string $m) => str_contains($m, 'H_CURR = 1')));
+        $this->warningContaining(app(HospitalStartupCheck::class)->run(), 'H_CURR = 1');
     }
 
-    public function test_names_the_jobs_of_the_pick_lists_and_warns_about_unknown_or_missing_codes(): void
+    public function test_names_the_configured_job_codes_and_warns_about_missing_ones_with_the_full_job_list(): void
     {
-        config(['hospital.employees.job_codes' => ['doctors' => '2, 9', 'nurses' => '']]);
-        $this->job(2, 'طبيب');
+        config(['hospital.employees.job_codes' => ['doctors' => '2, 9', 'nurses' => '31']]);
+        $this->job(2, 'طبيب', 'Doctor');
+        $this->job(31, 'ممرض', 'Nurse');
+        $this->job(55, 'كاتب', 'Clerk');
         // Another hospital's job 9 does not make the code valid here.
         DB::table((new JobLookup)->getTable())->insert(['JOB_CODE' => 9, 'JOB_NAME_AR' => 'طبيب مقيم', 'HOS_NO' => 2]);
 
         $findings = app(HospitalStartupCheck::class)->run();
-        $warnings = $this->warnings($findings);
-        $infos = array_column(array_filter($findings, fn (array $f) => $f['level'] === HospitalStartupCheck::INFO), 'message');
 
-        $this->assertNotEmpty(array_filter($infos, fn (string $m) => str_contains($m, 'قوائم الأطباء') && str_contains($m, '2 (طبيب)')));
-        $this->assertNotEmpty(array_filter($warnings, fn (string $m) => str_contains($m, 'أكواد وظائف الأطباء غير موجودة') && str_contains($m, ': 9 (')));
-        $this->assertNotEmpty(array_filter($warnings, fn (string $m) => str_contains($m, 'HOSPITAL_NURSE_JOB_CODES')));
+        $this->assertFinding($findings, 'تعرض الوظائف: 2 (طبيب / Doctor)');
+        $this->assertFinding($findings, 'قوائم الممرضين (من الإعداد HOSPITAL_NURSE_JOB_CODES) تعرض الوظائف: 31 (ممرض / Nurse)');
+        $warning = $this->warningContaining($findings, 'أكواد وظائف الأطباء غير موجودة');
+        $this->assertStringContainsString(': 9.', $warning['message']);
+        $this->assertStringContainsString('HOSPITAL_DOCTOR_JOB_CODES', $warning['fix']);
+        $this->assertFinding($findings, '55 (كاتب / Clerk)');
     }
 
-    private function job(int $code, string $name): void
+    public function test_warns_when_no_nursing_job_is_found_and_says_what_to_set(): void
     {
-        DB::table((new JobLookup)->getTable())->insert(['JOB_CODE' => $code, 'JOB_NAME_AR' => $name, 'HOS_NO' => 1]);
+        $this->job(2, 'طبيب', 'Doctor');
+        $this->job(55, 'كاتب', 'Clerk');
+
+        $warning = $this->warningContaining(app(HospitalStartupCheck::class)->run(), 'لم توجد في C_JOB_TB');
+
+        $this->assertStringContainsString('كل الموظفين النشطين', $warning['message']);
+        $this->assertStringContainsString('HOSPITAL_NURSE_JOB_CODES', $warning['fix']);
+    }
+
+    public function test_warns_when_a_list_has_no_active_employee(): void
+    {
+        $this->completeHospital();
+        Employee::query()->get()->each(fn (Employee $employee) => DB::table($employee->getTable())
+            ->where(['EMP_SERIAL' => $employee->EMP_SERIAL, 'HOS_NO' => 1])
+            ->update(['EMP_REC_CD' => 0]));
+
+        $warning = $this->warningContaining(app(HospitalStartupCheck::class)->run(), 'لا يوجد أي موظف نشط في قوائم الأطباء');
+
+        $this->assertStringContainsString('HOSPITAL_EMP_REC_CD', $warning['fix']);
+    }
+
+    private function completeHospital(): void
+    {
+        $this->hospital(1, 'مجمع الشفاء الطبي', current: true);
+        $this->hospital(2, 'مستشفى الرنتيسي', current: false);
+        SexLookup::factory()->create(['SEX_CODE' => 2, 'SEX_NAME_AR' => 'ذكر', 'SEX_NAME_EN' => 'Male']);
+        SexLookup::factory()->create(['SEX_CODE' => 1, 'SEX_NAME_AR' => 'انثى', 'SEX_NAME_EN' => 'Female']);
+        $this->job(2, 'طبيب', 'Doctor');
+        $this->job(31, 'ممرض', 'Nurse');
+        Employee::factory()->create(['EMP_JOB_CD' => 2]);
+        Employee::factory()->create(['EMP_JOB_CD' => 31]);
     }
 
     private function hospital(int $code, string $name, bool $current): void
@@ -119,15 +174,41 @@ class HospitalStartupCheckTest extends TestCase
         ]);
     }
 
+    private function job(int $code, string $nameAr, string $nameEn): void
+    {
+        DB::table((new JobLookup)->getTable())->insert(['JOB_CODE' => $code, 'JOB_NAME_AR' => $nameAr, 'JOB_NAME_EN' => $nameEn, 'HOS_NO' => 1]);
+    }
+
     /**
-     * @param  list<array{level: string, message: string}>  $findings
-     * @return list<string>
+     * @param  list<array{level: string, section: string, message: string, fix: ?string}>  $findings
+     * @return list<array{level: string, section: string, message: string, fix: ?string}>
      */
     private function warnings(array $findings): array
     {
-        return array_values(array_map(
-            fn (array $finding) => $finding['message'],
-            array_filter($findings, fn (array $finding) => $finding['level'] === HospitalStartupCheck::WARNING)
-        ));
+        return array_values(array_filter($findings, fn (array $finding) => $finding['level'] === HospitalStartupCheck::WARNING));
+    }
+
+    /**
+     * @param  list<array{level: string, section: string, message: string, fix: ?string}>  $findings
+     * @return array{level: string, section: string, message: string, fix: ?string}
+     */
+    private function warningContaining(array $findings, string $text): array
+    {
+        $matches = array_values(array_filter($this->warnings($findings), fn (array $w) => str_contains($w['message'], $text)));
+        $this->assertCount(1, $matches, "One warning containing \"{$text}\". Warnings: ".json_encode(array_column($this->warnings($findings), 'message'), JSON_UNESCAPED_UNICODE));
+        $this->assertNotEmpty($matches[0]['fix']);
+
+        return $matches[0];
+    }
+
+    /**
+     * @param  list<array{level: string, section: string, message: string, fix: ?string}>  $findings
+     */
+    private function assertFinding(array $findings, string $text): void
+    {
+        $this->assertNotEmpty(
+            array_filter($findings, fn (array $f) => str_contains($f['message'], $text)),
+            "A finding containing \"{$text}\". Findings: ".json_encode(array_column($findings, 'message'), JSON_UNESCAPED_UNICODE)
+        );
     }
 }

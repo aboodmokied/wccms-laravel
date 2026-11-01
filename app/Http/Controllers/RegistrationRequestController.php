@@ -66,7 +66,9 @@ class RegistrationRequestController extends Controller
     {
         $nurses = Employee::query()->active()->inRole(EmployeeRole::Nurse)->orderedByName()->with('job')->get();
 
-        return view('requests.create', compact('nurses'));
+        $unfilteredRoles = Employee::unfilteredRoleLabels(EmployeeRole::Nurse);
+
+        return view('requests.create', compact('nurses', 'unfilteredRoles'));
     }
 
     public function searchPatient(Request $request, HospitalPatientSyncServiceInterface $syncService)

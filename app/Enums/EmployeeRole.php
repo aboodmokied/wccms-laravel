@@ -3,11 +3,15 @@
 namespace App\Enums;
 
 use App\Models\Employee;
-use App\Support\HospitalCode;
+use App\Support\StaffJobs;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
- * The role an employee field asks for, matched on EMPLOYEE_TB.EMP_JOB_CD against the C_JOB_TB codes configured in
- * hospital.employees.job_codes. A role with no codes configured does not filter.
+ * The role an employee field asks for:
+ * - job: EMPLOYEE_TB.EMP_JOB_CD among the role's C_JOB_TB codes (App\Support\StaffJobs);
+ * - doctors also need EMP_REC_CD = hospital.employees.record_status, as the hospital's own doctor lists do.
+ * A role whose codes are unknown does not filter on the job; Employee::pickLists() reports it on the screen.
+ * The wound care team is doctors and nurses.
  */
 enum EmployeeRole: string
 {
@@ -22,22 +26,70 @@ enum EmployeeRole: string
      */
     public function jobCodes(): array
     {
-        if ($this === self::WoundCareTeam) {
-            $doctors = self::Doctor->jobCodes();
-            $nurses = self::Nurse->jobCodes();
+        return match ($this) {
+            self::Doctor => StaffJobs::doctorCodes(),
+            self::Nurse => StaffJobs::nurseCodes(),
+            self::WoundCareTeam => self::Doctor->jobCodes() === [] || self::Nurse->jobCodes() === []
+                ? []
+                : array_values(array_unique([...self::Doctor->jobCodes(), ...self::Nurse->jobCodes()])),
+        };
+    }
 
-            // The team is doctors and nurses: until both are known, any job.
-            return $doctors === [] || $nurses === [] ? [] : array_values(array_unique([...$doctors, ...$nurses]));
+    /**
+     * True when the role's job codes are unknown, so its list holds every active employee.
+     */
+    public function isUnfiltered(): bool
+    {
+        return $this->jobCodes() === [];
+    }
+
+    /**
+     * The EMP_REC_CD value this role requires, or null.
+     */
+    public function recordStatus(): ?int
+    {
+        $value = config('hospital.employees.record_status');
+
+        if ($value === null || $value === '' || $this !== self::Doctor) {
+            return null;
         }
 
-        return self::parseCodes(config("hospital.employees.job_codes.{$this->value}"));
+        return (int) $value;
+    }
+
+    public function constrain(Builder $query): void
+    {
+        if ($this === self::WoundCareTeam) {
+            if (self::Doctor->hasConditions() && self::Nurse->hasConditions()) {
+                $query->where(fn (Builder $team) => $team
+                    ->where(fn (Builder $doctors) => self::Doctor->constrain($doctors))
+                    ->orWhere(fn (Builder $nurses) => self::Nurse->constrain($nurses)));
+            }
+
+            return;
+        }
+
+        if ($this->jobCodes() !== []) {
+            $query->whereIn('EMP_JOB_CD', $this->jobCodes());
+        }
+
+        if ($this->recordStatus() !== null) {
+            $query->where('EMP_REC_CD', $this->recordStatus());
+        }
     }
 
     public function includes(Employee $employee): bool
     {
+        if ($this === self::WoundCareTeam) {
+            return ! (self::Doctor->hasConditions() && self::Nurse->hasConditions())
+                || self::Doctor->includes($employee)
+                || self::Nurse->includes($employee);
+        }
+
         $codes = $this->jobCodes();
 
-        return $codes === [] || in_array((int) $employee->EMP_JOB_CD, $codes, true);
+        return ($codes === [] || in_array((int) $employee->EMP_JOB_CD, $codes, true))
+            && ($this->recordStatus() === null || (int) $employee->EMP_REC_CD === $this->recordStatus());
     }
 
     public function label(): string
@@ -61,15 +113,8 @@ enum EmployeeRole: string
         };
     }
 
-    /**
-     * @return list<int>
-     */
-    private static function parseCodes(mixed $codes): array
+    private function hasConditions(): bool
     {
-        $values = is_array($codes) ? $codes : explode(',', (string) $codes);
-
-        return array_values(array_unique(array_filter(
-            array_map(fn ($code): ?int => HospitalCode::parse(is_string($code) ? trim($code) : $code), $values)
-        )));
+        return $this->jobCodes() !== [] || $this->recordStatus() !== null;
     }
 }

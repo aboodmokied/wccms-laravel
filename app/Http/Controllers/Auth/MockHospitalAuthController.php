@@ -64,6 +64,7 @@ class MockHospitalAuthController extends Controller
                 'EMP_GRANDFATHER_NAME_AR' => count($names) > 3 ? $names[2] : null,
                 'EMP_LAST_NAME_AR' => count($names) > 1 ? implode(' ', array_slice($names, min(count($names) - 1, 3))) : null,
                 'EMP_ACTIVE' => config('hospital.employees.active_value'),
+                'EMP_REC_CD' => 1,
             ]);
 
             $user->update(['PER_USER_EMP_CD' => $employee->EMP_SERIAL, 'PER_USER_HOS_NO' => Hospital::number()]);

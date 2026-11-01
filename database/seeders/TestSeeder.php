@@ -468,6 +468,7 @@ class TestSeeder extends Seeder
                 'EMP_LAST_NAME_AR' => $lastName,
                 'EMP_JOB_CD' => $jobCode,
                 'EMP_ACTIVE' => config('hospital.employees.active_value'),
+                'EMP_REC_CD' => 1,
             ]
         );
     }

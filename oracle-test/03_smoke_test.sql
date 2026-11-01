@@ -1,12 +1,18 @@
 -- ============================================================================
 -- 03_smoke_test.sql: calls the 4 WCCMS procedures with XML payloads and checks what they wrote.
--- Run as WCCMS (the application's user), after 01_hos_stub.sql and the two WCCMS scripts.
+-- Run as WCCMS (the application's user), after the two WCCMS scripts, through one of:
+--   03_smoke_stub.sql  the Docker kit (run.ps1 / run.sh): the HOS stub of 01_hos_stub.sql;
+--   live_check.sql     the real hospital database, with a real nurse and patient of HOSPITAL_NO.
+-- They set the substitution variables used below (SQL*Plus DEFINE with the caret as prefix, since the
+-- ampersand appears in the XML test strings): hos_schema, hos, nurse, user_emp, foreign_emp, patient, mode.
 -- Prints one PASS/FAIL line per check, then "SMOKE TEST: PASS" or "SMOKE TEST: FAIL".
--- Exit code = number of failed checks (0 = all passed). Everything is rolled back at the end.
+-- Exit code = number of failed checks (0 = all passed). The procedures never COMMIT: everything this
+-- script writes is rolled back at the end, also on an error.
 -- ============================================================================
 
 WHENEVER SQLERROR EXIT FAILURE ROLLBACK
-SET DEFINE OFF
+SET DEFINE ^
+SET VERIFY OFF
 SET SERVEROUTPUT ON SIZE 1000000
 SET FEEDBACK OFF
 SET LINESIZE 220
@@ -156,7 +162,7 @@ DECLARE
     IS
     BEGIN
         RETURN '<payload>'
-            || x('nurse_code', '1002')
+            || x('nurse_code', '^nurse')
             || x('entry_user_code', c_user)
             || x('assessed_at', '2026-11-08 10:00')
             || x('submission_key', p_key)
@@ -181,6 +187,27 @@ BEGIN
     assert_true('46 assessment choices seeded', v_count = 46);
 
     -- ------------------------------------------------------------------
+    -- 0b. WCCMS reads the 8 hospital tables of hospital ^hos, and the codes used below exist there
+    -- ------------------------------------------------------------------
+    v_codes := WC_CODE_LIST('MR_PATIENT_TB', 'EMPLOYEE_TB', 'ADMISSION_PATIENT_TB', 'INPATIENT_ADM_TB',
+                            'C_LOCATION_TB', 'C_SEX_TB', 'C_JOB_TB', 'C_HOSPITAL_TB');
+    FOR i IN 1 .. v_codes.COUNT LOOP
+        BEGIN
+            EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ^hos_schema..' || v_codes(i) || ' WHERE HOS_NO = :h' INTO v_count USING ^hos;
+            assert_true('SELECT on ^hos_schema..' || v_codes(i) || ' (' || v_count || ' rows of hospital ^hos)', TRUE);
+        EXCEPTION
+            WHEN OTHERS THEN
+                assert_true('SELECT on ^hos_schema..' || v_codes(i) || ': ' || SUBSTR(SQLERRM, 1, 200), FALSE);
+        END;
+    END LOOP;
+    SELECT COUNT(*) INTO v_count FROM ^hos_schema..MR_PATIENT_TB WHERE MRP_PATREC_CODE = ^patient AND HOS_NO = ^hos;
+    assert_true('patient ^patient exists in hospital ^hos', v_count = 1);
+    SELECT COUNT(*) INTO v_count FROM ^hos_schema..EMPLOYEE_TB WHERE EMP_SERIAL IN (^nurse, ^user_emp) AND HOS_NO = ^hos;
+    assert_true('employees ^nurse and ^user_emp exist in hospital ^hos', v_count = CASE WHEN ^nurse = ^user_emp THEN 1 ELSE 2 END);
+    SELECT COUNT(*) INTO v_count FROM ^hos_schema..EMPLOYEE_TB WHERE EMP_SERIAL = ^foreign_emp AND HOS_NO = ^hos;
+    assert_true('employee ^foreign_emp does not exist in hospital ^hos', v_count = 0);
+
+    -- ------------------------------------------------------------------
     -- 1. Helpers
     -- ------------------------------------------------------------------
     BEGIN
@@ -196,19 +223,21 @@ BEGIN
             FN_WC_XML_TEXT(XMLTYPE('<p><t>a &amp;lt; b</t></p>'), 't') = 'a &lt; b');
         assert_true('FN_WC_XML_TEXT keeps Arabic and line breaks',
             FN_WC_XML_TEXT(XMLTYPE('<p><t>سطر أول' || CHR(10) || 'سطر ثان</t></p>'), 't') = 'سطر أول' || CHR(10) || 'سطر ثان');
-        assert_true('FN_WC_EMPLOYEE_EXISTS: 1001 in hospital 1', FN_WC_EMPLOYEE_EXISTS('1001', 1) = 1);
-        assert_true('FN_WC_EMPLOYEE_EXISTS: 2001 not in hospital 1', FN_WC_EMPLOYEE_EXISTS('2001', 1) = 0);
-        assert_true('FN_WC_EMPLOYEE_EXISTS: 2001 in hospital 2', FN_WC_EMPLOYEE_EXISTS('2001', 2) = 1);
+        assert_true('FN_WC_EMPLOYEE_EXISTS: ^user_emp in hospital ^hos', FN_WC_EMPLOYEE_EXISTS('^user_emp', ^hos) = 1);
+        assert_true('FN_WC_EMPLOYEE_EXISTS: ^foreign_emp not in hospital ^hos', FN_WC_EMPLOYEE_EXISTS('^foreign_emp', ^hos) = 0);
+        IF '^mode' = 'STUB' THEN
+            assert_true('FN_WC_EMPLOYEE_EXISTS: ^foreign_emp in hospital 2', FN_WC_EMPLOYEE_EXISTS('^foreign_emp', 2) = 1);
+        END IF;
         assert_true('FN_WC_EMPLOYEE_EXISTS: invalid numbers give 0',
-            FN_WC_EMPLOYEE_EXISTS('abc', 1) = 0 AND FN_WC_EMPLOYEE_EXISTS(NULL, 1) = 0
-            AND FN_WC_EMPLOYEE_EXISTS('1001.5', 1) = 0 AND FN_WC_EMPLOYEE_EXISTS('1234567890', 1) = 0);
+            FN_WC_EMPLOYEE_EXISTS('abc', ^hos) = 0 AND FN_WC_EMPLOYEE_EXISTS(NULL, ^hos) = 0
+            AND FN_WC_EMPLOYEE_EXISTS('1001.5', ^hos) = 0 AND FN_WC_EMPLOYEE_EXISTS('1234567890', ^hos) = 0);
     EXCEPTION
         WHEN OTHERS THEN
             assert_true('helpers: unexpected error ' || SUBSTR(SQLERRM, 1, 300), FALSE);
     END;
 
     -- ------------------------------------------------------------------
-    -- 2. Reference rows: a user (employee 1001 of hospital 1) and two pending requests
+    -- 2. Reference rows: a user (employee ^user_emp of hospital ^hos) and two pending requests
     -- ------------------------------------------------------------------
     SELECT MIN(WC_DIAG_CODE) INTO v_diag FROM WC_DIAGNOSIS_TB WHERE WC_DIAG_IS_ACTIVE = 1;
     SELECT MIN(WC_WTYPE_CODE) INTO v_wtype FROM WC_WOUND_TYPE_TB WHERE WC_WTYPE_IS_ACTIVE = 1;
@@ -216,20 +245,20 @@ BEGIN
     SELECT MIN(WC_PMH_CODE) INTO v_pmh FROM WC_PMH_TB WHERE WC_PMH_IS_ACTIVE = 1;
 
     INSERT INTO WC_USERS_TB (PER_USER_CODE, PER_USER_FULL_NAME, PER_USER_USERNAME, PER_USER_ROLE, PER_USER_IS_ACTIVE, PER_USER_EMP_CD, PER_USER_HOS_NO)
-    VALUES (c_user, 'ممرضة الاختبار', 'smoke.nurse', 'NURSE', 1, 1001, 1);
+    VALUES (c_user, 'ممرضة الاختبار', 'smoke.nurse', 'NURSE', 1, ^user_emp, ^hos);
 
     INSERT INTO WC_REQUEST_REG_TB (WC_REQ_CODE, WC_REQ_HOS_NO, WC_REQ_PATIENT_CD, WC_REQ_PAT_NAME_SNAPSHOT, WC_REQ_PAT_ID_SNAPSHOT,
         WC_REQ_NURSE_CD, WC_REQ_ENTRY_USER_CD, WC_REQ_STATUS, WC_REQ_CREATED_AT)
-    VALUES (c_req1, 1, 5001, 'محمود إبراهيم سالم عياد', '400000001', 1001, c_user, 'PENDING', FN_WC_NOW());
+    VALUES (c_req1, ^hos, ^patient, 'محمود إبراهيم سالم عياد', '400000001', ^user_emp, c_user, 'PENDING', FN_WC_NOW());
     INSERT INTO WC_REQUEST_REG_TB (WC_REQ_CODE, WC_REQ_HOS_NO, WC_REQ_PATIENT_CD, WC_REQ_PAT_NAME_SNAPSHOT, WC_REQ_PAT_ID_SNAPSHOT,
         WC_REQ_NURSE_CD, WC_REQ_ENTRY_USER_CD, WC_REQ_STATUS, WC_REQ_CREATED_AT)
-    VALUES (c_req2, 1, 5001, 'محمود إبراهيم سالم عياد', '400000001', 1001, c_user, 'PENDING', FN_WC_NOW());
+    VALUES (c_req2, ^hos, ^patient, 'محمود إبراهيم سالم عياد', '400000001', ^user_emp, c_user, 'PENDING', FN_WC_NOW());
 
     -- ------------------------------------------------------------------
     -- 3. SP_WC_ACCEPT_REGISTRATION
     -- ------------------------------------------------------------------
     BEGIN
-        SP_WC_ACCEPT_REGISTRATION(c_req1, accept_payload('1002'), v_reg);
+        SP_WC_ACCEPT_REGISTRATION(c_req1, accept_payload('^nurse'), v_reg);
         assert_true('accept: returns a registration code', v_reg IS NOT NULL);
     EXCEPTION
         WHEN OTHERS THEN
@@ -237,28 +266,28 @@ BEGIN
     END;
 
     SELECT COUNT(*) INTO v_count FROM WC_REGISTRATION_TB
-    WHERE WC_REG_CODE = v_reg AND WC_REG_HOS_NO = 1 AND WC_REG_PATIENT_CD = 5001 AND WC_REG_NURSE_CD = 1002
+    WHERE WC_REG_CODE = v_reg AND WC_REG_HOS_NO = ^hos AND WC_REG_PATIENT_CD = ^patient AND WC_REG_NURSE_CD = ^nurse
       AND WC_REG_STATUS = 'ACTIVE' AND WC_REG_HAS_ALLERGIES = 1 AND WC_REG_NO_COMORBIDITIES = 0;
-    assert_true('accept: registration row with HOS_NO 1, patient 5001, nurse 1002', v_count = 1);
+    assert_true('accept: registration row with HOS_NO ^hos, patient ^patient, nurse ^nurse', v_count = 1);
 
     SELECT MAX(WC_REG_ALLERGIES_DESCRIPTION) INTO v_text FROM WC_REGISTRATION_TB WHERE WC_REG_CODE = v_reg;
     assert_true('accept: XML entities decoded (& < > '' ") and Arabic kept', v_text = c_allergy_txt);
 
     SELECT COUNT(*) INTO v_count FROM WC_REQUEST_REG_TB
-    WHERE WC_REQ_CODE = c_req1 AND WC_REQ_STATUS = 'ACCEPTED' AND WC_REQ_REVIEWED_BY_CD = 1002;
-    assert_true('accept: request ACCEPTED, reviewed by 1002', v_count = 1);
+    WHERE WC_REQ_CODE = c_req1 AND WC_REQ_STATUS = 'ACCEPTED' AND WC_REQ_REVIEWED_BY_CD = ^nurse;
+    assert_true('accept: request ACCEPTED, reviewed by ^nurse', v_count = 1);
 
     SELECT MAX(WC_RDIAG_CODE), COUNT(*) INTO v_wound1, v_count FROM WC_REG_DIAGNOSIS_TB
-    WHERE WC_RDIAG_REGISTRATION_CD = v_reg AND WC_RDIAG_HOS_NO = 1 AND WC_RDIAG_CLINICAL_EMP_CD = 1002;
-    assert_true('accept: one wound with HOS_NO 1', v_count = 1);
+    WHERE WC_RDIAG_REGISTRATION_CD = v_reg AND WC_RDIAG_HOS_NO = ^hos AND WC_RDIAG_CLINICAL_EMP_CD = ^nurse;
+    assert_true('accept: one wound with HOS_NO ^hos', v_count = 1);
 
     SELECT COUNT(*) INTO v_count FROM WC_WOUND_ASSESSMENT_TB
-    WHERE WC_WA_REG_DIAGNOSIS_CD = v_wound1 AND WC_WA_HOS_NO = 1 AND WC_WA_TYPE = 'INITIAL'
-      AND WC_WA_CLINICAL_EMP_CD = 1002 AND WC_WA_WCT_EMP_CD IS NULL
+    WHERE WC_WA_REG_DIAGNOSIS_CD = v_wound1 AND WC_WA_HOS_NO = ^hos AND WC_WA_TYPE = 'INITIAL'
+      AND WC_WA_CLINICAL_EMP_CD = ^nurse AND WC_WA_WCT_EMP_CD IS NULL
       AND WC_WA_LENGTH_MM = 12.5 AND WC_WA_WIDTH_MM = 8.25 AND WC_WA_DEPTH_MM = 0
       AND WC_WA_PAIN_AT_DRESSING = 1 AND WC_WA_SWAB_TAKEN = 0 AND WC_WA_FOLLOW_UP_REQUIRED = 1
       AND WC_WA_ASSESSED_AT = TO_DATE('2026-11-01 09:30:00', 'YYYY-MM-DD HH24:MI:SS');
-    assert_true('accept: initial assessment with HOS_NO 1 and decimals 12.5 / 8.25', v_count = 1);
+    assert_true('accept: initial assessment with HOS_NO ^hos and decimals 12.5 / 8.25', v_count = 1);
 
     SELECT COUNT(*) INTO v_count FROM WC_ASSESSMENT_FINDING_TB f
     JOIN WC_WOUND_ASSESSMENT_TB a ON a.WC_WA_CODE = f.WC_AF_ASSESSMENT_CD
@@ -266,10 +295,10 @@ BEGIN
     assert_true('accept: 3 findings (2 wound bed + 1 margin)', v_count = 3);
 
     SELECT COUNT(*) INTO v_count FROM WC_WOUND_PHOTO_TB
-    WHERE WC_PHOTO_REG_DIAGNOSIS_CD = v_wound1 AND WC_PHOTO_HOS_NO = 1 AND WC_PHOTO_STAGE = 'INITIAL'
-      AND WC_PHOTO_NURSE_CD = 1002 AND WC_PHOTO_PATH = 'wounds/smoke-initial.jpg' AND WC_PHOTO_CAPTION = 'صورة أولى'
+    WHERE WC_PHOTO_REG_DIAGNOSIS_CD = v_wound1 AND WC_PHOTO_HOS_NO = ^hos AND WC_PHOTO_STAGE = 'INITIAL'
+      AND WC_PHOTO_NURSE_CD = ^nurse AND WC_PHOTO_PATH = 'wounds/smoke-initial.jpg' AND WC_PHOTO_CAPTION = 'صورة أولى'
       AND WC_PHOTO_TAKEN_AT = TO_DATE('2026-11-01 09:30', 'YYYY-MM-DD HH24:MI') AND WC_PHOTO_REVIEW_DETAIL_CD IS NULL;
-    assert_true('accept: photo with HOS_NO 1', v_count = 1);
+    assert_true('accept: photo with HOS_NO ^hos', v_count = 1);
 
     SELECT COUNT(*) INTO v_count FROM WC_REGISTRATION_PMH_TB WHERE WC_RPMH_REGISTRATION_CD = v_reg AND WC_RPMH_PMH_CD = v_pmh;
     assert_true('accept: PMH row', v_count = 1);
@@ -283,7 +312,7 @@ BEGIN
     -- (only a top-level call, as PHP makes, is rolled back as a whole), hence the savepoints.
     SAVEPOINT sp_decided;
     BEGIN
-        SP_WC_ACCEPT_REGISTRATION(c_req1, accept_payload('1002'), v_result);
+        SP_WC_ACCEPT_REGISTRATION(c_req1, accept_payload('^nurse'), v_result);
         assert_true('accept the same request twice -> REQUEST_ALREADY_DECIDED (no error raised)', FALSE);
     EXCEPTION
         WHEN OTHERS THEN
@@ -293,21 +322,21 @@ BEGIN
 
     SAVEPOINT sp_other_hospital;
     BEGIN
-        SP_WC_ACCEPT_REGISTRATION(c_req2, accept_payload('2001'), v_result);
-        assert_true('nurse 2001 exists only in hospital 2 -> INVALID_EMPLOYEE (no error raised)', FALSE);
+        SP_WC_ACCEPT_REGISTRATION(c_req2, accept_payload('^foreign_emp'), v_result);
+        assert_true('nurse ^foreign_emp (not in hospital ^hos) -> INVALID_EMPLOYEE (no error raised)', FALSE);
     EXCEPTION
         WHEN OTHERS THEN
-            expect_error('nurse 2001 exists only in hospital 2', 'INVALID_EMPLOYEE', SQLCODE, SQLERRM);
+            expect_error('nurse ^foreign_emp (not in hospital ^hos)', 'INVALID_EMPLOYEE', SQLCODE, SQLERRM);
     END;
     ROLLBACK TO sp_other_hospital;
 
     SAVEPOINT sp_wct_other_hospital;
     BEGIN
-        SP_WC_ACCEPT_REGISTRATION(c_req2, accept_payload('1002', p_wct => '2001'), v_result);
-        assert_true('wound care employee 2001 only in hospital 2 -> INVALID_EMPLOYEE (no error raised)', FALSE);
+        SP_WC_ACCEPT_REGISTRATION(c_req2, accept_payload('^nurse', p_wct => '^foreign_emp'), v_result);
+        assert_true('wound care employee ^foreign_emp (not in hospital ^hos) -> INVALID_EMPLOYEE (no error raised)', FALSE);
     EXCEPTION
         WHEN OTHERS THEN
-            expect_error('wound care employee 2001 only in hospital 2', 'INVALID_EMPLOYEE', SQLCODE, SQLERRM);
+            expect_error('wound care employee ^foreign_emp (not in hospital ^hos)', 'INVALID_EMPLOYEE', SQLCODE, SQLERRM);
     END;
     ROLLBACK TO sp_wct_other_hospital;
 
@@ -323,7 +352,7 @@ BEGIN
 
     SAVEPOINT sp_not_found;
     BEGIN
-        SP_WC_ACCEPT_REGISTRATION('no-such-request', accept_payload('1002'), v_result);
+        SP_WC_ACCEPT_REGISTRATION('no-such-request', accept_payload('^nurse'), v_result);
         assert_true('unknown request -> REQUEST_NOT_FOUND (no error raised)', FALSE);
     EXCEPTION
         WHEN OTHERS THEN
@@ -335,12 +364,12 @@ BEGIN
     assert_true('second request still PENDING after the rejected calls', v_count = 1);
 
     -- ------------------------------------------------------------------
-    -- 4. SP_WC_ADD_WOUND (wound data inside <assessment>; employee 1001 exists in both hospitals)
+    -- 4. SP_WC_ADD_WOUND (wound data inside <assessment>; on the stub, employee ^user_emp exists in both hospitals)
     -- ------------------------------------------------------------------
     BEGIN
         SP_WC_ADD_WOUND(
             v_reg,
-            '<payload>' || x('clinic_nurse_code', '1001') || x('entry_user_code', c_user)
+            '<payload>' || x('clinic_nurse_code', '^user_emp') || x('entry_user_code', c_user)
                 || x('assessed_at', '2026-11-02 08:00') || x('assessment', initial_wound) || '</payload>',
             v_wound2
         );
@@ -351,16 +380,16 @@ BEGIN
     END;
 
     SELECT COUNT(*) INTO v_count FROM WC_REG_DIAGNOSIS_TB
-    WHERE WC_RDIAG_CODE = v_wound2 AND WC_RDIAG_REGISTRATION_CD = v_reg AND WC_RDIAG_HOS_NO = 1
-      AND WC_RDIAG_CLINICAL_EMP_CD = 1001 AND WC_RDIAG_DESCRIPTION = 'كعب القدم الأيسر';
-    assert_true('add wound: wound row with HOS_NO 1', v_count = 1);
+    WHERE WC_RDIAG_CODE = v_wound2 AND WC_RDIAG_REGISTRATION_CD = v_reg AND WC_RDIAG_HOS_NO = ^hos
+      AND WC_RDIAG_CLINICAL_EMP_CD = ^user_emp AND WC_RDIAG_DESCRIPTION = 'كعب القدم الأيسر';
+    assert_true('add wound: wound row with HOS_NO ^hos', v_count = 1);
 
     SELECT COUNT(*) INTO v_count FROM WC_WOUND_ASSESSMENT_TB
-    WHERE WC_WA_REG_DIAGNOSIS_CD = v_wound2 AND WC_WA_HOS_NO = 1 AND WC_WA_TYPE = 'INITIAL' AND WC_WA_CLINICAL_EMP_CD = 1001;
-    assert_true('add wound: initial assessment with HOS_NO 1', v_count = 1);
+    WHERE WC_WA_REG_DIAGNOSIS_CD = v_wound2 AND WC_WA_HOS_NO = ^hos AND WC_WA_TYPE = 'INITIAL' AND WC_WA_CLINICAL_EMP_CD = ^user_emp;
+    assert_true('add wound: initial assessment with HOS_NO ^hos', v_count = 1);
 
-    SELECT COUNT(*) INTO v_count FROM WC_WOUND_PHOTO_TB WHERE WC_PHOTO_REG_DIAGNOSIS_CD = v_wound2 AND WC_PHOTO_HOS_NO = 1;
-    assert_true('add wound: photo with HOS_NO 1', v_count = 1);
+    SELECT COUNT(*) INTO v_count FROM WC_WOUND_PHOTO_TB WHERE WC_PHOTO_REG_DIAGNOSIS_CD = v_wound2 AND WC_PHOTO_HOS_NO = ^hos;
+    assert_true('add wound: photo with HOS_NO ^hos', v_count = 1);
 
     -- ------------------------------------------------------------------
     -- 5. SP_WC_COMPLETE_REVIEW
@@ -388,9 +417,9 @@ BEGIN
     END;
 
     SELECT COUNT(*) INTO v_count FROM WC_DAILY_REVIEW_TB
-    WHERE WC_DREV_CODE = v_review AND WC_DREV_HOS_NO = 1 AND WC_DREV_NURSE_CD = 1002
+    WHERE WC_DREV_CODE = v_review AND WC_DREV_HOS_NO = ^hos AND WC_DREV_NURSE_CD = ^nurse
       AND WC_DREV_REGISTRATION_CD = v_reg AND WC_DREV_SUBMISSION_KEY = 'smoke-key-1' AND WC_DREV_SCHEDULED_REVIEW_CD IS NULL;
-    assert_true('review: visit row with HOS_NO 1', v_count = 1);
+    assert_true('review: visit row with HOS_NO ^hos', v_count = 1);
 
     SELECT COUNT(*), SUM(WC_DREVD_FOLLOW_UP_REQUIRED) INTO v_count, v_number FROM WC_REVIEW_DETAIL_TB
     WHERE WC_REVD_REVIEW_CD = v_review AND WC_REVD_REVIEW_TYPE = 'DAILY' AND WC_DREVD_STATUS = 'IMPROVING';
@@ -398,9 +427,9 @@ BEGIN
 
     SELECT COUNT(*) INTO v_count FROM WC_WOUND_ASSESSMENT_TB a
     JOIN WC_REVIEW_DETAIL_TB d ON d.WC_REVD_CODE = a.WC_WA_REVIEW_DETAIL_CD
-    WHERE d.WC_REVD_REVIEW_CD = v_review AND a.WC_WA_TYPE = 'FOLLOW_UP' AND a.WC_WA_HOS_NO = 1
-      AND a.WC_WA_CLINICAL_EMP_CD = 1002 AND a.WC_WA_EXUDATE_TYPE_CD IS NULL;
-    assert_true('review: 2 follow-up assessments with HOS_NO 1 (dry wound, no exudate type)', v_count = 2);
+    WHERE d.WC_REVD_REVIEW_CD = v_review AND a.WC_WA_TYPE = 'FOLLOW_UP' AND a.WC_WA_HOS_NO = ^hos
+      AND a.WC_WA_CLINICAL_EMP_CD = ^nurse AND a.WC_WA_EXUDATE_TYPE_CD IS NULL;
+    assert_true('review: 2 follow-up assessments with HOS_NO ^hos (dry wound, no exudate type)', v_count = 2);
 
     SELECT COUNT(*), MAX(WC_SREV_VISIT_SERIAL) INTO v_count, v_number FROM WC_SCHEDULED_REVIEW_TB WHERE WC_SREV_REGISTRATION_CD = v_reg;
     SELECT MAX(WC_REG_NEXT_VISIT_DATE) INTO v_date FROM WC_REGISTRATION_TB WHERE WC_REG_CODE = v_reg;
@@ -434,14 +463,14 @@ BEGIN
             assert_true('discharge review: unexpected error ' || SUBSTR(SQLERRM, 1, 300), FALSE);
     END;
     SELECT COUNT(*) INTO v_count FROM WC_REGISTRATION_TB
-    WHERE WC_REG_CODE = v_reg AND WC_REG_STATUS = 'DISCHARGED' AND WC_REG_DISCHARGED_BY_EMP_CD = 1002;
-    assert_true('discharge review: registration DISCHARGED by 1002', v_count = 1);
+    WHERE WC_REG_CODE = v_reg AND WC_REG_STATUS = 'DISCHARGED' AND WC_REG_DISCHARGED_BY_EMP_CD = ^nurse;
+    assert_true('discharge review: registration DISCHARGED by ^nurse', v_count = 1);
 
     SAVEPOINT sp_not_active;
     BEGIN
         SP_WC_ADD_WOUND(
             v_reg,
-            '<payload>' || x('clinic_nurse_code', '1002') || x('entry_user_code', c_user) || initial_wound || '</payload>',
+            '<payload>' || x('clinic_nurse_code', '^nurse') || x('entry_user_code', c_user) || initial_wound || '</payload>',
             v_result
         );
         assert_true('add wound to a discharged registration -> REGISTRATION_NOT_ACTIVE (no error raised)', FALSE);
@@ -457,20 +486,22 @@ BEGIN
     SAVEPOINT sp_users;
     BEGIN
         INSERT INTO WC_USERS_TB (PER_USER_CODE, PER_USER_USERNAME, PER_USER_EMP_CD, PER_USER_HOS_NO)
-        VALUES ('aaaaaaaa-0000-4000-8000-000000000002', 'smoke.duplicate', 1001, 1);
-        assert_true('UX_WC_USERS_EMP rejects a second account for employee 1001 of hospital 1', FALSE);
+        VALUES ('aaaaaaaa-0000-4000-8000-000000000002', 'smoke.duplicate', ^user_emp, ^hos);
+        assert_true('UX_WC_USERS_EMP rejects a second account for employee ^user_emp of hospital ^hos', FALSE);
     EXCEPTION
         WHEN DUP_VAL_ON_INDEX THEN
-            assert_true('UX_WC_USERS_EMP rejects a second account for employee 1001 of hospital 1', TRUE);
+            assert_true('UX_WC_USERS_EMP rejects a second account for employee ^user_emp of hospital ^hos', TRUE);
     END;
     BEGIN
+        IF '^mode' = 'STUB' THEN
+            INSERT INTO WC_USERS_TB (PER_USER_CODE, PER_USER_USERNAME, PER_USER_EMP_CD, PER_USER_HOS_NO)
+            VALUES ('aaaaaaaa-0000-4000-8000-000000000003', 'smoke.hospital2', ^user_emp, 2);
+        END IF;
         INSERT INTO WC_USERS_TB (PER_USER_CODE, PER_USER_USERNAME, PER_USER_EMP_CD, PER_USER_HOS_NO)
-        VALUES ('aaaaaaaa-0000-4000-8000-000000000003', 'smoke.hospital2', 1001, 2);
+        VALUES ('aaaaaaaa-0000-4000-8000-000000000004', 'smoke.unlinked1', NULL, ^hos);
         INSERT INTO WC_USERS_TB (PER_USER_CODE, PER_USER_USERNAME, PER_USER_EMP_CD, PER_USER_HOS_NO)
-        VALUES ('aaaaaaaa-0000-4000-8000-000000000004', 'smoke.unlinked1', NULL, 1);
-        INSERT INTO WC_USERS_TB (PER_USER_CODE, PER_USER_USERNAME, PER_USER_EMP_CD, PER_USER_HOS_NO)
-        VALUES ('aaaaaaaa-0000-4000-8000-000000000005', 'smoke.unlinked2', NULL, 1);
-        assert_true('UX_WC_USERS_EMP allows employee 1001 of hospital 2 and several unlinked accounts', TRUE);
+        VALUES ('aaaaaaaa-0000-4000-8000-000000000005', 'smoke.unlinked2', NULL, ^hos);
+        assert_true('UX_WC_USERS_EMP allows several unlinked accounts (and, on the stub, employee ^user_emp of hospital 2)', TRUE);
     EXCEPTION
         WHEN OTHERS THEN
             assert_true('UX_WC_USERS_EMP allows ... (' || SUBSTR(SQLERRM, 1, 200) || ')', FALSE);

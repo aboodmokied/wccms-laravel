@@ -18,6 +18,7 @@
                         </div>
                     </div>
 
+                    @include('partials.staff_lists_notice')
                     <div class="mb-3">
                         <label class="form-label fw-bold">الممرض المنفذ للتخريج <span class="text-danger">*</span></label>
                         <select name="discharging_nurse_code" class="form-select" required>

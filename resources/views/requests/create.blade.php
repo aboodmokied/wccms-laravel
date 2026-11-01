@@ -90,6 +90,7 @@
                         <!-- 3. Referral Details -->
                         <h2 class="fs-5 fw-bold mb-3">2. بيانات الإحالة</h2>
 
+                        @include('partials.staff_lists_notice')
                         <div class="mb-3">
                             <label for="attending_nurse_code" class="form-label fw-semibold">الممرض المحول / مسؤول القسم <span class="text-danger">*</span></label>
                             <select name="attending_nurse_code" id="attending_nurse_code" class="form-select @error('attending_nurse_code') is-invalid @enderror" required>

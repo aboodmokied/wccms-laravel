@@ -89,18 +89,29 @@ return [
     ],
 
     'employees' => [
-        // EMP_ACTIVE value of an employee at work (the hospital's code filters EMP_ACTIVE = 1).
-        'active_value' => 1,
+        // An employee at work, for every pick list: EMP_ACTIVE = this value (the hospital's HOS_USERS_VW filters
+        // EMP_ACTIVE = 1). Empty = no EMP_ACTIVE filter.
+        'active_value' => env('HOSPITAL_EMP_ACTIVE', 1),
+
+        // EMP_REC_CD = this value: the hospital's own employee lists use it (68 places, e.g. GET_DOCTORS_NAMES:
+        // EMP_JOB_CD = 2 AND EMP_REC_CD = 1). Applied to the doctor lists, or to every list with
+        // HOSPITAL_EMP_REC_CD_LISTS=all. Empty = no EMP_REC_CD filter.
+        'record_status' => env('HOSPITAL_EMP_REC_CD', 1),
+        'record_status_lists' => env('HOSPITAL_EMP_REC_CD_LISTS', 'doctors'),
 
         // C_JOB_TB.JOB_CODE values (EMPLOYEE_TB.EMP_JOB_CD), comma separated, that fill the employee pick lists:
         // the doctor fields list doctors only, the nurse fields nurses only, and the wound care team field both.
-        // An empty list does not filter (the field lists every active employee); wccms:check-hospital warns about it.
         'job_codes' => [
             // 2: the hospital's own doctor lists filter on it (GET_DOCTORS_PROC, GET_DOCTORS_NAMES: EMP_JOB_CD = 2).
             'doctors' => env('HOSPITAL_DOCTOR_JOB_CODES', '2'),
-            // Not known yet: no nurse code appears in the hospital's code. Set it from C_JOB_TB.
+            // Empty: found at run time in C_JOB_TB by job name (nurse_job_keywords below) and logged. A value here
+            // overrides the detection.
             'nurses' => env('HOSPITAL_NURSE_JOB_CODES', ''),
         ],
+
+        // A C_JOB_TB job is a nursing job when JOB_NAME_AR or JOB_NAME_EN contains one of these (case and Arabic
+        // diacritics ignored).
+        'nurse_job_keywords' => ['تمريض', 'ممرض', 'ممرضة', 'Nurse', 'Nursing'],
     ],
 
     /*
@@ -115,8 +126,9 @@ return [
     */
 
     'sex' => [
-        'male_name_en' => 'Male',
-        'female_name_en' => 'Female',
+        // The exact C_SEX_TB.SEX_NAME_EN of each sex (wccms:check-hospital lists every code and its class).
+        'male_name_en' => env('HOSPITAL_SEX_MALE_NAME_EN', 'Male'),
+        'female_name_en' => env('HOSPITAL_SEX_FEMALE_NAME_EN', 'Female'),
     ],
 
 ];
