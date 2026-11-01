@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DischargeRegistrationRequest;
 use App\Http\Requests\StoreWoundDiagnosisRequest;
 use App\Http\Requests\UpdateRegistrationRequest;
-use App\Models\PerEmployee;
+use App\Models\Employee;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDiagnosis;
 use App\Models\WcDressing;
@@ -48,10 +48,7 @@ class RegistrationController extends Controller
         ])->where('WC_REG_STATUS', $status);
 
         if ($search = trim($request->input('search'))) {
-            $query->whereHas('patient', function ($q) use ($search) {
-                $q->where('MR_PAT_FULL_NAME', 'like', "%{$search}%")
-                    ->orWhere('MR_PAT_ID_NO', 'like', "%{$search}%");
-            });
+            $query->whereHas('patient', fn ($q) => $q->matching($search));
         }
 
         $registrations = $query->orderBy('WC_REG_DATE', 'desc')->paginate(15)->withQueryString();
@@ -146,7 +143,7 @@ class RegistrationController extends Controller
         $diagnoses = WcDiagnosis::where('WC_DIAG_IS_ACTIVE', 1)->get();
         $dressings = WcDressing::where('WC_DRESS_IS_ACTIVE', 1)->get();
         $medications = WcMedication::where('WC_MED_IS_ACTIVE', 1)->get();
-        $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
+        $staff = Employee::pickLists();
         $assessmentChoices = WcAssessmentChoice::query()
             ->where('WC_ACH_IS_ACTIVE', 1)
             ->orderBy('WC_ACH_DISPLAY_ORDER')
@@ -160,7 +157,7 @@ class RegistrationController extends Controller
             'diagnoses' => $diagnoses,
             'dressings' => $dressings,
             'medications' => $medications,
-            'employees' => $employees,
+            ...$staff,
             'healthSummary' => $healthSummary,
             'assessmentChoices' => $assessmentChoices,
         ]);

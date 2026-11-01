@@ -81,9 +81,9 @@
                 </div>
                 <div class="col">
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                        <h2 class="fw-bold fs-5 mb-0 text-dark">{{ $registration->patient?->MR_PAT_FULL_NAME }}</h2>
+                        <h2 class="fw-bold fs-5 mb-0 text-dark">{{ $registration->patient?->full_name }}</h2>
                         <span class="badge bg-primary text-white px-2.5 py-1 fs-8 rounded-pill">
-                            <i class="bi bi-card-text me-1"></i>{{ $registration->patient?->MR_PAT_ID_NO }}
+                            <i class="bi bi-card-text me-1"></i>{{ $registration->patient?->MRP_ID }}
                         </span>
                         @if($registration->is_reviewed_today)
                             <span class="badge bg-success text-white px-2.5 py-1 fs-8 rounded-pill">
@@ -96,7 +96,7 @@
                         @endif
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-3 text-muted fs-7">
-                        <span><i class="bi bi-gender-ambiguous me-1 text-primary"></i>الجنس: <strong>{{ $registration->patient?->MR_PAT_GENDER === 'MALE' ? 'ذكر' : 'أنثى' }}</strong></span>
+                        <span><i class="bi bi-gender-ambiguous me-1 text-primary"></i>الجنس: <strong>{{ $registration->patient?->sex_label ?: 'غير معروف' }}</strong></span>
                         <span>&bull;</span>
                         <span><i class="bi bi-calendar3 me-1 text-primary"></i>تاريخ التسجيل: <strong>{{ \Carbon\Carbon::parse($registration->WC_REG_DATE)->format('Y-m-d H:i') }}</strong></span>
                         <span>&bull;</span>
@@ -163,19 +163,19 @@
                     <ul class="list-group list-group-flush fs-7">
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
                             <span class="text-muted"><i class="bi bi-person me-2"></i>الاسم الرباعي:</span>
-                            <span class="fw-bold text-dark">{{ $registration->patient?->MR_PAT_FULL_NAME }}</span>
+                            <span class="fw-bold text-dark">{{ $registration->patient?->full_name }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
                             <span class="text-muted"><i class="bi bi-credit-card-2-front me-2"></i>رقم الهوية:</span>
-                            <span class="fw-bold text-dark font-monospace">{{ $registration->patient?->MR_PAT_ID_NO }}</span>
+                            <span class="fw-bold text-dark font-monospace">{{ $registration->patient?->MRP_ID }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
                             <span class="text-muted"><i class="bi bi-telephone me-2"></i>رقم الهاتف:</span>
-                            <span class="fw-semibold text-dark">{{ $registration->patient?->MR_PAT_PHONE ?: 'غير متوفر' }}</span>
+                            <span class="fw-semibold text-dark">{{ $registration->patient?->MRP_MOBILE_NO ?: 'غير متوفر' }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
                             <span class="text-muted"><i class="bi bi-calendar-event me-2"></i>تاريخ الميلاد:</span>
-                            <span class="fw-semibold text-dark">{{ $registration->patient?->MR_PAT_DOB ? \Carbon\Carbon::parse($registration->patient->MR_PAT_DOB)->format('Y-m-d') : 'غير محدد' }}</span>
+                            <span class="fw-semibold text-dark">{{ $registration->patient?->MRP_DOB ? \Carbon\Carbon::parse($registration->patient->MRP_DOB)->format('Y-m-d') : 'غير محدد' }}</span>
                         </li>
                     </ul>
                 </div>
@@ -195,7 +195,7 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
                             <span class="text-muted"><i class="bi bi-person-badge me-2"></i>الممرض المسؤول:</span>
-                            <span class="fw-semibold text-dark">{{ $registration->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</span>
+                            <span class="fw-semibold text-dark">{{ $registration->nurse?->full_name ?? 'غير محدد' }}</span>
                         </li>
                         @if($registration->procedure)
                             <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
@@ -206,7 +206,7 @@
                         @if($registration->WC_REG_STATUS === 'DISCHARGED')
                             <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5">
                                 <span class="text-muted"><i class="bi bi-person-x me-2"></i>الممرض المنفذ للتخريج:</span>
-                                <span class="fw-semibold text-danger">{{ $registration->dischargingNurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</span>
+                                <span class="fw-semibold text-danger">{{ $registration->dischargingNurse?->full_name ?? 'غير محدد' }}</span>
                             </li>
                         @endif
                     </ul>
@@ -270,7 +270,7 @@
                                         </td>
                                         <td>
                                             <span class="fw-semibold text-secondary fs-7">
-                                                <i class="bi bi-person me-1"></i>{{ $diag->clinicalEmployee?->PER_EMP_FULL_NAME ?? 'غير محدد' }}
+                                                <i class="bi bi-person me-1"></i>{{ $diag->clinicalEmployee?->full_name ?? 'غير محدد' }}
                                             </span>
                                         </td>
                                         <td class="pe-4 text-end">

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\MrPatient;
 use App\Models\User;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -68,15 +68,11 @@ class ReportsAndDashboardTest extends TestCase
 
     public function test_patient_history_search_and_render_timeline(): void
     {
-        // Seed test patient using exact database schema
-        $patientCode = 'PAT-TEST-001';
-        DB::table('mr_patient_tb')->insert([
-            'MR_PAT_CODE' => $patientCode,
-            'MR_PAT_ID_NO' => '1029384756',
-            'MR_PAT_FULL_NAME' => 'أحمد الغامدي',
-            'MR_PAT_GENDER' => 'M',
-            'MR_PAT_PHONE' => '0501234567',
-        ]);
+        // A patient of the configured hospital in MR_PATIENT_TB, searched by medical record number
+        $patientCode = MrPatient::factory()->male()->named('أحمد', null, null, 'الغامدي')->create([
+            'MRP_ID' => 102938475,
+            'MRP_MOBILE_NO' => '0501234567',
+        ])->MRP_PATREC_CODE;
 
         $response = $this->call(
             'GET',
@@ -87,19 +83,15 @@ class ReportsAndDashboardTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('أحمد الغامدي');
-        $response->assertSee('1029384756');
+        $response->assertSee('102938475');
     }
 
     public function test_patient_history_csv_export_stream(): void
     {
-        $patientCode = 'PAT-TEST-CSV';
-        DB::table('mr_patient_tb')->insert([
-            'MR_PAT_CODE' => $patientCode,
-            'MR_PAT_ID_NO' => '9988776655',
-            'MR_PAT_FULL_NAME' => 'فاطمة العتيبي',
-            'MR_PAT_GENDER' => 'F',
-            'MR_PAT_PHONE' => '0559988776',
-        ]);
+        $patientCode = MrPatient::factory()->female()->named('فاطمة', null, null, 'العتيبي')->create([
+            'MRP_ID' => 998877665,
+            'MRP_MOBILE_NO' => '0559988776',
+        ])->MRP_PATREC_CODE;
 
         $response = $this->call(
             'GET',

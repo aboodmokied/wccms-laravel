@@ -1,33 +1,29 @@
 -- ============================================================================
 -- WCCMS (Wound Care Clinic Management System) - Oracle schema
--- Target: Oracle 12.2 or later, database character set AL32UTF8
+-- Target: Oracle 11g (11.2) or later. Every identifier is 30 characters or fewer.
+-- Database character set assumed AR8MSWIN1256 (Arabic is stored fine; characters outside Windows-1256,
+-- such as emoji, are stored as '?'). Run the script with NLS_LANG=AMERICAN_AMERICA.AL32UTF8.
 -- Run order: this file, then wccms_oracle_procedures.sql (see MIGRATION_GUIDE.md)
 -- ============================================================================
 --
 -- ما يفعله هذا الملف
---   1) ينشئ المستخدم WCCMS ويعطيه الصلاحيات (يُنفَّذ بمستخدم DBA).
---   2) ينشئ جداول WCCMS الـ 20 داخل مخطط WCCMS مع مفاتيح أجنبية حقيقية تشير مباشرة إلى جدولي المرضى
---      والموظفين في مخطط المستشفى (بدون views وبدون نسخ).
---   3) ينشئ الفهارس وقيود CHECK.
+--   1) ينشئ المستخدم WCCMS ويعطيه صلاحية القراءة فقط على جداول المستشفى التي يحتاجها (يُنفَّذ بمستخدم DBA).
+--   2) ينشئ جداول WCCMS الـ 20 داخل مخطط WCCMS.
+--   3) ينشئ المفاتيح الأجنبية بين جداول WCCMS، والفهارس وقيود CHECK.
 --   4) يُدخل البيانات الأساسية (خيارات التقييم الـ 46 وقوائم العيادة). الإدخال لا يكرر الصفوف إذا أعيد تشغيله.
+--   5) في آخره قسم مُعطَّل (تعليقات) للمفاتيح الأجنبية المركّبة إلى جداول المستشفى؛ انظر القسم 8.
 --
--- جداول المستشفى لا تُنشأ ولا تُعدَّل هنا. WCCMS يقرأ منها فقط، والمفاتيح الأجنبية تشير إليها.
+-- جداول المستشفى (مخطط HOS) لا تُنشأ ولا تُعدَّل هنا. WCCMS يقرأ منها فقط:
+--   HOS.MR_PATIENT_TB      المفتاح (MRP_PATREC_CODE, HOS_NO)
+--   HOS.EMPLOYEE_TB        المفتاح (EMP_SERIAL, HOS_NO)
+--   HOS.ADMISSION_PATIENT_TB, HOS.INPATIENT_ADM_TB, HOS.C_LOCATION_TB, HOS.C_SEX_TB, HOS.C_JOB_TB, HOS.C_HOSPITAL_TB
 --
--- ----------------------------------------------------------------------------
--- الـ placeholders: استبدلها كلها قبل التشغيل (Find & Replace على الملف كاملاً)
--- ----------------------------------------------------------------------------
---   {{HOSPITAL_SCHEMA}}    اسم مخطط (مالك) جداول المستشفى، مثل HIS.
---                          استعلام للتأكد: SELECT owner, table_name FROM all_tables WHERE table_name LIKE '%PATIENT%';
---   {{PATIENTS_TABLE}}     اسم جدول المرضى في مخطط المستشفى، بدون اسم المخطط، مثل PATIENTS.
---   {{PATIENTS_PK}}        عمود المفتاح الأساسي لجدول المرضى، مثل PATIENT_ID.
---                          يجب أن يكون عليه PRIMARY KEY أو UNIQUE، وإلا يرفض Oracle المفتاح الأجنبي (ORA-02270).
---   {{PATIENTS_PK_TYPE}}   نوع ذلك العمود كما هو بالضبط، مثل NUMBER(10) أو VARCHAR2(20 CHAR).
---                          استعلام: SELECT data_type, data_length, data_precision, data_scale, char_used
---                                   FROM all_tab_columns WHERE owner='{{HOSPITAL_SCHEMA}}'
---                                   AND table_name='{{PATIENTS_TABLE}}' AND column_name='{{PATIENTS_PK}}';
---   {{EMPLOYEES_TABLE}}    اسم جدول الموظفين في مخطط المستشفى، مثل EMPLOYEES.
---   {{EMPLOYEES_PK}}       عمود المفتاح الأساسي لجدول الموظفين، مثل EMP_ID (PRIMARY KEY أو UNIQUE).
---   {{EMPLOYEES_PK_TYPE}}  نوع ذلك العمود كما هو بالضبط (نفس استعلام المرضى).
+-- رقم المستشفى (HOS_NO)
+--   قاعدة المستشفى تخدم أكثر من مستشفى، والرمز نفسه قد يتكرر في مستشفيين. لذلك كل جدول من جداولنا يشير إلى مريض أو
+--   موظف فيه عمود HOS_NO واحد (مثل WC_REG_HOS_NO) يملؤه التطبيق من HOSPITAL_NO، وكل فهرس على رمز مريض أو موظف
+--   يضم هذا العمود.
+--
+-- الـ placeholders: استبدلها قبل التشغيل (Find & Replace على الملف كاملاً)
 --   {{WCCMS_PASSWORD}}     كلمة مرور المستخدم WCCMS (تُكتب أيضاً في DB_PASSWORD في .env).
 --   {{WCCMS_TABLESPACE}}   الـ tablespace التي تُحفظ فيها بيانات WCCMS، مثل USERS.
 --
@@ -36,13 +32,9 @@
 --
 -- طريقة التشغيل
 --   - بـ SQL*Plus أو SQLcl كمستخدم DBA:  @wccms_oracle_schema.sql
---     مع NLS_LANG=AMERICAN_AMERICA.AL32UTF8 حتى تُحفظ النصوص العربية سليمة. الملف محفوظ بترميز UTF-8.
+--     مع NLS_LANG=AMERICAN_AMERICA.AL32UTF8 حتى تُحوَّل النصوص العربية سليمة. الملف محفوظ بترميز UTF-8.
 --   - أو في SQL Developer بـ Run Script (F5).
 --   - الملف يتوقف عند أول خطأ (WHENEVER SQLERROR). صحّح السبب وأعد التشغيل على مخطط نظيف.
---
--- ملاحظة مهمة عن المفاتيح الأجنبية
---   المفاتيح الأجنبية الحقيقية تعني أن نظام المستشفى لن يستطيع حذف مريض أو موظف له سجل في WCCMS
---   (ORA-02292)، ولن يستطيع تغيير قيمة مفتاحه. هذا مقصود ويجب أن يعرفه فريق نظام المستشفى.
 -- ============================================================================
 
 WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK
@@ -60,12 +52,18 @@ CREATE USER WCCMS IDENTIFIED BY "{{WCCMS_PASSWORD}}"
 
 GRANT CREATE SESSION, CREATE TABLE, CREATE PROCEDURE, CREATE TYPE TO WCCMS;
 
--- {{HOSPITAL_SCHEMA}}.{{PATIENTS_TABLE}} و {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}}: جدولا المستشفى.
--- SELECT: للقراءة من التطبيق والـ procedures. REFERENCES: شرط لإنشاء مفتاح أجنبي يشير إلى جدول في مخطط آخر.
+-- قراءة فقط من جداول المستشفى: التطبيق يقرأ المرضى والموظفين والدخولات والأقسام والجنس والمسمى الوظيفي،
+-- والدالة FN_WC_EMPLOYEE_EXISTS تقرأ جدول الموظفين (لذلك المنح مباشر للمستخدم، لا عبر role).
 -- لا INSERT ولا UPDATE ولا DELETE: WCCMS لا يكتب في جداول المستشفى.
--- إذا رفض Oracle المنح (ORA-01031)، يُنفَّذ هذان السطران بمستخدم مالك مخطط المستشفى.
-GRANT SELECT, REFERENCES ON {{HOSPITAL_SCHEMA}}.{{PATIENTS_TABLE}} TO WCCMS;
-GRANT SELECT, REFERENCES ON {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} TO WCCMS;
+-- إذا رفض Oracle المنح (ORA-01031)، تُنفَّذ هذه الأسطر بمستخدم HOS.
+GRANT SELECT ON HOS.MR_PATIENT_TB TO WCCMS;
+GRANT SELECT ON HOS.EMPLOYEE_TB TO WCCMS;
+GRANT SELECT ON HOS.ADMISSION_PATIENT_TB TO WCCMS;
+GRANT SELECT ON HOS.INPATIENT_ADM_TB TO WCCMS;
+GRANT SELECT ON HOS.C_LOCATION_TB TO WCCMS;
+GRANT SELECT ON HOS.C_SEX_TB TO WCCMS;
+GRANT SELECT ON HOS.C_JOB_TB TO WCCMS;
+GRANT SELECT ON HOS.C_HOSPITAL_TB TO WCCMS;
 
 -- كل ما يلي يُنشأ داخل مخطط WCCMS (يعمل سواء كنت متصلاً بـ DBA أو بـ WCCMS).
 ALTER SESSION SET CURRENT_SCHEMA = WCCMS;
@@ -74,20 +72,21 @@ ALTER SESSION SET CURRENT_SCHEMA = WCCMS;
 -- 2) الجداول
 -- أنواع الأعمدة:
 --   - المفاتيح UUID: VARCHAR2(36 CHAR) (لا CHAR(36): CHAR يُكمل بمسافات ويُفسد المقارنة).
---   - النصوص: VARCHAR2(n CHAR) حتى يُحسب الطول بالحروف لا بالبايت (الحرف العربي = 2 بايت).
---     تنبيه: إذا كان MAX_STRING_SIZE = STANDARD فالحد الفعلي لـ VARCHAR2 هو 4000 بايت (~2000 حرف عربي)؛
---     لذلك النصوص التي يسمح النظام فيها بأكثر من 2000 حرف هي CLOB.
+--   - رموز المرضى والموظفين: NUMBER(9)، مثل MRP_PATREC_CODE و EMP_SERIAL في المستشفى.
+--   - رقم المستشفى: NUMBER(5)، مثل HOS_NO في المستشفى.
+--   - النصوص: VARCHAR2(n CHAR) حتى يُحسب الطول بالحروف لا بالبايت.
+--     تنبيه: في 11g الحد الفعلي لـ VARCHAR2 هو 4000 بايت؛ لذلك النصوص الطويلة CLOB.
 --   - التواريخ: DATE (يحفظ التاريخ والوقت). النظام يحفظ الأوقات بتوقيت UTC.
 --   - القيم المنطقية: NUMBER(1) مع CHECK (0, 1).
---   - الأعمدة التي تشير إلى المستشفى تأخذ نوع مفتاح المستشفى نفسه: {{PATIENTS_PK_TYPE}} و {{EMPLOYEES_PK_TYPE}}.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 2.1 PER_USERS_TB: حسابات الدخول إلى WCCMS (جدول WCCMS، ليس جدول المستشفى)
+-- 2.1 WC_USERS_TB: حسابات الدخول إلى WCCMS (جدول WCCMS، وليس HOS.PER_USERS_TB)
 -- PER_USER_USERNAME = قيمة sub في JWT نظام دخول المستشفى.
--- PER_USER_EMP_CD: الموظف المرتبط بالحساب في جدول موظفي المستشفى؛ موظف واحد لكل حساب (UNIQUE).
+-- PER_USER_EMP_CD + PER_USER_HOS_NO: الموظف المرتبط بالحساب في HOS.EMPLOYEE_TB؛ موظف واحد لكل حساب
+-- (الفهرس الفريد UX_WC_USERS_EMP في القسم 4 يتجاهل الحسابات غير المرتبطة).
 -- ----------------------------------------------------------------------------
-CREATE TABLE PER_USERS_TB (
+CREATE TABLE WC_USERS_TB (
     PER_USER_CODE       VARCHAR2(36 CHAR)   NOT NULL,
     PER_USER_FULL_NAME  VARCHAR2(255 CHAR),
     PER_USER_USERNAME   VARCHAR2(100 CHAR)  NOT NULL,
@@ -95,13 +94,12 @@ CREATE TABLE PER_USERS_TB (
     PER_USER_PASSWORD   VARCHAR2(255 CHAR),
     PER_USER_ROLE       VARCHAR2(20 CHAR),
     PER_USER_IS_ACTIVE  NUMBER(1)           DEFAULT 1 NOT NULL,
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى
-    PER_USER_EMP_CD     {{EMPLOYEES_PK_TYPE}},
-    CONSTRAINT PK_PER_USERS PRIMARY KEY (PER_USER_CODE),
-    CONSTRAINT UQ_PER_USERS_USERNAME UNIQUE (PER_USER_USERNAME),
-    CONSTRAINT UQ_PER_USERS_EMP UNIQUE (PER_USER_EMP_CD),
-    CONSTRAINT CK_PER_USERS_ACTIVE CHECK (PER_USER_IS_ACTIVE IN (0, 1)),
-    CONSTRAINT CK_PER_USERS_ROLE CHECK (PER_USER_ROLE IS NULL OR PER_USER_ROLE IN ('ADMIN', 'NURSE'))
+    PER_USER_EMP_CD     NUMBER(9),
+    PER_USER_HOS_NO     NUMBER(5)           NOT NULL,
+    CONSTRAINT PK_WC_USERS PRIMARY KEY (PER_USER_CODE),
+    CONSTRAINT UQ_WC_USERS_USERNAME UNIQUE (PER_USER_USERNAME),
+    CONSTRAINT CK_WC_USERS_ACTIVE CHECK (PER_USER_IS_ACTIVE IN (0, 1)),
+    CONSTRAINT CK_WC_USERS_ROLE CHECK (PER_USER_ROLE IS NULL OR PER_USER_ROLE IN ('ADMIN', 'NURSE'))
 );
 
 -- ----------------------------------------------------------------------------
@@ -165,18 +163,19 @@ CREATE TABLE WC_PROCEDURE_TB (
 
 -- ----------------------------------------------------------------------------
 -- 2.3 WC_REQUEST_REG_TB: طلبات التحويل من الأقسام
+-- WC_REQ_PATIENT_CD -> HOS.MR_PATIENT_TB.MRP_PATREC_CODE؛ الممرض والمراجع -> HOS.EMPLOYEE_TB.EMP_SERIAL؛
+-- كلها في المستشفى WC_REQ_HOS_NO.
 -- ----------------------------------------------------------------------------
 CREATE TABLE WC_REQUEST_REG_TB (
     WC_REQ_CODE                VARCHAR2(36 CHAR)   NOT NULL,
-    -- {{PATIENTS_PK_TYPE}}: نوع مفتاح جدول مرضى المستشفى
-    WC_REQ_PATIENT_CD          {{PATIENTS_PK_TYPE}} NOT NULL,
+    WC_REQ_HOS_NO              NUMBER(5)           NOT NULL,
+    WC_REQ_PATIENT_CD          NUMBER(9)           NOT NULL,
     WC_REQ_PAT_NAME_SNAPSHOT   VARCHAR2(150 CHAR)  NOT NULL,
     WC_REQ_PAT_ID_SNAPSHOT     VARCHAR2(50 CHAR)   NOT NULL,
     WC_REQ_PAT_PHONE_SNAPSHOT  VARCHAR2(30 CHAR),
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى (هنا وفي WC_REQ_REVIEWED_BY_CD)
-    WC_REQ_NURSE_CD            {{EMPLOYEES_PK_TYPE}} NOT NULL,
+    WC_REQ_NURSE_CD            NUMBER(9)           NOT NULL,
     WC_REQ_ENTRY_USER_CD       VARCHAR2(36 CHAR)   NOT NULL,
-    WC_REQ_REVIEWED_BY_CD      {{EMPLOYEES_PK_TYPE}},
+    WC_REQ_REVIEWED_BY_CD      NUMBER(9),
     WC_REQ_STATUS              VARCHAR2(20 CHAR)   DEFAULT 'PENDING' NOT NULL,
     WC_REQ_REJECTION_REASON    VARCHAR2(500 CHAR),
     WC_REQ_NOTES               CLOB,
@@ -188,32 +187,32 @@ CREATE TABLE WC_REQUEST_REG_TB (
 
 -- ----------------------------------------------------------------------------
 -- 2.4 WC_REGISTRATION_TB: تسجيل المريض في العيادة
+-- رموز المريض والموظفين كلها في المستشفى WC_REG_HOS_NO.
 -- ----------------------------------------------------------------------------
 CREATE TABLE WC_REGISTRATION_TB (
-    WC_REG_CODE                       VARCHAR2(36 CHAR)    NOT NULL,
-    WC_REG_REQUEST_CD                 VARCHAR2(36 CHAR)    NOT NULL,
-    -- {{PATIENTS_PK_TYPE}}: نوع مفتاح جدول مرضى المستشفى
-    WC_REG_PATIENT_CD                 {{PATIENTS_PK_TYPE}} NOT NULL,
-    WC_REG_DEPARTMENT_CD              VARCHAR2(36 CHAR),
-    WC_REG_PROCEDURE_CD               VARCHAR2(36 CHAR),
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى (هنا وفي WC_REG_NURSE_CD و WC_REG_DISCHARGED_BY_EMP_CD)
-    WC_REG_PROCEDURE_PERFORMED_BY_CD  {{EMPLOYEES_PK_TYPE}},
-    WC_REG_PROCEDURE_PERFORMED_AT     DATE,
-    WC_REG_PMH_NOTES                  VARCHAR2(4000 CHAR),
-    WC_REG_DATE                       DATE                 NOT NULL,
-    WC_REG_NURSE_CD                   {{EMPLOYEES_PK_TYPE}} NOT NULL,
-    WC_REG_ENTRY_USER_CD              VARCHAR2(36 CHAR)    NOT NULL,
-    WC_REG_STATUS                     VARCHAR2(20 CHAR)    DEFAULT 'ACTIVE' NOT NULL,
-    WC_REG_DISCHARGE_DATE             DATE,
-    WC_REG_DISCHARGE_TYPE             VARCHAR2(30 CHAR),
-    WC_REG_DISCHARGED_AT              DATE,
-    WC_REG_DISCHARGED_BY_EMP_CD       {{EMPLOYEES_PK_TYPE}},
-    WC_REG_HAS_ALLERGIES              NUMBER(1),
-    WC_REG_ALLERGIES_DESCRIPTION      VARCHAR2(4000 CHAR),
-    WC_REG_NO_COMORBIDITIES           NUMBER(1),
-    WC_REG_NEXT_VISIT_DATE            DATE,
-    WC_REG_FOLLOW_UP_FREQUENCY        VARCHAR2(100 CHAR),
-    WC_REG_FOLLOW_UP_OBJECTIVE        VARCHAR2(4000 CHAR),
+    WC_REG_CODE                    VARCHAR2(36 CHAR)    NOT NULL,
+    WC_REG_HOS_NO                  NUMBER(5)            NOT NULL,
+    WC_REG_REQUEST_CD              VARCHAR2(36 CHAR)    NOT NULL,
+    WC_REG_PATIENT_CD              NUMBER(9)            NOT NULL,
+    WC_REG_DEPARTMENT_CD           VARCHAR2(36 CHAR),
+    WC_REG_PROCEDURE_CD            VARCHAR2(36 CHAR),
+    WC_REG_PROC_PERFORMED_BY_CD    NUMBER(9),
+    WC_REG_PROCEDURE_PERFORMED_AT  DATE,
+    WC_REG_PMH_NOTES               VARCHAR2(4000 CHAR),
+    WC_REG_DATE                    DATE                 NOT NULL,
+    WC_REG_NURSE_CD                NUMBER(9)            NOT NULL,
+    WC_REG_ENTRY_USER_CD           VARCHAR2(36 CHAR)    NOT NULL,
+    WC_REG_STATUS                  VARCHAR2(20 CHAR)    DEFAULT 'ACTIVE' NOT NULL,
+    WC_REG_DISCHARGE_DATE          DATE,
+    WC_REG_DISCHARGE_TYPE          VARCHAR2(30 CHAR),
+    WC_REG_DISCHARGED_AT           DATE,
+    WC_REG_DISCHARGED_BY_EMP_CD    NUMBER(9),
+    WC_REG_HAS_ALLERGIES           NUMBER(1),
+    WC_REG_ALLERGIES_DESCRIPTION   VARCHAR2(4000 CHAR),
+    WC_REG_NO_COMORBIDITIES        NUMBER(1),
+    WC_REG_NEXT_VISIT_DATE         DATE,
+    WC_REG_FOLLOW_UP_FREQUENCY     VARCHAR2(100 CHAR),
+    WC_REG_FOLLOW_UP_OBJECTIVE     VARCHAR2(4000 CHAR),
     CONSTRAINT PK_WC_REGISTRATION PRIMARY KEY (WC_REG_CODE),
     CONSTRAINT CK_WC_REG_STATUS CHECK (WC_REG_STATUS IN ('ACTIVE', 'DISCHARGED')),
     CONSTRAINT CK_WC_REG_HAS_ALLERGIES CHECK (WC_REG_HAS_ALLERGIES IS NULL OR WC_REG_HAS_ALLERGIES IN (0, 1)),
@@ -231,12 +230,12 @@ CREATE TABLE WC_REGISTRATION_TB (
 -- ----------------------------------------------------------------------------
 CREATE TABLE WC_REG_DIAGNOSIS_TB (
     WC_RDIAG_CODE              VARCHAR2(36 CHAR)   NOT NULL,
+    WC_RDIAG_HOS_NO            NUMBER(5)           NOT NULL,
     WC_RDIAG_REGISTRATION_CD   VARCHAR2(36 CHAR)   NOT NULL,
     WC_RDIAG_DIAGNOSIS_CD      VARCHAR2(36 CHAR)   NOT NULL,
     WC_RDIAG_WOUND_TYPE_CD     VARCHAR2(36 CHAR)   NOT NULL,
     WC_RDIAG_DESCRIPTION       VARCHAR2(4000 CHAR),
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى
-    WC_RDIAG_CLINICAL_EMP_CD   {{EMPLOYEES_PK_TYPE}},
+    WC_RDIAG_CLINICAL_EMP_CD   NUMBER(9),
     WC_RDIAG_ENTRY_USER_CD     VARCHAR2(36 CHAR),
     CONSTRAINT PK_WC_REG_DIAGNOSIS PRIMARY KEY (WC_RDIAG_CODE)
 );
@@ -265,11 +264,11 @@ CREATE TABLE WC_SCHEDULED_REVIEW_TB (
 -- ----------------------------------------------------------------------------
 CREATE TABLE WC_DAILY_REVIEW_TB (
     WC_DREV_CODE                 VARCHAR2(36 CHAR)   NOT NULL,
+    WC_DREV_HOS_NO               NUMBER(5)           NOT NULL,
     WC_DREV_REGISTRATION_CD      VARCHAR2(36 CHAR)   NOT NULL,
     WC_DREV_SCHEDULED_REVIEW_CD  VARCHAR2(36 CHAR),
     WC_DREV_VISIT_DATE           DATE                NOT NULL,
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى
-    WC_DREV_NURSE_CD             {{EMPLOYEES_PK_TYPE}} NOT NULL,
+    WC_DREV_NURSE_CD             NUMBER(9)           NOT NULL,
     WC_DREV_ENTRY_USER_CD        VARCHAR2(36 CHAR)   NOT NULL,
     WC_DREV_OVERALL_STATUS       VARCHAR2(30 CHAR)   NOT NULL,
     WC_DREV_GENERAL_NOTES        CLOB,
@@ -330,13 +329,13 @@ CREATE TABLE WC_REGISTRATION_PMH_TB (
 -- ----------------------------------------------------------------------------
 CREATE TABLE WC_WOUND_ASSESSMENT_TB (
     WC_WA_CODE                  VARCHAR2(36 CHAR)   NOT NULL,
+    WC_WA_HOS_NO                NUMBER(5)           NOT NULL,
     WC_WA_REG_DIAGNOSIS_CD      VARCHAR2(36 CHAR)   NOT NULL,
     WC_WA_REVIEW_DETAIL_CD      VARCHAR2(36 CHAR),
     WC_WA_TYPE                  VARCHAR2(20 CHAR)   NOT NULL,
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى (هنا وفي WCT و DOCTOR)
-    WC_WA_CLINICAL_EMP_CD       {{EMPLOYEES_PK_TYPE}} NOT NULL,
-    WC_WA_WCT_EMP_CD            {{EMPLOYEES_PK_TYPE}},
-    WC_WA_DOCTOR_EMP_CD         {{EMPLOYEES_PK_TYPE}},
+    WC_WA_CLINICAL_EMP_CD       NUMBER(9)           NOT NULL,
+    WC_WA_WCT_EMP_CD            NUMBER(9),
+    WC_WA_DOCTOR_EMP_CD         NUMBER(9),
     WC_WA_ENTRY_USER_CD         VARCHAR2(36 CHAR)   NOT NULL,
     WC_WA_ASSESSED_AT           DATE                NOT NULL,
     WC_WA_WOUND_STATUS_CD       VARCHAR2(36 CHAR)   NOT NULL,
@@ -393,17 +392,17 @@ CREATE TABLE WC_ASSESSMENT_FINDING_TB (
 -- 2.13 WC_WOUND_PHOTO_TB: صور الجروح (الملف على القرص، والمسار هنا)
 -- ----------------------------------------------------------------------------
 CREATE TABLE WC_WOUND_PHOTO_TB (
-    WC_PHOTO_CODE                    VARCHAR2(36 CHAR)    NOT NULL,
-    WC_PHOTO_REG_DIAGNOSIS_CD        VARCHAR2(36 CHAR)    NOT NULL,
-    WC_PHOTO_DAILY_REVIEW_DETAIL_CD  VARCHAR2(36 CHAR),
-    WC_PHOTO_STAGE                   VARCHAR2(20 CHAR)    NOT NULL,
-    WC_PHOTO_PATH                    VARCHAR2(255 CHAR)   NOT NULL,
-    WC_PHOTO_CAPTION                 VARCHAR2(1000 CHAR),
-    WC_PHOTO_TAKEN_AT                DATE                 NOT NULL,
-    -- {{EMPLOYEES_PK_TYPE}}: نوع مفتاح جدول موظفي المستشفى
-    WC_PHOTO_NURSE_CD                {{EMPLOYEES_PK_TYPE}} NOT NULL,
-    WC_PHOTO_ENTRY_USER_CD           VARCHAR2(36 CHAR)    NOT NULL,
-    WC_PHOTO_ASSESSMENT_CD           VARCHAR2(36 CHAR),
+    WC_PHOTO_CODE               VARCHAR2(36 CHAR)    NOT NULL,
+    WC_PHOTO_HOS_NO             NUMBER(5)            NOT NULL,
+    WC_PHOTO_REG_DIAGNOSIS_CD   VARCHAR2(36 CHAR)    NOT NULL,
+    WC_PHOTO_REVIEW_DETAIL_CD   VARCHAR2(36 CHAR),
+    WC_PHOTO_STAGE              VARCHAR2(20 CHAR)    NOT NULL,
+    WC_PHOTO_PATH               VARCHAR2(255 CHAR)   NOT NULL,
+    WC_PHOTO_CAPTION            VARCHAR2(1000 CHAR),
+    WC_PHOTO_TAKEN_AT           DATE                 NOT NULL,
+    WC_PHOTO_NURSE_CD           NUMBER(9)            NOT NULL,
+    WC_PHOTO_ENTRY_USER_CD      VARCHAR2(36 CHAR)    NOT NULL,
+    WC_PHOTO_ASSESSMENT_CD      VARCHAR2(36 CHAR),
     CONSTRAINT PK_WC_WOUND_PHOTO PRIMARY KEY (WC_PHOTO_CODE),
     CONSTRAINT CK_WC_PHOTO_STAGE CHECK (WC_PHOTO_STAGE IN ('INITIAL', 'REVIEW'))
 );
@@ -425,67 +424,33 @@ CREATE TABLE WC_REPORT_EXPORT_TB (
 );
 
 -- ============================================================================
--- 3) المفاتيح الأجنبية
+-- 3) المفاتيح الأجنبية بين جداول WCCMS
+-- المفاتيح إلى جداول المستشفى (HOS) ليست هنا: هي اختيارية ومُعطَّلة في القسم 8 آخر الملف. ما دامت مُعطَّلة،
+-- يتحقق التطبيق والـ procedures من وجود كل مريض وموظف في المستشفى HOSPITAL_NO قبل الحفظ.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 3.1 إلى جداول المستشفى (14 مفتاحاً)
--- {{HOSPITAL_SCHEMA}}.{{PATIENTS_TABLE}}({{PATIENTS_PK}}): جدول المرضى ومفتاحه.
--- {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}}({{EMPLOYEES_PK}}): جدول الموظفين ومفتاحه.
--- ----------------------------------------------------------------------------
-ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_PATIENT
-    FOREIGN KEY (WC_REQ_PATIENT_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{PATIENTS_TABLE}} ({{PATIENTS_PK}});
-ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_PATIENT
-    FOREIGN KEY (WC_REG_PATIENT_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{PATIENTS_TABLE}} ({{PATIENTS_PK}});
-
--- حذف الموظف من المستشفى يفك ربطه بالحساب فقط (SET NULL)
-ALTER TABLE PER_USERS_TB ADD CONSTRAINT FK_PER_USERS_EMP
-    FOREIGN KEY (PER_USER_EMP_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}}) ON DELETE SET NULL;
-ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_NURSE
-    FOREIGN KEY (WC_REQ_NURSE_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_REVIEWED_BY
-    FOREIGN KEY (WC_REQ_REVIEWED_BY_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_PROC_PERFORMED_BY
-    FOREIGN KEY (WC_REG_PROCEDURE_PERFORMED_BY_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_NURSE
-    FOREIGN KEY (WC_REG_NURSE_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_DISCHARGED_BY
-    FOREIGN KEY (WC_REG_DISCHARGED_BY_EMP_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_REG_DIAGNOSIS_TB ADD CONSTRAINT FK_WC_RDIAG_CLINICAL_EMP
-    FOREIGN KEY (WC_RDIAG_CLINICAL_EMP_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_DAILY_REVIEW_TB ADD CONSTRAINT FK_WC_DREV_NURSE
-    FOREIGN KEY (WC_DREV_NURSE_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_CLINICAL_EMP
-    FOREIGN KEY (WC_WA_CLINICAL_EMP_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_WCT_EMP
-    FOREIGN KEY (WC_WA_WCT_EMP_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_DOCTOR_EMP
-    FOREIGN KEY (WC_WA_DOCTOR_EMP_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-ALTER TABLE WC_WOUND_PHOTO_TB ADD CONSTRAINT FK_WC_PHOTO_NURSE
-    FOREIGN KEY (WC_PHOTO_NURSE_CD) REFERENCES {{HOSPITAL_SCHEMA}}.{{EMPLOYEES_TABLE}} ({{EMPLOYEES_PK}});
-
--- ----------------------------------------------------------------------------
--- 3.2 إلى PER_USERS_TB (مُدخل البيانات)
+-- 3.1 إلى WC_USERS_TB (مُدخل البيانات)
 -- ----------------------------------------------------------------------------
 ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_ENTRY_USER
-    FOREIGN KEY (WC_REQ_ENTRY_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_REQ_ENTRY_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_ENTRY_USER
-    FOREIGN KEY (WC_REG_ENTRY_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_REG_ENTRY_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_REG_DIAGNOSIS_TB ADD CONSTRAINT FK_WC_RDIAG_ENTRY_USER
-    FOREIGN KEY (WC_RDIAG_ENTRY_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_RDIAG_ENTRY_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_SCHEDULED_REVIEW_TB ADD CONSTRAINT FK_WC_SREV_CREATED_BY
-    FOREIGN KEY (WC_SREV_CREATED_BY_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_SREV_CREATED_BY_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_DAILY_REVIEW_TB ADD CONSTRAINT FK_WC_DREV_ENTRY_USER
-    FOREIGN KEY (WC_DREV_ENTRY_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_DREV_ENTRY_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_ENTRY_USER
-    FOREIGN KEY (WC_WA_ENTRY_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_WA_ENTRY_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_WOUND_PHOTO_TB ADD CONSTRAINT FK_WC_PHOTO_ENTRY_USER
-    FOREIGN KEY (WC_PHOTO_ENTRY_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_PHOTO_ENTRY_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 ALTER TABLE WC_REPORT_EXPORT_TB ADD CONSTRAINT FK_WC_RPEX_USER
-    FOREIGN KEY (WC_RPEX_USER_CD) REFERENCES PER_USERS_TB (PER_USER_CODE);
+    FOREIGN KEY (WC_RPEX_USER_CD) REFERENCES WC_USERS_TB (PER_USER_CODE);
 
 -- ----------------------------------------------------------------------------
--- 3.3 بين جداول WCCMS
+-- 3.2 بين جداول العيادة
 -- ----------------------------------------------------------------------------
 ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_REQUEST
     FOREIGN KEY (WC_REG_REQUEST_CD) REFERENCES WC_REQUEST_REG_TB (WC_REQ_CODE);
@@ -560,35 +525,43 @@ ALTER TABLE WC_ASSESSMENT_FINDING_TB ADD CONSTRAINT FK_WC_AF_CHOICE
 ALTER TABLE WC_WOUND_PHOTO_TB ADD CONSTRAINT FK_WC_PHOTO_REG_DIAGNOSIS
     FOREIGN KEY (WC_PHOTO_REG_DIAGNOSIS_CD) REFERENCES WC_REG_DIAGNOSIS_TB (WC_RDIAG_CODE) ON DELETE CASCADE;
 ALTER TABLE WC_WOUND_PHOTO_TB ADD CONSTRAINT FK_WC_PHOTO_REVIEW_DETAIL
-    FOREIGN KEY (WC_PHOTO_DAILY_REVIEW_DETAIL_CD) REFERENCES WC_REVIEW_DETAIL_TB (WC_REVD_CODE) ON DELETE SET NULL;
+    FOREIGN KEY (WC_PHOTO_REVIEW_DETAIL_CD) REFERENCES WC_REVIEW_DETAIL_TB (WC_REVD_CODE) ON DELETE SET NULL;
 ALTER TABLE WC_WOUND_PHOTO_TB ADD CONSTRAINT FK_WC_PHOTO_ASSESSMENT
     FOREIGN KEY (WC_PHOTO_ASSESSMENT_CD) REFERENCES WC_WOUND_ASSESSMENT_TB (WC_WA_CODE) ON DELETE SET NULL;
 
 -- ============================================================================
 -- 4) الفهارس
 -- Oracle لا ينشئ فهرساً للمفتاح الأجنبي تلقائياً. بدون الفهرس يقفل Oracle الجدول الابن كاملاً عند تعديل
--- صف في جدول المستشفى المرتبط، ويصبح البحث بطيئاً. المفاتيح الأساسية و UNIQUE لها فهارس تلقائية.
+-- صف في الجدول الأب، ويصبح البحث بطيئاً. المفاتيح الأساسية و UNIQUE لها فهارس تلقائية.
+-- كل فهرس على رمز مريض أو موظف يضم عمود HOS_NO للجدول: الرمز وحده قد يتكرر في مستشفيين.
 -- ============================================================================
-CREATE INDEX IX_WC_REQ_PATIENT ON WC_REQUEST_REG_TB (WC_REQ_PATIENT_CD);
-CREATE INDEX IX_WC_REQ_NURSE ON WC_REQUEST_REG_TB (WC_REQ_NURSE_CD);
+
+-- موظف واحد لكل حساب. Oracle يعدّ (NULL, 1) مكرراً في UNIQUE مركّب، لذلك فهرس دالّي يتجاهل الحسابات غير المرتبطة.
+CREATE UNIQUE INDEX UX_WC_USERS_EMP ON WC_USERS_TB (
+    CASE WHEN PER_USER_EMP_CD IS NOT NULL THEN PER_USER_EMP_CD END,
+    CASE WHEN PER_USER_EMP_CD IS NOT NULL THEN PER_USER_HOS_NO END
+);
+
+CREATE INDEX IX_WC_REQ_PATIENT ON WC_REQUEST_REG_TB (WC_REQ_PATIENT_CD, WC_REQ_HOS_NO);
+CREATE INDEX IX_WC_REQ_NURSE ON WC_REQUEST_REG_TB (WC_REQ_NURSE_CD, WC_REQ_HOS_NO);
 CREATE INDEX IX_WC_REQ_ENTRY_USER ON WC_REQUEST_REG_TB (WC_REQ_ENTRY_USER_CD);
-CREATE INDEX IX_WC_REQ_REVIEWED_BY ON WC_REQUEST_REG_TB (WC_REQ_REVIEWED_BY_CD);
+CREATE INDEX IX_WC_REQ_REVIEWED_BY ON WC_REQUEST_REG_TB (WC_REQ_REVIEWED_BY_CD, WC_REQ_HOS_NO);
 CREATE INDEX IX_WC_REQ_STATUS ON WC_REQUEST_REG_TB (WC_REQ_STATUS);
 
 CREATE INDEX IX_WC_REG_REQUEST ON WC_REGISTRATION_TB (WC_REG_REQUEST_CD);
-CREATE INDEX IX_WC_REG_PATIENT ON WC_REGISTRATION_TB (WC_REG_PATIENT_CD);
+CREATE INDEX IX_WC_REG_PATIENT ON WC_REGISTRATION_TB (WC_REG_PATIENT_CD, WC_REG_HOS_NO);
 CREATE INDEX IX_WC_REG_DEPARTMENT ON WC_REGISTRATION_TB (WC_REG_DEPARTMENT_CD);
 CREATE INDEX IX_WC_REG_PROCEDURE ON WC_REGISTRATION_TB (WC_REG_PROCEDURE_CD);
-CREATE INDEX IX_WC_REG_PROC_PERFORMED_BY ON WC_REGISTRATION_TB (WC_REG_PROCEDURE_PERFORMED_BY_CD);
-CREATE INDEX IX_WC_REG_NURSE ON WC_REGISTRATION_TB (WC_REG_NURSE_CD);
+CREATE INDEX IX_WC_REG_PROC_PERFORMED_BY ON WC_REGISTRATION_TB (WC_REG_PROC_PERFORMED_BY_CD, WC_REG_HOS_NO);
+CREATE INDEX IX_WC_REG_NURSE ON WC_REGISTRATION_TB (WC_REG_NURSE_CD, WC_REG_HOS_NO);
 CREATE INDEX IX_WC_REG_ENTRY_USER ON WC_REGISTRATION_TB (WC_REG_ENTRY_USER_CD);
 CREATE INDEX IX_WC_REG_STATUS ON WC_REGISTRATION_TB (WC_REG_STATUS);
-CREATE INDEX IX_WC_REG_DISCHARGED_BY ON WC_REGISTRATION_TB (WC_REG_DISCHARGED_BY_EMP_CD);
+CREATE INDEX IX_WC_REG_DISCHARGED_BY ON WC_REGISTRATION_TB (WC_REG_DISCHARGED_BY_EMP_CD, WC_REG_HOS_NO);
 
 CREATE INDEX IX_WC_RDIAG_REGISTRATION ON WC_REG_DIAGNOSIS_TB (WC_RDIAG_REGISTRATION_CD);
 CREATE INDEX IX_WC_RDIAG_DIAGNOSIS ON WC_REG_DIAGNOSIS_TB (WC_RDIAG_DIAGNOSIS_CD);
 CREATE INDEX IX_WC_RDIAG_WOUND_TYPE ON WC_REG_DIAGNOSIS_TB (WC_RDIAG_WOUND_TYPE_CD);
-CREATE INDEX IX_WC_RDIAG_CLINICAL_EMP ON WC_REG_DIAGNOSIS_TB (WC_RDIAG_CLINICAL_EMP_CD);
+CREATE INDEX IX_WC_RDIAG_CLINICAL_EMP ON WC_REG_DIAGNOSIS_TB (WC_RDIAG_CLINICAL_EMP_CD, WC_RDIAG_HOS_NO);
 CREATE INDEX IX_WC_RDIAG_ENTRY_USER ON WC_REG_DIAGNOSIS_TB (WC_RDIAG_ENTRY_USER_CD);
 
 CREATE INDEX IX_WC_SREV_REGISTRATION ON WC_SCHEDULED_REVIEW_TB (WC_SREV_REGISTRATION_CD);
@@ -597,7 +570,7 @@ CREATE INDEX IX_WC_SREV_STATUS ON WC_SCHEDULED_REVIEW_TB (WC_SREV_STATUS);
 CREATE INDEX IX_WC_SREV_SCHEDULED_DATE ON WC_SCHEDULED_REVIEW_TB (WC_SREV_SCHEDULED_DATE);
 
 CREATE INDEX IX_WC_DREV_REGISTRATION ON WC_DAILY_REVIEW_TB (WC_DREV_REGISTRATION_CD);
-CREATE INDEX IX_WC_DREV_NURSE ON WC_DAILY_REVIEW_TB (WC_DREV_NURSE_CD);
+CREATE INDEX IX_WC_DREV_NURSE ON WC_DAILY_REVIEW_TB (WC_DREV_NURSE_CD, WC_DREV_HOS_NO);
 CREATE INDEX IX_WC_DREV_ENTRY_USER ON WC_DAILY_REVIEW_TB (WC_DREV_ENTRY_USER_CD);
 CREATE INDEX IX_WC_DREV_OVERALL_STATUS ON WC_DAILY_REVIEW_TB (WC_DREV_OVERALL_STATUS);
 CREATE INDEX IX_WC_DREV_VISIT_DATE ON WC_DAILY_REVIEW_TB (WC_DREV_VISIT_DATE);
@@ -614,9 +587,9 @@ CREATE INDEX IX_WC_ACH_CATEGORY_ACTIVE ON WC_ASSESSMENT_CHOICE_TB (WC_ACH_CATEGO
 CREATE INDEX IX_WC_RPMH_PMH ON WC_REGISTRATION_PMH_TB (WC_RPMH_PMH_CD);
 
 CREATE INDEX IX_WC_WA_DIAGNOSIS_ASSESSED ON WC_WOUND_ASSESSMENT_TB (WC_WA_REG_DIAGNOSIS_CD, WC_WA_ASSESSED_AT);
-CREATE INDEX IX_WC_WA_CLINICAL_EMP ON WC_WOUND_ASSESSMENT_TB (WC_WA_CLINICAL_EMP_CD);
-CREATE INDEX IX_WC_WA_WCT_EMP ON WC_WOUND_ASSESSMENT_TB (WC_WA_WCT_EMP_CD);
-CREATE INDEX IX_WC_WA_DOCTOR_EMP ON WC_WOUND_ASSESSMENT_TB (WC_WA_DOCTOR_EMP_CD);
+CREATE INDEX IX_WC_WA_CLINICAL_EMP ON WC_WOUND_ASSESSMENT_TB (WC_WA_CLINICAL_EMP_CD, WC_WA_HOS_NO);
+CREATE INDEX IX_WC_WA_WCT_EMP ON WC_WOUND_ASSESSMENT_TB (WC_WA_WCT_EMP_CD, WC_WA_HOS_NO);
+CREATE INDEX IX_WC_WA_DOCTOR_EMP ON WC_WOUND_ASSESSMENT_TB (WC_WA_DOCTOR_EMP_CD, WC_WA_HOS_NO);
 CREATE INDEX IX_WC_WA_ENTRY_USER ON WC_WOUND_ASSESSMENT_TB (WC_WA_ENTRY_USER_CD);
 CREATE INDEX IX_WC_WA_WOUND_STATUS ON WC_WOUND_ASSESSMENT_TB (WC_WA_WOUND_STATUS_CD);
 CREATE INDEX IX_WC_WA_EXUDATE_AMOUNT ON WC_WOUND_ASSESSMENT_TB (WC_WA_EXUDATE_AMOUNT_CD);
@@ -634,9 +607,9 @@ CREATE INDEX IX_WC_WA_PROCEDURE ON WC_WOUND_ASSESSMENT_TB (WC_WA_PROCEDURE_CD);
 CREATE INDEX IX_WC_AF_CHOICE ON WC_ASSESSMENT_FINDING_TB (WC_AF_CHOICE_CD);
 
 CREATE INDEX IX_WC_PHOTO_REG_DIAGNOSIS ON WC_WOUND_PHOTO_TB (WC_PHOTO_REG_DIAGNOSIS_CD);
-CREATE INDEX IX_WC_PHOTO_REVIEW_DETAIL ON WC_WOUND_PHOTO_TB (WC_PHOTO_DAILY_REVIEW_DETAIL_CD);
+CREATE INDEX IX_WC_PHOTO_REVIEW_DETAIL ON WC_WOUND_PHOTO_TB (WC_PHOTO_REVIEW_DETAIL_CD);
 CREATE INDEX IX_WC_PHOTO_STAGE ON WC_WOUND_PHOTO_TB (WC_PHOTO_STAGE);
-CREATE INDEX IX_WC_PHOTO_NURSE ON WC_WOUND_PHOTO_TB (WC_PHOTO_NURSE_CD);
+CREATE INDEX IX_WC_PHOTO_NURSE ON WC_WOUND_PHOTO_TB (WC_PHOTO_NURSE_CD, WC_PHOTO_HOS_NO);
 CREATE INDEX IX_WC_PHOTO_ENTRY_USER ON WC_WOUND_PHOTO_TB (WC_PHOTO_ENTRY_USER_CD);
 CREATE INDEX IX_WC_PHOTO_ASSESSMENT ON WC_WOUND_PHOTO_TB (WC_PHOTO_ASSESSMENT_CD);
 
@@ -646,8 +619,9 @@ CREATE INDEX IX_WC_RPEX_EXPORTED_AT ON WC_REPORT_EXPORT_TB (WC_RPEX_EXPORTED_AT)
 -- ============================================================================
 -- 5) تعليقات الجداول
 -- ============================================================================
-COMMENT ON TABLE PER_USERS_TB IS 'حسابات المستخدمين الذين يسجلون الدخول إلى WCCMS، وربط كل حساب بموظف المستشفى';
-COMMENT ON COLUMN PER_USERS_TB.PER_USER_EMP_CD IS 'الموظف المرتبط بالحساب في جدول موظفي المستشفى (اختياري، موظف واحد لكل حساب)';
+COMMENT ON TABLE WC_USERS_TB IS 'حسابات المستخدمين الذين يسجلون الدخول إلى WCCMS، وربط كل حساب بموظف المستشفى';
+COMMENT ON COLUMN WC_USERS_TB.PER_USER_EMP_CD IS 'الموظف المرتبط بالحساب: HOS.EMPLOYEE_TB.EMP_SERIAL (اختياري، موظف واحد لكل حساب)';
+COMMENT ON COLUMN WC_USERS_TB.PER_USER_HOS_NO IS 'رقم المستشفى للموظف المرتبط (HOS.EMPLOYEE_TB.HOS_NO)، من HOSPITAL_NO';
 COMMENT ON TABLE WC_DEPARTMENT_TB IS 'أقسام المستشفى المحوِّلة إلى العيادة';
 COMMENT ON TABLE WC_PMH_TB IS 'قائمة الأمراض المزمنة (التاريخ المرضي السابق)';
 COMMENT ON TABLE WC_DIAGNOSIS_TB IS 'قائمة تشخيصات الجروح';
@@ -656,16 +630,22 @@ COMMENT ON TABLE WC_DRESSING_TB IS 'قائمة الضمادات';
 COMMENT ON TABLE WC_MEDICATION_TB IS 'قائمة الأدوية الموضعية';
 COMMENT ON TABLE WC_PROCEDURE_TB IS 'قائمة الإجراءات العلاجية';
 COMMENT ON TABLE WC_REQUEST_REG_TB IS 'طلبات تحويل المرضى من الأقسام إلى العيادة';
+COMMENT ON COLUMN WC_REQUEST_REG_TB.WC_REQ_HOS_NO IS 'رقم المستشفى لرموز المريض والموظفين في هذا الصف (HOS_NO)';
 COMMENT ON TABLE WC_REGISTRATION_TB IS 'تسجيل المريض في العيادة بعد قبول الطلب';
+COMMENT ON COLUMN WC_REGISTRATION_TB.WC_REG_HOS_NO IS 'رقم المستشفى لرموز المريض والموظفين في هذا الصف (HOS_NO)';
 COMMENT ON TABLE WC_REG_DIAGNOSIS_TB IS 'الجروح المسجلة لكل تسجيل';
+COMMENT ON COLUMN WC_REG_DIAGNOSIS_TB.WC_RDIAG_HOS_NO IS 'رقم المستشفى لرمز الموظف في هذا الصف (HOS_NO)';
 COMMENT ON TABLE WC_SCHEDULED_REVIEW_TB IS 'مواعيد المراجعة';
 COMMENT ON TABLE WC_DAILY_REVIEW_TB IS 'رأس زيارة المراجعة (يومية أو مجدولة)';
+COMMENT ON COLUMN WC_DAILY_REVIEW_TB.WC_DREV_HOS_NO IS 'رقم المستشفى لرمز الموظف في هذا الصف (HOS_NO)';
 COMMENT ON TABLE WC_REVIEW_DETAIL_TB IS 'تفاصيل كل جرح في زيارة المراجعة';
 COMMENT ON TABLE WC_ASSESSMENT_CHOICE_TB IS 'خيارات نموذج تقييم الجرح';
 COMMENT ON TABLE WC_REGISTRATION_PMH_TB IS 'الأمراض المزمنة لكل تسجيل';
 COMMENT ON TABLE WC_WOUND_ASSESSMENT_TB IS 'التقييم المنظم للجرح (أولي أو متابعة)';
+COMMENT ON COLUMN WC_WOUND_ASSESSMENT_TB.WC_WA_HOS_NO IS 'رقم المستشفى لرموز الموظفين في هذا الصف (HOS_NO)';
 COMMENT ON TABLE WC_ASSESSMENT_FINDING_TB IS 'الاختيارات المتعددة للتقييم (قاع الجرح وحوافه)';
 COMMENT ON TABLE WC_WOUND_PHOTO_TB IS 'صور الجروح (الملف على القرص والمسار هنا)';
+COMMENT ON COLUMN WC_WOUND_PHOTO_TB.WC_PHOTO_HOS_NO IS 'رقم المستشفى لرمز الموظف في هذا الصف (HOS_NO)';
 COMMENT ON TABLE WC_REPORT_EXPORT_TB IS 'سجل تصدير التقارير الشهرية';
 
 -- ============================================================================
@@ -892,3 +872,61 @@ SELECT object_name, object_type FROM all_objects WHERE owner = 'WCCMS' AND statu
 SELECT COUNT(*) AS CHOICES_COUNT FROM WCCMS.WC_ASSESSMENT_CHOICE_TB;
 
 -- بعد هذا الملف: نفّذ wccms_oracle_procedures.sql. لا حاجة لإدخال أي مستخدم: الحساب يُنشأ عند أول دخول.
+
+-- ============================================================================
+-- 8) اختياري ومُعطَّل: المفاتيح الأجنبية المركّبة إلى جداول المستشفى (HOS)
+--
+-- فعّل هذا القسم فقط إذا تحقق الشرطان معاً:
+--   أ) مخطط WCCMS في قاعدة البيانات نفسها التي فيها HOS. المفتاح الأجنبي لا يعبر DB link؛ إذا كان WCCMS في
+--      قاعدة أخرى ويقرأ HOS عبر DB link فلا تفعّل هذا القسم أبداً.
+--   ب) أُعطي WCCMS صلاحية REFERENCES على HOS.MR_PATIENT_TB و HOS.EMPLOYEE_TB (السطران الأولان أدناه، بمستخدم
+--      HOS أو DBA).
+-- بعد التفعيل اضبط HOSPITAL_FOREIGN_KEYS=true في .env (config('hospital.foreign_keys')). القيمة الافتراضية false:
+-- القسم مُعطَّل، والتطبيق والـ procedures يتحققان من وجود المريض والموظف في المستشفى HOSPITAL_NO قبل الحفظ.
+--
+-- المفاتيح مركّبة (الرمز, HOS_NO) لأن المفتاح الأساسي في المستشفى مركّب. إذا كان رمز الموظف NULL (عمود اختياري)
+-- لا يتحقق Oracle من المفتاح لذلك الصف.
+-- التنبيه: مع التفعيل لا يستطيع HOS حذف مريض أو موظف له صفوف في WCCMS (ORA-02292). ناقش هذا مع إدارة قاعدة
+-- المستشفى قبل التفعيل.
+--
+-- طريقة التفعيل: انسخ الأسطر التالية إلى ملف جديد، احذف "-- " من أول كل سطر، ونفّذه بعد هذا الملف.
+-- ============================================================================
+-- GRANT REFERENCES ON HOS.MR_PATIENT_TB TO WCCMS;
+-- GRANT REFERENCES ON HOS.EMPLOYEE_TB TO WCCMS;
+--
+-- ALTER SESSION SET CURRENT_SCHEMA = WCCMS;
+--
+-- ALTER TABLE WC_USERS_TB ADD CONSTRAINT FK_WC_USERS_EMPLOYEE
+--     FOREIGN KEY (PER_USER_EMP_CD, PER_USER_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+--
+-- ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_PATIENT
+--     FOREIGN KEY (WC_REQ_PATIENT_CD, WC_REQ_HOS_NO) REFERENCES HOS.MR_PATIENT_TB (MRP_PATREC_CODE, HOS_NO);
+-- ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_NURSE
+--     FOREIGN KEY (WC_REQ_NURSE_CD, WC_REQ_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+-- ALTER TABLE WC_REQUEST_REG_TB ADD CONSTRAINT FK_WC_REQ_REVIEWED_BY
+--     FOREIGN KEY (WC_REQ_REVIEWED_BY_CD, WC_REQ_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+--
+-- ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_PATIENT
+--     FOREIGN KEY (WC_REG_PATIENT_CD, WC_REG_HOS_NO) REFERENCES HOS.MR_PATIENT_TB (MRP_PATREC_CODE, HOS_NO);
+-- ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_PROC_PERFORMED_BY
+--     FOREIGN KEY (WC_REG_PROC_PERFORMED_BY_CD, WC_REG_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+-- ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_NURSE
+--     FOREIGN KEY (WC_REG_NURSE_CD, WC_REG_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+-- ALTER TABLE WC_REGISTRATION_TB ADD CONSTRAINT FK_WC_REG_DISCHARGED_BY
+--     FOREIGN KEY (WC_REG_DISCHARGED_BY_EMP_CD, WC_REG_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+--
+-- ALTER TABLE WC_REG_DIAGNOSIS_TB ADD CONSTRAINT FK_WC_RDIAG_CLINICAL_EMP
+--     FOREIGN KEY (WC_RDIAG_CLINICAL_EMP_CD, WC_RDIAG_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+--
+-- ALTER TABLE WC_DAILY_REVIEW_TB ADD CONSTRAINT FK_WC_DREV_NURSE
+--     FOREIGN KEY (WC_DREV_NURSE_CD, WC_DREV_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+--
+-- ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_CLINICAL_EMP
+--     FOREIGN KEY (WC_WA_CLINICAL_EMP_CD, WC_WA_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+-- ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_WCT_EMP
+--     FOREIGN KEY (WC_WA_WCT_EMP_CD, WC_WA_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+-- ALTER TABLE WC_WOUND_ASSESSMENT_TB ADD CONSTRAINT FK_WC_WA_DOCTOR_EMP
+--     FOREIGN KEY (WC_WA_DOCTOR_EMP_CD, WC_WA_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);
+--
+-- ALTER TABLE WC_WOUND_PHOTO_TB ADD CONSTRAINT FK_WC_PHOTO_NURSE
+--     FOREIGN KEY (WC_PHOTO_NURSE_CD, WC_PHOTO_HOS_NO) REFERENCES HOS.EMPLOYEE_TB (EMP_SERIAL, HOS_NO);

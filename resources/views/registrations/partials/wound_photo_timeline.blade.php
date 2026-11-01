@@ -73,7 +73,7 @@
                                                         <span><i class="bi bi-calendar3 me-1"></i>{{ \Carbon\Carbon::parse($photo->WC_PHOTO_TAKEN_AT)->format('Y-m-d H:i') }}</span>
                                                     </div>
                                                     <div class="text-dark fw-bold mb-2">
-                                                        <i class="bi bi-person-badge text-primary me-1"></i>{{ $photo->nurse?->PER_EMP_FULL_NAME ?? 'ممرض العيادة' }}
+                                                        <i class="bi bi-person-badge text-primary me-1"></i>{{ $photo->nurse?->full_name ?? 'ممرض العيادة' }}
                                                     </div>
 
                                                     <div class="d-flex gap-1 mt-2">

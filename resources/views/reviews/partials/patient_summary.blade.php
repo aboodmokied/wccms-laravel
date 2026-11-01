@@ -8,9 +8,9 @@
             </div>
             <div class="col-12 col-md">
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                    <h2 class="fw-bold fs-5 mb-0 text-dark">{{ $registration->patient?->MR_PAT_FULL_NAME }}</h2>
+                    <h2 class="fw-bold fs-5 mb-0 text-dark">{{ $registration->patient?->full_name }}</h2>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fs-8 rounded-pill">
-                        <i class="bi bi-card-text me-1"></i>رقم الهوية: {{ $registration->patient?->MR_PAT_ID_NO }}
+                        <i class="bi bi-card-text me-1"></i>رقم الهوية: {{ $registration->patient?->MRP_ID }}
                     </span>
                     @if($registration->WC_REG_STATUS === 'ACTIVE')
                         <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 fs-8 rounded-pill">
@@ -23,11 +23,11 @@
                     @endif
                 </div>
                 <div class="d-flex flex-wrap align-items-center gap-3 text-muted fs-7 mt-2">
-                    <span><i class="bi bi-gender-ambiguous me-1 text-primary"></i>الجنس: <strong>{{ $registration->patient?->MR_PAT_GENDER === 'MALE' ? 'ذكر' : 'أنثى' }}</strong></span>
+                    <span><i class="bi bi-gender-ambiguous me-1 text-primary"></i>الجنس: <strong>{{ $registration->patient?->sex_label ?: 'غير معروف' }}</strong></span>
                     <span>&bull;</span>
                     <span><i class="bi bi-building me-1 text-primary"></i>القسم: <strong>{{ $registration->department?->WC_DEPT_NAME ?? 'عيادة الجروح' }}</strong></span>
                     <span>&bull;</span>
-                    <span><i class="bi bi-person-badge me-1 text-primary"></i>الممرض المسؤول: <strong>{{ $registration->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong></span>
+                    <span><i class="bi bi-person-badge me-1 text-primary"></i>الممرض المسؤول: <strong>{{ $registration->nurse?->full_name ?? 'غير محدد' }}</strong></span>
                     <span>&bull;</span>
                     <span><i class="bi bi-calendar3 me-1 text-primary"></i>تاريخ التسجيل: <strong>{{ \Carbon\Carbon::parse($registration->WC_REG_DATE)->format('Y-m-d') }}</strong></span>
                 </div>

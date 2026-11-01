@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHospital;
 use App\Models\Concerns\HasDbFirstAttributes;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WcRegistration extends Model
 {
-    use HasDbFirstAttributes;
+    use BelongsToHospital, HasDbFirstAttributes;
+
+    public const HOSPITAL_NO_COLUMN = 'WC_REG_HOS_NO';
 
     protected $table = 'wc_registration_tb';
 
@@ -41,6 +44,7 @@ class WcRegistration extends Model
         'WC_REG_STATUS',
         'WC_REG_DISCHARGED_AT',
         'WC_REG_DISCHARGED_BY_EMP_CD',
+        'WC_REG_HOS_NO',
     ];
 
     protected function casts(): array
@@ -52,6 +56,21 @@ class WcRegistration extends Model
             'WC_REG_NEXT_VISIT_DATE' => 'datetime',
             'WC_REG_DISCHARGE_DATE' => 'date',
             'WC_REG_DISCHARGED_AT' => 'datetime',
+        ];
+    }
+
+    /**
+     * Patient and employee codes on this row, checked against the configured hospital before every save.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    protected function hospitalLinks(): array
+    {
+        return [
+            'WC_REG_PATIENT_CD' => MrPatient::class,
+            'WC_REG_PROC_PERFORMED_BY_CD' => Employee::class,
+            'WC_REG_NURSE_CD' => Employee::class,
+            'WC_REG_DISCHARGED_BY_EMP_CD' => Employee::class,
         ];
     }
 
@@ -79,7 +98,7 @@ class WcRegistration extends Model
 
     public function patient()
     {
-        return $this->belongsTo(MrPatient::class, 'WC_REG_PATIENT_CD', 'MR_PAT_CODE');
+        return $this->belongsTo(MrPatient::class, 'WC_REG_PATIENT_CD', 'MRP_PATREC_CODE');
     }
 
     public function department()
@@ -94,7 +113,7 @@ class WcRegistration extends Model
 
     public function nurse()
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_REG_NURSE_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_REG_NURSE_CD', 'EMP_SERIAL');
     }
 
     public function entryUser()
@@ -104,7 +123,7 @@ class WcRegistration extends Model
 
     public function dischargingNurse()
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_REG_DISCHARGED_BY_EMP_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_REG_DISCHARGED_BY_EMP_CD', 'EMP_SERIAL');
     }
 
     public function diagnoses()

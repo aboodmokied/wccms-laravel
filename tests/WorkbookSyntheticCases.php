@@ -2,8 +2,9 @@
 
 namespace Tests;
 
+use App\Models\AdmissionPatient;
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDailyReview;
@@ -28,7 +29,7 @@ trait WorkbookSyntheticCases
 {
     private ?User $reportUser = null;
 
-    private ?PerEmployee $reportEmployee = null;
+    private ?Employee $reportEmployee = null;
 
     private int $patientSequence = 0;
 
@@ -69,7 +70,7 @@ trait WorkbookSyntheticCases
             $pairs[] = [$novemberMales[2 + $i], $decemberMales[$i]];
         }
         foreach ($pairs as $pairIndex => [$first, $second]) {
-            $patient = $this->reportPatient(['MR_PAT_GENDER' => 'MALE', 'MR_PAT_FULL_NAME' => 'مريض متكرر '.($pairIndex + 1)]);
+            $patient = $this->reportPatient(['sex' => 'MALE', 'name' => 'مريض متكرر '.($pairIndex + 1)]);
             $entries[$first]['patient'] = $patient;
             $entries[$second]['patient'] = $patient;
         }
@@ -80,7 +81,7 @@ trait WorkbookSyntheticCases
             $day = $isLaterOfSameMonthPair ? 28 : 1 + (($dayInMonth[$entry['month']] = ($dayInMonth[$entry['month']] ?? -1) + 1) % 27);
 
             $this->registerCase([
-                'patient' => $entry['patient'] ?? $this->reportPatient(['MR_PAT_GENDER' => $entry['gender']]),
+                'patient' => $entry['patient'] ?? $this->reportPatient(['sex' => $entry['gender']]),
                 'registeredAt' => CarbonImmutable::parse($entry['month'].'-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT).' 09:00:00'),
                 'wounds' => [['diagnosis' => $entry['diagnosis'], 'woundType' => 'Pressure']],
             ]);
@@ -107,10 +108,10 @@ trait WorkbookSyntheticCases
         $registeredAt = $case['registeredAt'] ?? CarbonImmutable::parse('2025-11-10 09:00:00');
 
         $request = WcRequestReg::create([
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->reportEmployee()->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => (string) $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->reportEmployee()->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->reportUser()->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => $registeredAt,
@@ -118,10 +119,10 @@ trait WorkbookSyntheticCases
 
         $registration = WcRegistration::create([
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->reportDepartment($case['department'] ?? 'Medical Male')->WC_DEPT_CODE,
             'WC_REG_DATE' => $registeredAt,
-            'WC_REG_NURSE_CD' => $this->reportEmployee()->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->reportEmployee()->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->reportUser()->PER_USER_CODE,
             'WC_REG_STATUS' => $case['status'] ?? 'ACTIVE',
             'WC_REG_DISCHARGED_AT' => $case['dischargedAt'] ?? null,
@@ -135,7 +136,7 @@ trait WorkbookSyntheticCases
                 'WC_RDIAG_DIAGNOSIS_CD' => WcDiagnosis::firstOrCreate(['WC_DIAG_NAME' => $wound['diagnosis']], ['WC_DIAG_IS_ACTIVE' => 1])->WC_DIAG_CODE,
                 'WC_RDIAG_WOUND_TYPE_CD' => WcWoundType::firstOrCreate(['WC_WTYPE_NAME' => $wound['woundType']], ['WC_WTYPE_IS_ACTIVE' => 1])->WC_WTYPE_CODE,
                 'WC_RDIAG_DESCRIPTION' => $wound['description'] ?? null,
-                'WC_RDIAG_CLINICAL_EMP_CD' => $this->reportEmployee()->PER_EMP_CODE,
+                'WC_RDIAG_CLINICAL_EMP_CD' => $this->reportEmployee()->EMP_SERIAL,
                 'WC_RDIAG_ENTRY_USER_CD' => $this->reportUser()->PER_USER_CODE,
             ]);
         }
@@ -153,7 +154,7 @@ trait WorkbookSyntheticCases
         return WcWoundAssessment::create([
             'WC_WA_REG_DIAGNOSIS_CD' => $wound->WC_RDIAG_CODE,
             'WC_WA_TYPE' => $type,
-            'WC_WA_CLINICAL_EMP_CD' => $this->reportEmployee()->PER_EMP_CODE,
+            'WC_WA_CLINICAL_EMP_CD' => $this->reportEmployee()->EMP_SERIAL,
             'WC_WA_ENTRY_USER_CD' => $this->reportUser()->PER_USER_CODE,
             'WC_WA_ASSESSED_AT' => $assessedAt,
             'WC_WA_WOUND_STATUS_CD' => $this->reportChoice('WOUND_STATUS', $type === 'INITIAL' ? 'FIRST_VISIT' : 'IMPROVING'),
@@ -171,14 +172,18 @@ trait WorkbookSyntheticCases
         return WcDailyReview::create([
             'WC_DREV_REGISTRATION_CD' => $registration->WC_REG_CODE,
             'WC_DREV_VISIT_DATE' => $visitAt,
-            'WC_DREV_NURSE_CD' => $this->reportEmployee()->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $this->reportEmployee()->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $this->reportUser()->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => $overallStatus,
         ]);
     }
 
     /**
-     * A patient; hospital-synced columns (national ID, admission date) are not mass assignable, hence forceFill.
+     * A patient in the hospital table (MR_PATIENT_TB) of the configured hospital.
+     *
+     * Special keys: 'name' (stored whole in the first-name column, so full_name returns it as given), 'sex' ('MALE',
+     * 'FEMALE', or null for a patient without a C_SEX_TB code) and 'admissionDate' (adds an open hospital admission
+     * entered that day). Any other key is an MR_PATIENT_TB column.
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -186,13 +191,30 @@ trait WorkbookSyntheticCases
     {
         $this->patientSequence++;
 
-        $patient = new MrPatient;
-        $patient->forceFill([
-            'MR_PAT_ID_NO' => 'SYN-'.str_pad((string) $this->patientSequence, 4, '0', STR_PAD_LEFT),
-            'MR_PAT_FULL_NAME' => 'مريض اصطناعي '.$this->patientSequence,
-            'MR_PAT_GENDER' => 'MALE',
+        $sex = array_key_exists('sex', $attributes) ? $attributes['sex'] : 'MALE';
+        $name = $attributes['name'] ?? 'مريض اصطناعي '.$this->patientSequence;
+        $admissionDate = $attributes['admissionDate'] ?? null;
+        unset($attributes['sex'], $attributes['name'], $attributes['admissionDate']);
+
+        $factory = match ($sex) {
+            'MALE' => MrPatient::factory()->male(),
+            'FEMALE' => MrPatient::factory()->female(),
+            default => MrPatient::factory(),
+        };
+
+        $patient = $factory->named($name)->create([
+            'MRP_ID' => 900_000_000 + $this->patientSequence,
+            'MRP_DOB' => null,
+            'MRP_MOBILE_NO' => null,
             ...$attributes,
-        ])->save();
+        ]);
+
+        if ($admissionDate !== null) {
+            AdmissionPatient::factory()->create([
+                'ADMISSION_PATREC_CD' => $patient->MRP_PATREC_CODE,
+                'ADMISSION_ENTER_DATE' => $admissionDate,
+            ]);
+        }
 
         return $patient;
     }
@@ -220,14 +242,12 @@ trait WorkbookSyntheticCases
         ]);
     }
 
-    protected function reportEmployee(): PerEmployee
+    protected function reportEmployee(): Employee
     {
         if ($this->reportEmployee === null) {
-            $this->reportEmployee = PerEmployee::create([
-                'PER_EMP_FULL_NAME' => 'ممرض التقارير',
-            ]);
+            $this->reportEmployee = Employee::factory()->named('ممرض', null, null, 'التقارير')->create();
 
-            $this->reportUser()->update(['PER_USER_EMP_CD' => $this->reportEmployee->PER_EMP_CODE]);
+            $this->reportUser()->update(['PER_USER_EMP_CD' => $this->reportEmployee->EMP_SERIAL]);
         }
 
         return $this->reportEmployee;

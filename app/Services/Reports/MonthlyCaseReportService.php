@@ -2,6 +2,9 @@
 
 namespace App\Services\Reports;
 
+use App\Models\AdmissionPatient;
+use App\Models\MrPatient;
+use App\Models\SexLookup;
 use App\Models\WcAssessmentFinding;
 use App\Models\WcDailyReview;
 use App\Models\WcRegDiagnosis;
@@ -100,9 +103,11 @@ class MonthlyCaseReportService
                 'count' => $cases->where('gender', $gender)->count(),
             ]);
 
-        $unspecified = $cases->whereNull('gender')->count();
+        // Patients whose C_SEX_TB English name is not exactly Male/Female (or who have no sex code) are counted as
+        // unknown, never guessed (config/hospital.php "sex").
+        $unspecified = $cases->where('gender', __('clinical.genders.UNKNOWN'))->count();
         if ($unspecified > 0) {
-            $perGender->push(['label' => __('clinical.genders.UNSPECIFIED'), 'count' => $unspecified]);
+            $perGender->push(['label' => __('clinical.genders.UNKNOWN'), 'count' => $unspecified]);
         }
 
         $perDiagnosis = $cases
@@ -193,7 +198,8 @@ class MonthlyCaseReportService
     private function withCaseRelations(EloquentCollection $registrations): EloquentCollection
     {
         return $registrations->load([
-            'patient',
+            'patient.sex',
+            'patient.admissions',
             'department',
             'procedure',
             'pmhConditions',
@@ -236,14 +242,12 @@ class MonthlyCaseReportService
             number: $number,
             registrationCode: $registration->WC_REG_CODE,
             registeredAt: $this->immutable($registration->WC_REG_DATE),
-            patientCode: $registration->WC_REG_PATIENT_CD,
-            patientName: (string) $patient?->MR_PAT_FULL_NAME,
-            idNumber: $this->firstFilled($patient?->MR_PAT_NATIONAL_ID, $patient?->MR_PAT_ID_NO),
-            gender: $this->gender($patient?->MR_PAT_GENDER),
-            birthYear: $patient?->MR_PAT_DOB ? $this->immutable($patient->MR_PAT_DOB)->year : null,
-            hospitalAdmissionDate: $patient?->MR_PAT_HOSPITAL_ADMISSION_DATE
-                ? $this->immutable($patient->MR_PAT_HOSPITAL_ADMISSION_DATE)->startOfDay()
-                : null,
+            patientCode: (string) $registration->WC_REG_PATIENT_CD,
+            patientName: (string) $patient?->full_name,
+            idNumber: $patient?->MRP_ID !== null ? (string) $patient->MRP_ID : null,
+            gender: $this->gender($patient),
+            birthYear: $patient?->MRP_DOB?->year,
+            hospitalAdmissionDate: $this->hospitalAdmissionAt($patient, $this->immutable($registration->WC_REG_DATE)),
             department: $registration->department?->WC_DEPT_NAME,
             pastMedicalHistory: $this->pastMedicalHistory($registration),
             diagnoses: $this->distinct($wounds->map(fn (WcRegDiagnosis $wound): ?string => $wound->diagnosis?->WC_DIAG_NAME)),
@@ -363,13 +367,31 @@ class MonthlyCaseReportService
         return $value instanceof DateTimeInterface ? CarbonImmutable::instance($value) : CarbonImmutable::parse($value);
     }
 
-    private function gender(?string $gender): ?string
+    /**
+     * Classified from C_SEX_TB.SEX_NAME_EN (exactly the configured Male/Female names); anything else is "Unknown".
+     */
+    private function gender(?MrPatient $patient): string
     {
-        return match (mb_strtoupper(trim((string) $gender))) {
-            'MALE', 'M' => __('clinical.genders.MALE'),
-            'FEMALE', 'F' => __('clinical.genders.FEMALE'),
-            default => null,
+        return match ($patient?->sex_class) {
+            SexLookup::MALE => __('clinical.genders.MALE'),
+            SexLookup::FEMALE => __('clinical.genders.FEMALE'),
+            default => __('clinical.genders.UNKNOWN'),
         };
+    }
+
+    /**
+     * Day of the hospital admission (ADMISSION_PATIENT_TB) the patient was in when registered at the clinic.
+     */
+    private function hospitalAdmissionAt(?MrPatient $patient, CarbonImmutable $registeredAt): ?CarbonImmutable
+    {
+        $admission = $patient?->admissions
+            ->filter(fn (AdmissionPatient $admission): bool => $admission->ADMISSION_ENTER_DATE !== null
+                && $admission->ADMISSION_ENTER_DATE->lte($registeredAt)
+                && ($admission->ADMISSION_OUT_DATE === null || $admission->ADMISSION_OUT_DATE->gte($registeredAt->startOfDay())))
+            ->sortBy([['ADMISSION_ENTER_DATE', 'desc'], ['ADMISSION_CODE', 'desc']])
+            ->first();
+
+        return $admission ? $this->immutable($admission->ADMISSION_ENTER_DATE)->startOfDay() : null;
     }
 
     private function firstFilled(?string ...$values): ?string

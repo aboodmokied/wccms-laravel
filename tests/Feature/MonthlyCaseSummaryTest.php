@@ -35,7 +35,7 @@ class MonthlyCaseSummaryTest extends TestCase
     public function test_case_with_two_diagnoses_counts_under_each_but_once_per_month_and_gender(): void
     {
         $this->registerCase([
-            'patient' => $this->reportPatient(['MR_PAT_GENDER' => 'FEMALE']),
+            'patient' => $this->reportPatient(['sex' => 'FEMALE']),
             'wounds' => [
                 ['diagnosis' => 'DF', 'woundType' => 'Surgical'],
                 ['diagnosis' => 'bedsore PEU', 'woundType' => 'Pressure'],
@@ -66,14 +66,14 @@ class MonthlyCaseSummaryTest extends TestCase
         $this->assertSame(1, $response->viewData('summary')['totalCases']);
     }
 
-    public function test_lists_unspecified_gender_only_when_a_case_has_none(): void
+    public function test_lists_unknown_gender_only_when_a_case_has_none(): void
     {
-        $this->registerCase(['patient' => $this->reportPatient(['MR_PAT_GENDER' => ''])]);
+        $this->registerCase(['patient' => $this->reportPatient(['sex' => null])]);
 
         $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
 
         $this->assertSame(
-            [['label' => 'Male', 'count' => 0], ['label' => 'Female', 'count' => 0], ['label' => 'Unspecified', 'count' => 1]],
+            [['label' => 'Male', 'count' => 0], ['label' => 'Female', 'count' => 0], ['label' => 'Unknown', 'count' => 1]],
             $response->viewData('summary')['perGender'],
         );
     }

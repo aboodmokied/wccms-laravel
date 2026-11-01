@@ -8,7 +8,7 @@
     <div class="d-flex align-items-center gap-3">
         <div class="text-end me-3">
             <span class="d-block fw-bold small text-dark">
-                {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم العيادة' }}
+                {{ auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم العيادة' }}
             </span>
             <span class="d-block text-muted x-small">
                 @if(auth()->user()?->PER_USER_ROLE === 'ADMIN')

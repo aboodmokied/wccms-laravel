@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcDailyReview;
 use App\Models\WcDepartment;
@@ -21,7 +21,7 @@ class RegistrationDetailsTest extends TestCase
 
     private User $nurseUser;
 
-    private PerEmployee $nurseEmployee;
+    private Employee $nurseEmployee;
 
     private WcDepartment $department;
 
@@ -42,12 +42,9 @@ class RegistrationDetailsTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->nurseEmployee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض فحص تجريبي',
-        ]);
+        $this->nurseEmployee = Employee::factory()->named('ممرض فحص تجريبي')->create();
 
-        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE]);
+        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->EMP_SERIAL]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),
@@ -61,19 +58,16 @@ class RegistrationDetailsTest extends TestCase
             'WC_PROC_IS_ACTIVE' => 1,
         ]);
 
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '100200300',
-            'MR_PAT_FULL_NAME' => 'أحمد محمود علي',
-            'MR_PAT_GENDER' => 'MALE',
+        $patient = MrPatient::factory()->male()->named('أحمد محمود علي')->create([
+            'MRP_ID' => 100200300,
         ]);
 
         $request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -82,10 +76,10 @@ class RegistrationDetailsTest extends TestCase
         $this->registration = WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -114,7 +108,7 @@ class RegistrationDetailsTest extends TestCase
             'WC_DREV_CODE' => (string) Str::uuid(),
             'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
             'WC_DREV_VISIT_DATE' => now()->subDays(2),
-            'WC_DREV_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'المراجعة الأقدم',
@@ -124,7 +118,7 @@ class RegistrationDetailsTest extends TestCase
             'WC_DREV_CODE' => (string) Str::uuid(),
             'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
             'WC_DREV_VISIT_DATE' => now()->subDay(),
-            'WC_DREV_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'IMPROVED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'المراجعة الأحدث',

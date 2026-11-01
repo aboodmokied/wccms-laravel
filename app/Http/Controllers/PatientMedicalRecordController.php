@@ -8,6 +8,7 @@ use App\Models\WcDailyReviewDetail;
 use App\Models\WcRegistration;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundPhoto;
+use App\Support\HospitalCode;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,14 +26,14 @@ class PatientMedicalRecordController extends Controller
 
         if ($search !== '') {
             $patients = MrPatient::query()
-                ->where('MR_PAT_ID_NO', $search)
-                ->orWhere('MR_PAT_CODE', $search)
-                ->orWhere('MR_PAT_FULL_NAME', 'LIKE', "%{$search}%")
+                ->with('sex')
+                ->matching($search)
+                ->orderedByName()
                 ->limit(20)
                 ->get();
 
             if ($patients->count() === 1) {
-                return redirect()->route('patients.show', $patients->first()->MR_PAT_CODE);
+                return redirect()->route('patients.show', $patients->first()->MRP_PATREC_CODE);
             }
         }
 
@@ -44,8 +45,11 @@ class PatientMedicalRecordController extends Controller
      */
     public function show(string $patientCode): View
     {
+        $patientCode = HospitalCode::parse($patientCode) ?? abort(404);
+
         $patient = MrPatient::query()
             ->with([
+                'sex',
                 'registrations' => function (HasMany $query): void {
                     $query
                         ->with([
@@ -80,7 +84,7 @@ class PatientMedicalRecordController extends Controller
                             'diagnoses.woundPhotos' => function (HasMany $photos): void {
                                 $photos
                                     ->where('WC_PHOTO_STAGE', 'INITIAL')
-                                    ->whereNull('WC_PHOTO_DAILY_REVIEW_DETAIL_CD')
+                                    ->whereNull('WC_PHOTO_REVIEW_DETAIL_CD')
                                     ->orderBy('WC_PHOTO_TAKEN_AT')
                                     ->orderBy('WC_PHOTO_CODE');
                             },

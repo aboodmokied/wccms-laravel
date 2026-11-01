@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHospital;
 use App\Models\Concerns\HasDbFirstAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WcWoundAssessment extends Model
 {
-    use HasDbFirstAttributes;
+    use BelongsToHospital, HasDbFirstAttributes;
+
+    public const HOSPITAL_NO_COLUMN = 'WC_WA_HOS_NO';
 
     protected $table = 'wc_wound_assessment_tb';
 
@@ -53,6 +56,7 @@ class WcWoundAssessment extends Model
         'WC_WA_CLINICAL_OBSERVATION',
         'WC_WA_WOUND_CHANGES',
         'WC_WA_FOLLOW_UP_REQUIRED',
+        'WC_WA_HOS_NO',
     ];
 
     protected function casts(): array
@@ -68,6 +72,20 @@ class WcWoundAssessment extends Model
         ];
     }
 
+    /**
+     * Patient and employee codes on this row, checked against the configured hospital before every save.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    protected function hospitalLinks(): array
+    {
+        return [
+            'WC_WA_CLINICAL_EMP_CD' => Employee::class,
+            'WC_WA_WCT_EMP_CD' => Employee::class,
+            'WC_WA_DOCTOR_EMP_CD' => Employee::class,
+        ];
+    }
+
     public function regDiagnosis(): BelongsTo
     {
         return $this->belongsTo(WcRegDiagnosis::class, 'WC_WA_REG_DIAGNOSIS_CD', 'WC_RDIAG_CODE');
@@ -80,17 +98,17 @@ class WcWoundAssessment extends Model
 
     public function clinicalEmployee(): BelongsTo
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_WA_CLINICAL_EMP_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_WA_CLINICAL_EMP_CD', 'EMP_SERIAL');
     }
 
     public function woundCareTeamEmployee(): BelongsTo
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_WA_WCT_EMP_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_WA_WCT_EMP_CD', 'EMP_SERIAL');
     }
 
     public function doctorEmployee(): BelongsTo
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_WA_DOCTOR_EMP_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_WA_DOCTOR_EMP_CD', 'EMP_SERIAL');
     }
 
     public function entryUser(): BelongsTo

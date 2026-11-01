@@ -2,8 +2,8 @@
 
 namespace Tests;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
@@ -23,7 +23,7 @@ abstract class StructuredWoundTestCase extends TestCase
 
     protected User $user;
 
-    protected PerEmployee $employee;
+    protected Employee $employee;
 
     protected MrPatient $patient;
 
@@ -40,9 +40,9 @@ abstract class StructuredWoundTestCase extends TestCase
         parent::setUp();
         $this->seed(WcAssessmentChoiceSeeder::class);
         $this->user = User::create(['PER_USER_CODE' => (string) Str::uuid(), 'PER_USER_USERNAME' => 'structured_user', 'PER_USER_ROLE' => 'NURSE', 'PER_USER_IS_ACTIVE' => 1]);
-        $this->employee = PerEmployee::create(['PER_EMP_CODE' => (string) Str::uuid(), 'PER_EMP_FULL_NAME' => 'ممرض منظم']);
-        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
-        $this->patient = MrPatient::create(['MR_PAT_CODE' => (string) Str::uuid(), 'MR_PAT_ID_NO' => '99112233', 'MR_PAT_FULL_NAME' => 'مريض التقييم المنظم', 'MR_PAT_GENDER' => 'MALE']);
+        $this->employee = Employee::factory()->named('ممرض', null, null, 'منظم')->create();
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->EMP_SERIAL]);
+        $this->patient = MrPatient::factory()->male()->named('مريض', 'التقييم', null, 'المنظم')->create(['MRP_ID' => 99112233]);
         $this->department = WcDepartment::create(['WC_DEPT_CODE' => (string) Str::uuid(), 'WC_DEPT_NAME' => 'عيادة الجروح', 'WC_DEPT_IS_ACTIVE' => 1]);
         $this->woundType = WcWoundType::create(['WC_WTYPE_CODE' => (string) Str::uuid(), 'WC_WTYPE_NAME' => 'قرحة', 'WC_WTYPE_IS_ACTIVE' => 1]);
         $this->diagnosis = WcDiagnosis::create(['WC_DIAG_CODE' => (string) Str::uuid(), 'WC_DIAG_NAME' => 'قرحة ضغط', 'WC_DIAG_IS_ACTIVE' => 1]);
@@ -52,9 +52,9 @@ abstract class StructuredWoundTestCase extends TestCase
     protected function pendingRequest(): WcRequestReg
     {
         return WcRequestReg::create([
-            'WC_REQ_CODE' => (string) Str::uuid(), 'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $this->patient->MR_PAT_FULL_NAME, 'WC_REQ_PAT_ID_SNAPSHOT' => $this->patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE, 'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
+            'WC_REQ_CODE' => (string) Str::uuid(), 'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $this->patient->full_name, 'WC_REQ_PAT_ID_SNAPSHOT' => (string) $this->patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL, 'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING', 'WC_REQ_CREATED_AT' => now(),
         ]);
     }
@@ -63,7 +63,7 @@ abstract class StructuredWoundTestCase extends TestCase
     protected function registrationPayload(): array
     {
         return [
-            'department_code' => $this->department->WC_DEPT_CODE, 'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+            'department_code' => $this->department->WC_DEPT_CODE, 'clinic_nurse_code' => $this->employee->EMP_SERIAL,
             'entry_user_code' => $this->user->PER_USER_CODE, 'assessed_at' => now()->toDateTimeString(),
             'has_allergies' => false, 'allergies_description' => null, 'no_comorbidities' => true, 'pmh_codes' => [],
             'next_visit_date' => now()->addWeek()->toDateString(), 'follow_up_frequency' => null, 'follow_up_objective' => 'متابعة الالتئام',
@@ -110,13 +110,13 @@ abstract class StructuredWoundTestCase extends TestCase
         $request = $this->pendingRequest();
         $request->update(['WC_REQ_STATUS' => 'ACCEPTED']);
         $registration = WcRegistration::create([
-            'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE, 'WC_REG_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE, 'WC_REG_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE, 'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->employee->PER_EMP_CODE, 'WC_REG_ENTRY_USER_CD' => $this->user->PER_USER_CODE, 'WC_REG_STATUS' => $status,
+            'WC_REG_NURSE_CD' => $this->employee->EMP_SERIAL, 'WC_REG_ENTRY_USER_CD' => $this->user->PER_USER_CODE, 'WC_REG_STATUS' => $status,
         ]);
         $wound = WcRegDiagnosis::create([
             'WC_RDIAG_REGISTRATION_CD' => $registration->WC_REG_CODE, 'WC_RDIAG_WOUND_TYPE_CD' => $this->woundType->WC_WTYPE_CODE,
-            'WC_RDIAG_DIAGNOSIS_CD' => $this->diagnosis->WC_DIAG_CODE, 'WC_RDIAG_CLINICAL_EMP_CD' => $this->employee->PER_EMP_CODE,
+            'WC_RDIAG_DIAGNOSIS_CD' => $this->diagnosis->WC_DIAG_CODE, 'WC_RDIAG_CLINICAL_EMP_CD' => $this->employee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
         ]);
 

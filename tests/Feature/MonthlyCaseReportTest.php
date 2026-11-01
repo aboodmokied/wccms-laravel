@@ -189,7 +189,7 @@ class MonthlyCaseReportTest extends TestCase
                 'WC_PHOTO_STAGE' => 'INITIAL',
                 'WC_PHOTO_PATH' => "wounds/photo-{$photo}.jpg",
                 'WC_PHOTO_TAKEN_AT' => CarbonImmutable::parse('2025-11-10 09:00'),
-                'WC_PHOTO_NURSE_CD' => $this->reportEmployee()->PER_EMP_CODE,
+                'WC_PHOTO_NURSE_CD' => $this->reportEmployee()->EMP_SERIAL,
                 'WC_PHOTO_ENTRY_USER_CD' => $this->reportUser()->PER_USER_CODE,
             ]);
         }
@@ -227,22 +227,22 @@ class MonthlyCaseReportTest extends TestCase
         $this->assertSame(['DM'], $case->pastMedicalHistory);
     }
 
-    public function test_shows_the_national_id_before_the_clinic_number_and_no_comorbidities_as_none(): void
+    public function test_shows_the_patient_document_number_and_no_comorbidities_as_none(): void
     {
         $this->registerCase([
-            'patient' => $this->reportPatient(['MR_PAT_ID_NO' => 'PAT-1001', 'MR_PAT_NATIONAL_ID' => '427408844', 'MR_PAT_DOB' => '1969-04-02']),
+            'patient' => $this->reportPatient(['MRP_ID' => 427408844, 'MRP_DOB' => '1969-04-02']),
             'registeredAt' => CarbonImmutable::parse('2025-11-10 09:00'),
             'noComorbidities' => true,
         ]);
         $this->registerCase([
-            'patient' => $this->reportPatient(['MR_PAT_ID_NO' => 'PAT-1002']),
+            'patient' => $this->reportPatient(['MRP_ID' => 100200300]),
             'registeredAt' => CarbonImmutable::parse('2025-11-11 09:00'),
         ]);
 
         $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
 
         $cases = $this->casesOf($response);
-        $this->assertSame(['427408844', 'PAT-1002'], $cases->pluck('idNumber')->all());
+        $this->assertSame(['427408844', '100200300'], $cases->pluck('idNumber')->all());
         $this->assertSame(1969, $cases->first()->birthYear);
         $this->assertSame(['No'], $cases->first()->pastMedicalHistory);
     }
@@ -285,7 +285,7 @@ class MonthlyCaseReportTest extends TestCase
     public function test_table_uses_the_workbook_headers_and_english_values(): void
     {
         $this->registerCase([
-            'patient' => $this->reportPatient(['MR_PAT_GENDER' => 'FEMALE']),
+            'patient' => $this->reportPatient(['sex' => 'FEMALE']),
             'registeredAt' => CarbonImmutable::parse('2025-11-03 09:00'),
             'status' => 'DISCHARGED',
             'dischargedAt' => CarbonImmutable::parse('2025-11-20 10:00'),
@@ -308,7 +308,7 @@ class MonthlyCaseReportTest extends TestCase
 
     public function test_escapes_patient_names_in_the_table(): void
     {
-        $this->registerCase(['patient' => $this->reportPatient(['MR_PAT_FULL_NAME' => "O'Brien <script>alert('x')</script>"])]);
+        $this->registerCase(['patient' => $this->reportPatient(['name' => "O'Brien <script>alert('x')</script>"])]);
 
         $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
 

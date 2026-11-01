@@ -296,7 +296,7 @@ class SqliteClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
             WcWoundPhoto::create([
                 'WC_PHOTO_CODE' => $photo['code'] ?? (string) Str::uuid(),
                 'WC_PHOTO_REG_DIAGNOSIS_CD' => $registrationDiagnosis->WC_RDIAG_CODE,
-                'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => $reviewDetail?->WC_REVD_CODE,
+                'WC_PHOTO_REVIEW_DETAIL_CD' => $reviewDetail?->WC_REVD_CODE,
                 'WC_PHOTO_ASSESSMENT_CD' => $assessment->WC_WA_CODE,
                 'WC_PHOTO_STAGE' => $type === 'INITIAL' ? 'INITIAL' : 'REVIEW',
                 'WC_PHOTO_PATH' => $photo['path'],

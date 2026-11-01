@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\AdmissionPatient;
+use App\Models\Employee;
+use App\Models\HospitalLocation;
+use App\Models\InpatientStay;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcRequestReg;
 use Firebase\JWT\JWT;
@@ -17,7 +20,7 @@ class WardReferralSubmissionTest extends TestCase
 
     private User $user;
 
-    private PerEmployee $employee;
+    private Employee $employee;
 
     private MrPatient $patient;
 
@@ -35,29 +38,29 @@ class WardReferralSubmissionTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->employee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض قسم الجراحة',
-            'PER_EMP_JOB_TITLE' => 'ممرض قانوني',
+        $this->employee = Employee::factory()->named('ممرض قسم الجراحة')->create();
+
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->EMP_SERIAL]);
+
+        $doctor = Employee::factory()->named('د. سامي الخطيب')->create();
+
+        $this->patient = MrPatient::factory()->male()->named('أحمد علي حسن')->create([
+            'MRP_ID' => 401234567,
+            'MRP_MOBILE_NO' => '0599123456',
+            'MRP_DOB' => '1985-04-12',
         ]);
 
-        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
-
-        $doctor = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'د. سامي الخطيب',
-            'PER_EMP_JOB_TITLE' => 'طبيب استشاري',
+        // The open hospital admission (ADMISSION_PATIENT_TB + a not-cancelled INPATIENT_ADM_TB stay) gives the ward
+        // and the attending doctor.
+        $ward = HospitalLocation::factory()->create(['LOC_NAME_AR' => 'الجراحة العامة']);
+        $admission = AdmissionPatient::factory()->create([
+            'ADMISSION_PATREC_CD' => $this->patient->MRP_PATREC_CODE,
+            'ADMISSION_LOC_CD' => $ward->LOC_CODE,
+            'ADMISSION_ENTER_DOC_CD' => $doctor->EMP_SERIAL,
         ]);
-
-        $this->patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '401234567',
-            'MR_PAT_SUPERVISING_DOCTOR_CD' => $doctor->PER_EMP_CODE,
-            'MR_PAT_FULL_NAME' => 'أحمد علي حسن',
-            'MR_PAT_PHONE' => '0599123456',
-            'MR_PAT_GENDER' => 'MALE',
-            'MR_PAT_DOB' => '1985-04-12',
-            'MR_PAT_LAST_SYNCED_AT' => now(),
+        InpatientStay::factory()->create([
+            'INPATIENT_ADMISSION_CD' => $admission->ADMISSION_CODE,
+            'INPATIENT_SUP_LOC_CD' => $ward->LOC_CODE,
         ]);
     }
 
@@ -84,11 +87,11 @@ class WardReferralSubmissionTest extends TestCase
         $response->assertJson([
             'found' => true,
             'patient' => [
-                'code' => $this->patient->MR_PAT_CODE,
+                'code' => $this->patient->MRP_PATREC_CODE,
                 'id_number' => '401234567',
                 'full_name' => 'أحمد علي حسن',
             ],
-            'admission' => ['attending_doctor' => 'د. سامي الخطيب'],
+            'admission' => ['attending_doctor' => 'د. سامي الخطيب', 'ward_name' => 'الجراحة العامة'],
             'has_pending_request' => false,
             'has_active_registration' => false,
         ]);
@@ -105,7 +108,7 @@ class WardReferralSubmissionTest extends TestCase
         $response->assertNotFound();
         $response->assertJson(['found' => false]);
         $this->assertSame($patientCountBefore, MrPatient::count());
-        $this->assertDatabaseMissing(MrPatient::class, ['MR_PAT_ID_NO' => '000000000']);
+        $this->assertDatabaseMissing(MrPatient::class, ['MRP_ID' => 0]);
     }
 
     public function test_ward_nurse_can_submit_referral_request_with_snapshot_data(): void
@@ -114,8 +117,8 @@ class WardReferralSubmissionTest extends TestCase
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('requests.store'), [
-                'patient_code' => $this->patient->MR_PAT_CODE,
-                'attending_nurse_code' => $this->employee->PER_EMP_CODE,
+                'patient_code' => $this->patient->MRP_PATREC_CODE,
+                'attending_nurse_code' => $this->employee->EMP_SERIAL,
                 'notes' => 'جرح ما بعد العملية الجراحية يحتاج تقييم العيادة',
             ]);
 
@@ -123,10 +126,10 @@ class WardReferralSubmissionTest extends TestCase
         $response->assertRedirect(route('requests.my'));
 
         $this->assertDatabaseHas('wc_request_reg_tb', [
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'أحمد علي حسن',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_NOTES' => 'جرح ما بعد العملية الجراحية يحتاج تقييم العيادة',
@@ -139,10 +142,10 @@ class WardReferralSubmissionTest extends TestCase
 
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'أحمد علي حسن',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -150,8 +153,8 @@ class WardReferralSubmissionTest extends TestCase
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('requests.store'), [
-                'patient_code' => $this->patient->MR_PAT_CODE,
-                'attending_nurse_code' => $this->employee->PER_EMP_CODE,
+                'patient_code' => $this->patient->MRP_PATREC_CODE,
+                'attending_nurse_code' => $this->employee->EMP_SERIAL,
                 'notes' => 'طلب مكرر',
             ]);
 

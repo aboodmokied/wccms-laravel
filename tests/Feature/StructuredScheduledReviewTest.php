@@ -17,7 +17,7 @@ class StructuredScheduledReviewTest extends StructuredWoundTestCase
             'WC_SREV_REGISTRATION_CD' => $registration->WC_REG_CODE, 'WC_SREV_CREATED_BY_CD' => $this->user->PER_USER_CODE,
             'WC_SREV_SCHEDULED_DATE' => now(), 'WC_SREV_VISIT_SERIAL' => 1, 'WC_SREV_STATUS' => 'PENDING', 'WC_SREV_CREATED_ON' => now(),
         ]);
-        $payload = ['submission_key' => (string) Str::uuid(), 'nurse_code' => $this->employee->PER_EMP_CODE, 'entry_user_code' => $this->user->PER_USER_CODE, 'overall_status' => 'IMPROVED_STAY', 'details' => [$this->followupAssessment($wound)]];
+        $payload = ['submission_key' => (string) Str::uuid(), 'nurse_code' => $this->employee->EMP_SERIAL, 'entry_user_code' => $this->user->PER_USER_CODE, 'overall_status' => 'IMPROVED_STAY', 'details' => [$this->followupAssessment($wound)]];
         app(ClinicalWorkflowGatewayInterface::class)->completeReview($registration, $payload, $scheduled);
         $this->assertSame('COMPLETED', $scheduled->fresh()->WC_SREV_STATUS);
 

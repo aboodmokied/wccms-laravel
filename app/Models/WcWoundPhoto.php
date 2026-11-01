@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHospital;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WcWoundPhoto extends Model
 {
+    use BelongsToHospital;
+
+    public const HOSPITAL_NO_COLUMN = 'WC_PHOTO_HOS_NO';
+
     protected $table = 'wc_wound_photo_tb';
 
     protected $primaryKey = 'WC_PHOTO_CODE';
@@ -20,7 +25,7 @@ class WcWoundPhoto extends Model
     protected $fillable = [
         'WC_PHOTO_CODE',
         'WC_PHOTO_REG_DIAGNOSIS_CD',
-        'WC_PHOTO_DAILY_REVIEW_DETAIL_CD',
+        'WC_PHOTO_REVIEW_DETAIL_CD',
         'WC_PHOTO_ASSESSMENT_CD',
         'WC_PHOTO_STAGE',
         'WC_PHOTO_PATH',
@@ -28,12 +33,25 @@ class WcWoundPhoto extends Model
         'WC_PHOTO_TAKEN_AT',
         'WC_PHOTO_NURSE_CD',
         'WC_PHOTO_ENTRY_USER_CD',
+        'WC_PHOTO_HOS_NO',
     ];
 
     protected function casts(): array
     {
         return [
             'WC_PHOTO_TAKEN_AT' => 'datetime',
+        ];
+    }
+
+    /**
+     * Patient and employee codes on this row, checked against the configured hospital before every save.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    protected function hospitalLinks(): array
+    {
+        return [
+            'WC_PHOTO_NURSE_CD' => Employee::class,
         ];
     }
 
@@ -49,12 +67,12 @@ class WcWoundPhoto extends Model
 
     public function dailyReviewDetail()
     {
-        return $this->belongsTo(WcDailyReviewDetail::class, 'WC_PHOTO_DAILY_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
+        return $this->belongsTo(WcDailyReviewDetail::class, 'WC_PHOTO_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
     }
 
     public function nurse()
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_PHOTO_NURSE_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_PHOTO_NURSE_CD', 'EMP_SERIAL');
     }
 
     public function entryUser()

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\PerUser;
 use App\Models\WcDailyReview;
 use App\Models\WcDailyReviewDetail;
@@ -33,15 +33,17 @@ class DailyReviewModelTest extends TestCase
             'PER_USER_ROLE' => 'NURSE',
         ]);
 
-        $nurse = PerEmployee::create(['PER_EMP_FULL_NAME' => 'Nurse Layla']);
-        $patient = MrPatient::create(['MR_PAT_ID_NO' => 'P-999', 'MR_PAT_FULL_NAME' => 'Omar H.', 'MR_PAT_GENDER' => 'MALE']);
+        $nurse = Employee::factory()->named('Nurse Layla')->create();
+        $patient = MrPatient::factory()->male()->named('Omar H.')->create([
+            'MRP_ID' => 500100101,
+        ]);
         $dept = WcDepartment::create(['WC_DEPT_NAME' => 'Surgery Clinic']);
 
         $request = WcRequestReg::create([
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'Omar H.',
             'WC_REQ_PAT_ID_SNAPSHOT' => 'P-999',
-            'WC_REQ_NURSE_CD' => $nurse->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $nurse->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'APPROVED',
             'WC_REQ_CREATED_AT' => now(),
@@ -49,10 +51,10 @@ class DailyReviewModelTest extends TestCase
 
         $reg = WcRegistration::create([
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $dept->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $nurse->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $nurse->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $user->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -64,7 +66,7 @@ class DailyReviewModelTest extends TestCase
             'WC_RDIAG_REGISTRATION_CD' => $reg->WC_REG_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $diag->WC_DIAG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $wtype->WC_WTYPE_CODE,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $nurse->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $nurse->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $user->PER_USER_CODE,
         ]);
 
@@ -87,7 +89,7 @@ class DailyReviewModelTest extends TestCase
             'WC_DREV_REGISTRATION_CD' => $reg->WC_REG_CODE,
             'WC_DREV_SCHEDULED_REVIEW_CD' => $scheduled->WC_SREV_CODE,
             'WC_DREV_VISIT_DATE' => now(),
-            'WC_DREV_NURSE_CD' => $nurse->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $nurse->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $user->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'Patient visited for follow-up review',

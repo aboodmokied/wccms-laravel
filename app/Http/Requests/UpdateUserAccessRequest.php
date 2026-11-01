@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Models\PerEmployee;
+use App\Rules\HospitalEmployeeExists;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateUserAccessRequest extends FormRequest
 {
@@ -27,7 +26,7 @@ class UpdateUserAccessRequest extends FormRequest
         return [
             'PER_USER_ROLE' => 'nullable|in:ADMIN,NURSE',
             'PER_USER_IS_ACTIVE' => 'required|boolean',
-            'PER_EMP_CODE' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'PER_EMP_CODE' => ['nullable', new HospitalEmployeeExists],
         ];
     }
 }

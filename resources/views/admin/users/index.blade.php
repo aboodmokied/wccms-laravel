@@ -40,8 +40,8 @@
                                 </td>
                                 <td>
                                     @if($user->employee)
-                                        <span class="fw-semibold text-primary">{{ $user->employee->PER_EMP_FULL_NAME }}</span>
-                                        <span class="d-block text-muted small">{{ $user->employee->PER_EMP_JOB_TITLE ?? 'غير مخصص' }}</span>
+                                        <span class="fw-semibold text-primary">{{ $user->employee->full_name }}</span>
+                                        <span class="d-block text-muted small">{{ $user->employee->job_title ?? 'غير مخصص' }}</span>
                                     @else
                                         <span class="badge bg-warning text-dark">غير مرتبط بموظف</span>
                                     @endif
@@ -81,7 +81,7 @@
                                             <select name="PER_EMP_CODE" class="form-select form-select-sm" style="width: 160px;">
                                                 <option value="">-- ربط بموظف --</option>
                                                 @foreach($unlinkedEmployees as $emp)
-                                                    <option value="{{ $emp->PER_EMP_CODE }}">{{ $emp->PER_EMP_FULL_NAME }}</option>
+                                                    <option value="{{ $emp->EMP_SERIAL }}">{{ $emp->full_name }}</option>
                                                 @endforeach
                                             </select>
                                         @endif

@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\EmployeeRole;
 use App\Http\Requests\Concerns\ValidatesWoundAssessment;
-use App\Models\PerEmployee;
+use App\Rules\HospitalEmployeeExists;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreWoundDiagnosisRequest extends FormRequest
 {
@@ -20,9 +20,9 @@ class StoreWoundDiagnosisRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'clinical_nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
-            'wct_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
-            'doctor_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'clinical_nurse_code' => ['required', new HospitalEmployeeExists(EmployeeRole::Nurse)],
+            'wct_employee_code' => ['nullable', new HospitalEmployeeExists(EmployeeRole::WoundCareTeam)],
+            'doctor_employee_code' => ['nullable', new HospitalEmployeeExists(EmployeeRole::Doctor)],
             'assessment' => ['required', 'array'],
             ...$this->woundAssessmentRules('assessment', true),
         ];

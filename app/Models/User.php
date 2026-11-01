@@ -2,21 +2,29 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LinksHospitalEmployee;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, LinksHospitalEmployee, Notifiable;
+
+    /**
+     * Hospital number of the employee link (PER_USER_EMP_CD). Accounts themselves are not filtered by it: the login
+     * (JWT sub) finds the account whatever hospital its employee link belongs to.
+     */
+    public const HOSPITAL_NO_COLUMN = 'PER_USER_HOS_NO';
+
+    protected static bool $scopedToHospital = false;
 
     /**
      * Database table associated with the model.
      *
      * @var string
      */
-    protected $table = 'per_users_tb';
+    protected $table = 'wc_users_tb';
 
     /**
      * Primary key column name.
@@ -57,6 +65,7 @@ class User extends Authenticatable
         'PER_USER_ROLE',
         'PER_USER_IS_ACTIVE',
         'PER_USER_EMP_CD',
+        'PER_USER_HOS_NO',
     ];
 
     /**
@@ -67,14 +76,6 @@ class User extends Authenticatable
     protected $casts = [
         'PER_USER_IS_ACTIVE' => 'boolean',
     ];
-
-    /**
-     * Get the associated hospital employee profile (PER_USER_EMP_CD).
-     */
-    public function employee(): BelongsTo
-    {
-        return $this->belongsTo(Employee::class, 'PER_USER_EMP_CD', 'PER_EMP_CODE');
-    }
 
     /**
      * Determine if the user has the ADMIN role.

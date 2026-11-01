@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcRequestReg;
 use Firebase\JWT\JWT;
@@ -17,7 +17,7 @@ class MyRequestsAndCancellationTest extends TestCase
 
     private User $user;
 
-    private PerEmployee $employee;
+    private Employee $employee;
 
     private MrPatient $patient;
 
@@ -35,22 +35,14 @@ class MyRequestsAndCancellationTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->employee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض القسم صاحب الطلب',
-            'PER_EMP_JOB_TITLE' => 'ممرض قانوني',
-        ]);
+        $this->employee = Employee::factory()->named('ممرض القسم صاحب الطلب')->create();
 
-        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->EMP_SERIAL]);
 
-        $this->patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '401234567',
-            'MR_PAT_FULL_NAME' => 'خالد عبد الله سعيد',
-            'MR_PAT_PHONE' => '0599334455',
-            'MR_PAT_GENDER' => 'MALE',
-            'MR_PAT_DOB' => '1975-11-20',
-            'MR_PAT_LAST_SYNCED_AT' => now(),
+        $this->patient = MrPatient::factory()->male()->named('خالد عبد الله سعيد')->create([
+            'MRP_ID' => 401234567,
+            'MRP_MOBILE_NO' => '0599334455',
+            'MRP_DOB' => '1975-11-20',
         ]);
     }
 
@@ -72,10 +64,10 @@ class MyRequestsAndCancellationTest extends TestCase
 
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'خالد عبد الله سعيد',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -94,10 +86,10 @@ class MyRequestsAndCancellationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'خالد عبد الله سعيد',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -121,10 +113,10 @@ class MyRequestsAndCancellationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'خالد عبد الله سعيد',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),

@@ -38,24 +38,24 @@
                                         <i class="bi bi-person-fill"></i>
                                     </div>
                                     <div>
-                                        <h5 class="fw-bolder fs-6 mb-1 text-dark">{{ $patient->MR_PAT_FULL_NAME }}</h5>
-                                        <span class="fs-8 text-muted">هوية: {{ $patient->MR_PAT_ID_NO }}</span>
+                                        <h5 class="fw-bolder fs-6 mb-1 text-dark">{{ $patient->full_name }}</h5>
+                                        <span class="fs-8 text-muted">هوية: {{ $patient->MRP_ID }}</span>
                                     </div>
                                 </div>
                                 <div class="p-3 bg-light-subtle rounded-3 border mb-3">
                                     <div class="row g-2 fs-8 text-muted">
                                         <div class="col-6">
                                             <span><i class="bi bi-file-earmark-person me-1 text-primary"></i>رقم الملف:</span>
-                                            <strong class="d-block text-dark">{{ $patient->MR_PAT_CODE }}</strong>
+                                            <strong class="d-block text-dark">{{ $patient->MRP_PATREC_CODE }}</strong>
                                         </div>
                                         <div class="col-6">
                                             <span><i class="bi bi-calendar3 me-1 text-primary"></i>العمر:</span>
-                                            <strong class="d-block text-dark">{{ \Carbon\Carbon::parse($patient->MR_PAT_DOB)->age }} سنة</strong>
+                                            <strong class="d-block text-dark">{{ $patient->MRP_DOB ? $patient->MRP_DOB->age . ' سنة' : 'غير محدد' }}</strong>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <a href="{{ route('patients.show', $patient->MR_PAT_CODE) }}" class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-bold shadow-2xs">
+                            <a href="{{ route('patients.show', $patient->MRP_PATREC_CODE) }}" class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-bold shadow-2xs">
                                 <i class="bi bi-folder2-open"></i>
                                 <span>استعراض السجل الطبي</span>
                             </a>

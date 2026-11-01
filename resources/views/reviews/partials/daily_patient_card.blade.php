@@ -17,8 +17,8 @@
                             <i class="bi bi-person-fill"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bolder fs-6 mb-0 text-dark">{{ $reg->patient?->MR_PAT_FULL_NAME }}</h5>
-                            <span class="fs-8 text-muted">رقم الهوية: {{ $reg->patient?->MR_PAT_ID_NO }}</span>
+                            <h5 class="fw-bolder fs-6 mb-0 text-dark">{{ $reg->patient?->full_name }}</h5>
+                            <span class="fs-8 text-muted">رقم الهوية: {{ $reg->patient?->MRP_ID }}</span>
                         </div>
                     </div>
                     <span class="badge bg-{{ $colorClass }}-subtle text-{{ $colorClass }} border border-{{ $colorClass }}-subtle px-2.5 py-1 fs-8 rounded-pill">
@@ -36,7 +36,7 @@
                             </div>
                             <div class="col-6">
                                 <span><i class="bi bi-person-badge me-1 text-primary"></i>الممرض:</span>
-                                <strong class="d-block text-dark fs-8">{{ $reg->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong>
+                                <strong class="d-block text-dark fs-8">{{ $reg->nurse?->full_name ?? 'غير محدد' }}</strong>
                             </div>
                         </div>
                     </div>
@@ -67,7 +67,7 @@
                                 {{ \Carbon\Carbon::parse($latestReview->WC_DREV_VISIT_DATE)->format('H:i - Y-m-d') }}
                             </strong>
                             <span class="fs-8 text-muted mt-1 d-block">
-                                بواسطة الممرض: <strong>{{ $latestReview->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong>
+                                بواسطة الممرض: <strong>{{ $latestReview->nurse?->full_name ?? 'غير محدد' }}</strong>
                             </span>
                         </div>
                     @endif

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
@@ -26,7 +26,7 @@ class DailyReviewTest extends TestCase
 
     private User $nurseUser;
 
-    private PerEmployee $nurseEmployee;
+    private Employee $nurseEmployee;
 
     private WcDepartment $department;
 
@@ -52,12 +52,9 @@ class DailyReviewTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->nurseEmployee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض تقييم يومي',
-        ]);
+        $this->nurseEmployee = Employee::factory()->named('ممرض تقييم يومي')->create();
 
-        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE]);
+        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->EMP_SERIAL]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),
@@ -77,19 +74,16 @@ class DailyReviewTest extends TestCase
             'WC_MED_IS_ACTIVE' => 1,
         ]);
 
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '100200300',
-            'MR_PAT_FULL_NAME' => 'أحمد محمود علي',
-            'MR_PAT_GENDER' => 'MALE',
+        $patient = MrPatient::factory()->male()->named('أحمد محمود علي')->create([
+            'MRP_ID' => 100200300,
         ]);
 
         $request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -98,10 +92,10 @@ class DailyReviewTest extends TestCase
         $this->registration = WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -123,7 +117,7 @@ class DailyReviewTest extends TestCase
             'WC_RDIAG_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $diagnosis->WC_DIAG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $woundType->WC_WTYPE_CODE,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
         ]);
 
@@ -174,7 +168,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'ملاحظة اختبارية',
                 'details' => [
@@ -196,7 +190,7 @@ class DailyReviewTest extends TestCase
         // Verify header record with dual audit
         $this->assertDatabaseHas('wc_daily_review_tb', [
             'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
-            'WC_DREV_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'ملاحظة اختبارية',
@@ -228,7 +222,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'IMPROVED_DISCHARGE',
                 'details' => [
                     [
@@ -246,7 +240,7 @@ class DailyReviewTest extends TestCase
         $this->assertDatabaseHas('wc_registration_tb', [
             'WC_REG_CODE' => $this->registration->WC_REG_CODE,
             'WC_REG_STATUS' => 'DISCHARGED',
-            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
         ]);
     }
 
@@ -262,7 +256,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'IMPROVED_SCHEDULED',
                 'next_visit_date' => $scheduledDate,
                 'follow_up_objective' => 'موعد متابعة',
@@ -306,7 +300,7 @@ class DailyReviewTest extends TestCase
         $this->registration->update([
             'WC_REG_STATUS' => 'DISCHARGED',
             'WC_REG_DISCHARGED_AT' => now(),
-            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
         ]);
 
         $response = $this->call(
@@ -314,7 +308,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
@@ -341,7 +335,7 @@ class DailyReviewTest extends TestCase
         $this->registration->update([
             'WC_REG_STATUS' => 'DISCHARGED',
             'WC_REG_DISCHARGED_AT' => now(),
-            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
         ]);
 
         $response = $this->call(
@@ -366,7 +360,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
@@ -404,7 +398,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [
@@ -439,7 +433,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'DEATH',
                 'general_notes' => 'تسجيل حالة وفاة',
                 'details' => [
@@ -483,7 +477,7 @@ class DailyReviewTest extends TestCase
             "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'details' => [
                     [

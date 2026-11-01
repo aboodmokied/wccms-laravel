@@ -44,13 +44,9 @@ class UserManagementTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $employee = Employee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'أ. فاطمة الزهراني',
-            'PER_EMP_JOB_TITLE' => 'ممرض جروح',
-        ]);
+        $employee = Employee::factory()->named('أ. فاطمة الزهراني')->create();
 
-        $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
+        $user->update(['PER_USER_EMP_CD' => $employee->EMP_SERIAL]);
 
         $token = $this->generateJwt('nurse_fatima');
 
@@ -95,12 +91,8 @@ class UserManagementTest extends TestCase
             'PER_USER_IS_ACTIVE' => 0,
         ]);
 
-        $employeeCode = (string) Str::uuid();
-        $employee = Employee::create([
-            'PER_EMP_CODE' => $employeeCode,
-            'PER_EMP_FULL_NAME' => 'م. أحمد خالد',
-            'PER_EMP_JOB_TITLE' => 'ممرض جروح',
-        ]);
+        $employee = Employee::factory()->named('م. أحمد خالد')->create();
+        $employeeCode = $employee->EMP_SERIAL;
 
         $token = $this->generateJwt('admin_user');
 
@@ -113,13 +105,13 @@ class UserManagementTest extends TestCase
 
         $response->assertStatus(200);
 
-        $this->assertDatabaseHas('per_users_tb', [
+        $this->assertDatabaseHas('wc_users_tb', [
             'PER_USER_CODE' => $targetUserCode,
             'PER_USER_ROLE' => 'NURSE',
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->assertDatabaseHas('per_users_tb', [
+        $this->assertDatabaseHas('wc_users_tb', [
             'PER_USER_CODE' => $targetUserCode,
             'PER_USER_EMP_CD' => $employeeCode,
         ]);

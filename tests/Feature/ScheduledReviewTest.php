@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
@@ -27,7 +27,7 @@ class ScheduledReviewTest extends TestCase
 
     private User $nurseUser;
 
-    private PerEmployee $nurseEmployee;
+    private Employee $nurseEmployee;
 
     private WcDepartment $department;
 
@@ -53,12 +53,9 @@ class ScheduledReviewTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->nurseEmployee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض المواعيد',
-        ]);
+        $this->nurseEmployee = Employee::factory()->named('ممرض المواعيد')->create();
 
-        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE]);
+        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->EMP_SERIAL]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),
@@ -78,20 +75,16 @@ class ScheduledReviewTest extends TestCase
             'WC_MED_IS_ACTIVE' => 1,
         ]);
 
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '1099887766',
-            'MR_PAT_NATIONAL_ID' => '1099887766',
-            'MR_PAT_FULL_NAME' => 'عبدالله خالد العتيبي',
-            'MR_PAT_GENDER' => 'MALE',
+        $patient = MrPatient::factory()->male()->named('عبدالله خالد العتيبي')->create([
+            'MRP_ID' => 500100103,
         ]);
 
         $request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -100,10 +93,10 @@ class ScheduledReviewTest extends TestCase
         $this->registration = WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -125,7 +118,7 @@ class ScheduledReviewTest extends TestCase
             'WC_RDIAG_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $diagnosis->WC_DIAG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $woundType->WC_WTYPE_CODE,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
         ]);
 
@@ -268,7 +261,7 @@ class ScheduledReviewTest extends TestCase
             "/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}",
             [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'إنجاز الموعد المجدول',
                 'details' => [
@@ -387,9 +380,9 @@ class ScheduledReviewTest extends TestCase
         $newRequest = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $patientCode,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -400,7 +393,7 @@ class ScheduledReviewTest extends TestCase
             'POST',
             "/requests/{$newRequest->WC_REQ_CODE}/accept",
             [
-                'clinic_nurse_code' => $this->nurseEmployee->PER_EMP_CODE,
+                'clinic_nurse_code' => $this->nurseEmployee->EMP_SERIAL,
                 'department_code' => $this->department->WC_DEPT_CODE,
                 'has_allergies' => false,
                 'no_comorbidities' => true,

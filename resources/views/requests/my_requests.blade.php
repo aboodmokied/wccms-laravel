@@ -46,7 +46,7 @@
                             <td class="fw-bold text-primary">REQ-{{ substr($req->WC_REQ_CODE, 0, 8) }}</td>
                             <td class="fw-semibold">{{ $req->WC_REQ_PAT_NAME_SNAPSHOT }}</td>
                             <td><code>{{ $req->WC_REQ_PAT_ID_SNAPSHOT }}</code></td>
-                            <td>{{ $req->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</td>
+                            <td>{{ $req->nurse?->full_name ?? 'غير محدد' }}</td>
                             <td><x-status-badge :status="$req->WC_REQ_STATUS" /></td>
                             <td>{{ \Carbon\Carbon::parse($req->WC_REQ_CREATED_AT)->format('Y-m-d H:i') }}</td>
                             <td class="text-center">

@@ -134,7 +134,7 @@
                                     <div class="d-flex flex-wrap align-items-center gap-3 text-muted fs-8 pt-1">
                                         <span>
                                             <i class="bi bi-person-badge text-primary me-1"></i>الممرض الفاحص عند التسجيل:
-                                            <strong>{{ $diag->clinicalEmployee?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong>
+                                            <strong>{{ $diag->clinicalEmployee?->full_name ?? 'غير محدد' }}</strong>
                                         </span>
                                         <span>&bull;</span>
                                         <span>

@@ -1,0 +1,20 @@
+# Oracle XE 11.2.0.2 for testing wccms_oracle_schema.sql and wccms_oracle_procedures.sql before delivery.
+# Used by run.ps1 / run.sh (see README.md). The kit folder is mounted at /kit inside the container.
+services:
+  oracle:
+    image: gvenzl/oracle-xe:11
+    container_name: wccms-oracle11
+    environment:
+      # Password of SYS and SYSTEM. Letters, digits and underscore only (the run scripts pass it unquoted).
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-Oracle_Test_1}
+    ports:
+      - "1521:1521"
+    shm_size: 1gb
+    volumes:
+      - ./:/kit
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s

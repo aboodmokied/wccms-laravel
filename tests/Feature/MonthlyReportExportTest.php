@@ -51,7 +51,7 @@ class MonthlyReportExportTest extends TestCase
 
     public function test_case_sheet_keeps_arabic_text_and_writes_dates_as_dates(): void
     {
-        $patient = $this->reportPatient(['MR_PAT_FULL_NAME' => 'ثائر عبيد', 'MR_PAT_HOSPITAL_ADMISSION_DATE' => '2025-10-15']);
+        $patient = $this->reportPatient(['name' => 'ثائر عبيد', 'admissionDate' => '2025-10-15 08:00:00']);
         $this->registerCase([
             'patient' => $patient,
             'status' => 'DISCHARGED',

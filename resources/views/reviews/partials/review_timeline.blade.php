@@ -58,7 +58,7 @@
                                 {{ $isScheduledReview ? 'مراجعة مجدولة' : 'مراجعة يومية' }}
                             </span>
                         </span>
-                        <span class="small text-muted mt-1">بواسطة {{ $review->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</span>
+                        <span class="small text-muted mt-1">بواسطة {{ $review->nurse?->full_name ?? 'غير محدد' }}</span>
                     </span>
                     <span class="badge bg-{{ $reviewOutcome[1] }}-subtle text-{{ $reviewOutcome[1] }} border border-{{ $reviewOutcome[1] }}-subtle rounded-pill px-3 py-2 clinical-review-outcome">
                         <i class="bi {{ $reviewOutcome[2] }} me-1" aria-hidden="true"></i>{{ $reviewOutcome[0] }}
@@ -70,7 +70,7 @@
                     <dl class="patient-audit-grid mb-3">
                         <div>
                             <dt>الموظف السريري</dt>
-                            <dd>{{ $review->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</dd>
+                            <dd>{{ $review->nurse?->full_name ?? 'غير محدد' }}</dd>
                         </div>
                         <div>
                             <dt>مدخل البيانات</dt>
@@ -178,7 +178,7 @@
                                                         <img src="{{ route('wound_photos.show', $photo->WC_PHOTO_CODE) }}" alt="صورة الجرح في المراجعة" loading="lazy">
                                                         <span class="badge bg-primary clinical-review-photo-badge">صورة المراجعة</span>
                                                         <small dir="ltr">{{ \Illuminate\Support\Carbon::parse($photo->WC_PHOTO_TAKEN_AT)->format('Y-m-d H:i') }}</small>
-                                                        <small>التقاط سريري: <strong>{{ $photo->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong></small>
+                                                        <small>التقاط سريري: <strong>{{ $photo->nurse?->full_name ?? 'غير محدد' }}</strong></small>
                                                         <small>إدخال الصورة: <strong>{{ $photo->entryUser?->PER_USER_USERNAME ?? 'النظام' }}</strong></small>
                                                     </a>
                                                 @endforeach

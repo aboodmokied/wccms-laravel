@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\PerUser;
 use App\Models\WcDailyReview;
 use App\Models\WcDepartment;
@@ -20,7 +20,7 @@ class TodayReviewStatusTest extends TestCase
 
     protected PerUser $user;
 
-    protected PerEmployee $nurse;
+    protected Employee $nurse;
 
     protected MrPatient $patient;
 
@@ -44,19 +44,12 @@ class TodayReviewStatusTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->nurse = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'الممرض التجريبي',
-            'PER_EMP_IS_ACTIVE' => 1,
-        ]);
+        $this->nurse = Employee::factory()->named('الممرض التجريبي')->create();
 
-        $this->user->update(['PER_USER_EMP_CD' => $this->nurse->PER_EMP_CODE]);
+        $this->user->update(['PER_USER_EMP_CD' => $this->nurse->EMP_SERIAL]);
 
-        $this->patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '999888777',
-            'MR_PAT_FULL_NAME' => 'مريض تجربة المراجعة اليومية',
-            'MR_PAT_GENDER' => 'MALE',
+        $this->patient = MrPatient::factory()->male()->named('مريض تجربة المراجعة اليومية')->create([
+            'MRP_ID' => 999888777,
         ]);
 
         $this->department = WcDepartment::create([
@@ -67,10 +60,10 @@ class TodayReviewStatusTest extends TestCase
 
         $this->request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $this->patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $this->patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurse->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $this->patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $this->patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurse->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -79,10 +72,10 @@ class TodayReviewStatusTest extends TestCase
         $this->registration = WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $this->request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->nurse->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->nurse->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -123,7 +116,7 @@ class TodayReviewStatusTest extends TestCase
             'WC_DREV_CODE' => (string) Str::uuid(),
             'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
             'WC_DREV_VISIT_DATE' => now(),
-            'WC_DREV_NURSE_CD' => $this->nurse->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $this->nurse->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'IMPROVED_FOLLOWUP',
             'WC_DREV_GENERAL_NOTES' => 'مراجعة اليوم المكتملة',

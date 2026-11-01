@@ -37,7 +37,7 @@
             </span>
             <span>
                 <small>الممرض المسؤول</small>
-                <strong>{{ $registration->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong>
+                <strong>{{ $registration->nurse?->full_name ?? 'غير محدد' }}</strong>
             </span>
             <span>
                 <small><bdi>{{ __('clinical.fields.procedure') }}</bdi></small>
@@ -82,7 +82,7 @@
             @if(!$isActive)
                 <div>
                     <span>منفذ التخريج</span>
-                    <p>{{ $registration->dischargingNurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</p>
+                    <p>{{ $registration->dischargingNurse?->full_name ?? 'غير محدد' }}</p>
                 </div>
             @endif
         </div>

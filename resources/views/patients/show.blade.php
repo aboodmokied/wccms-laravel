@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'السجل الطبي - ' . $patient->MR_PAT_FULL_NAME)
+@section('title', 'السجل الطبي - ' . $patient->full_name)
 
 @push('styles')
     @vite([

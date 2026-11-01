@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\PerUser;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcAssessmentFinding;
@@ -73,7 +73,7 @@ class WoundAssessmentModelTest extends TestCase
         $assessment = WcWoundAssessment::create([
             'WC_WA_REG_DIAGNOSIS_CD' => $registrationDiagnosis->WC_RDIAG_CODE,
             'WC_WA_TYPE' => 'INITIAL',
-            'WC_WA_CLINICAL_EMP_CD' => $employee->PER_EMP_CODE,
+            'WC_WA_CLINICAL_EMP_CD' => $employee->EMP_SERIAL,
             'WC_WA_ENTRY_USER_CD' => $user->PER_USER_CODE,
             'WC_WA_ASSESSED_AT' => now(),
             'WC_WA_WOUND_STATUS_CD' => $status->WC_ACH_CODE,
@@ -142,7 +142,7 @@ class WoundAssessmentModelTest extends TestCase
     }
 
     /**
-     * @return array{WcRegDiagnosis, PerEmployee, PerUser}
+     * @return array{WcRegDiagnosis, Employee, PerUser}
      */
     private function createRegistrationDiagnosis(): array
     {
@@ -151,31 +151,27 @@ class WoundAssessmentModelTest extends TestCase
             'PER_USER_ROLE' => 'NURSE',
             'PER_USER_IS_ACTIVE' => 1,
         ]);
-        $employee = PerEmployee::create([
-            'PER_EMP_FULL_NAME' => 'ممرضة الاختبار',
-        ]);
-        $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
-        $patient = MrPatient::create([
-            'MR_PAT_ID_NO' => 'ASSESSMENT-001',
-            'MR_PAT_FULL_NAME' => 'مريض الاختبار',
-            'MR_PAT_GENDER' => 'MALE',
+        $employee = Employee::factory()->named('ممرضة الاختبار')->create();
+        $user->update(['PER_USER_EMP_CD' => $employee->EMP_SERIAL]);
+        $patient = MrPatient::factory()->male()->named('مريض الاختبار')->create([
+            'MRP_ID' => 500100104,
         ]);
         $department = WcDepartment::create(['WC_DEPT_NAME' => 'عيادة الجروح']);
         $request = WcRequestReg::create([
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $employee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
         ]);
         $registration = WcRegistration::create([
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $employee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $employee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $user->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -185,7 +181,7 @@ class WoundAssessmentModelTest extends TestCase
             'WC_RDIAG_REGISTRATION_CD' => $registration->WC_REG_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $diagnosis->WC_DIAG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $woundType->WC_WTYPE_CODE,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $employee->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $employee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $user->PER_USER_CODE,
         ]);
 

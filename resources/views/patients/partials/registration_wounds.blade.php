@@ -33,7 +33,7 @@
                 <dl class="patient-audit-grid">
                     <div>
                         <dt>الموظف السريري</dt>
-                        <dd>{{ $wound->clinicalEmployee?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</dd>
+                        <dd>{{ $wound->clinicalEmployee?->full_name ?? 'غير محدد' }}</dd>
                     </div>
                     <div>
                         <dt>مدخل البيانات</dt>
@@ -59,7 +59,7 @@
                                 <span class="patient-photo-meta">
                                     <strong>صورة البداية</strong>
                                     <small dir="ltr">{{ \Illuminate\Support\Carbon::parse($photo->WC_PHOTO_TAKEN_AT)->format('Y-m-d H:i') }}</small>
-                                    <small>التقاط سريري: <strong>{{ $photo->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</strong></small>
+                                    <small>التقاط سريري: <strong>{{ $photo->nurse?->full_name ?? 'غير محدد' }}</strong></small>
                                     <small>إدخال الصورة: <strong>{{ $photo->entryUser?->PER_USER_USERNAME ?? 'النظام' }}</strong></small>
                                 </span>
                             </a>

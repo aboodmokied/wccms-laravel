@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcDailyReview;
 use App\Models\WcDailyReviewDetail;
@@ -45,7 +45,7 @@ class PatientMedicalRecordTest extends TestCase
     {
         $patient = $this->createPatient();
 
-        $this->get(route('patients.show', $patient->MR_PAT_CODE))
+        $this->get(route('patients.show', $patient->MRP_PATREC_CODE))
             ->assertRedirect('http://hospital.local/login');
     }
 
@@ -66,7 +66,7 @@ class PatientMedicalRecordTest extends TestCase
         $response->assertSeeInOrder([$activeCode, $newerHistoricalCode, $olderHistoricalCode]);
         $response->assertSee('data-registration-code="'.$activeCode.'"', false);
         $response->assertSee('data-initially-open="true"', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'id="patient-demographics-name">'.$context['patient']->MR_PAT_FULL_NAME));
+        $this->assertSame(1, substr_count($response->getContent(), 'id="patient-demographics-name">'.$context['patient']->full_name));
     }
 
     public function test_patient_record_opens_newest_historical_registration_when_none_is_active(): void
@@ -106,7 +106,7 @@ class PatientMedicalRecordTest extends TestCase
         $response = $this->getPatientRecord($context);
 
         $response->assertOk();
-        $response->assertSee($context['patient']->MR_PAT_FULL_NAME);
+        $response->assertSee($context['patient']->full_name);
         $response->assertSee('لا توجد تسجيلات سريرية لهذا المريض');
         $response->assertDontSee('data-registration-code=', false);
     }
@@ -274,7 +274,7 @@ class PatientMedicalRecordTest extends TestCase
         );
 
         $response->assertOk();
-        $response->assertSee(route('patients.show', $context['patient']->MR_PAT_CODE), false);
+        $response->assertSee(route('patients.show', $context['patient']->MRP_PATREC_CODE), false);
         $response->assertSee('كل تسجيلات المريض');
         $response->assertDontSee('إدخال مراجعة يومية');
         $response->assertDontSee('إضافة تشخيص جرح');
@@ -377,7 +377,7 @@ class PatientMedicalRecordTest extends TestCase
     public function test_audit_identities_remain_separate_and_scoped_to_each_registration(): void
     {
         $firstContext = $this->createClinicalContext();
-        $firstContext['employee']->update(['PER_EMP_FULL_NAME' => 'الممرض السريري الأول']);
+        $this->renameEmployee($firstContext['employee'], 'الممرض السريري الأول');
         $firstRecorder = $this->createEntryUser('first_record_entry');
         $firstRegistration = $this->createRegistration(
             $firstContext,
@@ -409,7 +409,7 @@ class PatientMedicalRecordTest extends TestCase
 
         $secondContext = $this->createClinicalContext();
         $secondContext['patient'] = $firstContext['patient'];
-        $secondContext['employee']->update(['PER_EMP_FULL_NAME' => 'الممرض السريري الثاني']);
+        $this->renameEmployee($secondContext['employee'], 'الممرض السريري الثاني');
         $secondRecorder = $this->createEntryUser('second_record_entry');
         $secondContext['user'] = $secondRecorder;
         $secondRegistration = $this->createRegistration(
@@ -457,7 +457,7 @@ class PatientMedicalRecordTest extends TestCase
     }
 
     /**
-     * @return array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}
+     * @return array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}
      */
     private function createClinicalContext(): array
     {
@@ -468,13 +468,9 @@ class PatientMedicalRecordTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $employee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض السجل الطولي',
-            'PER_EMP_IS_ACTIVE' => 1,
-        ]);
+        $employee = Employee::factory()->named('ممرض السجل الطولي')->create();
 
-        $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
+        $user->update(['PER_USER_EMP_CD' => $employee->EMP_SERIAL]);
 
         $department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),
@@ -492,18 +488,14 @@ class PatientMedicalRecordTest extends TestCase
 
     private function createPatient(): MrPatient
     {
-        return MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => 'PAT-'.Str::upper(Str::random(8)),
-            'MR_PAT_FULL_NAME' => 'مريض السجل الطبي',
-            'MR_PAT_PHONE' => '0599000000',
-            'MR_PAT_GENDER' => 'MALE',
-            'MR_PAT_DOB' => '1980-01-01',
+        return MrPatient::factory()->male()->named('مريض السجل الطبي')->create([
+            'MRP_MOBILE_NO' => '0599000000',
+            'MRP_DOB' => '1980-01-01',
         ]);
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
     private function createWound(
         array $context,
@@ -528,13 +520,13 @@ class PatientMedicalRecordTest extends TestCase
             'WC_RDIAG_DIAGNOSIS_CD' => $diagnosis->WC_DIAG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $woundType->WC_WTYPE_CODE,
             'WC_RDIAG_DESCRIPTION' => $description,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $context['employee']->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $context['employee']->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $context['user']->PER_USER_CODE,
         ]);
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
     private function createBareReview(
         array $context,
@@ -545,7 +537,7 @@ class PatientMedicalRecordTest extends TestCase
             'WC_DREV_CODE' => (string) Str::uuid(),
             'WC_DREV_REGISTRATION_CD' => $registration->WC_REG_CODE,
             'WC_DREV_VISIT_DATE' => $visitDate,
-            'WC_DREV_NURSE_CD' => $context['employee']->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $context['employee']->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $context['user']->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'IMPROVED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'مراجعة سجل الأداء',
@@ -553,7 +545,7 @@ class PatientMedicalRecordTest extends TestCase
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      * @return array{review: WcDailyReview, detail: WcDailyReviewDetail}
      */
     private function createReview(
@@ -580,7 +572,7 @@ class PatientMedicalRecordTest extends TestCase
             'WC_DREV_REGISTRATION_CD' => $registration->WC_REG_CODE,
             'WC_DREV_SCHEDULED_REVIEW_CD' => $scheduledReview?->WC_SREV_CODE,
             'WC_DREV_VISIT_DATE' => $visitDate,
-            'WC_DREV_NURSE_CD' => $context['employee']->PER_EMP_CODE,
+            'WC_DREV_NURSE_CD' => $context['employee']->EMP_SERIAL,
             'WC_DREV_ENTRY_USER_CD' => $context['user']->PER_USER_CODE,
             'WC_DREV_OVERALL_STATUS' => 'IMPROVED_STAY',
             'WC_DREV_GENERAL_NOTES' => $notes,
@@ -602,7 +594,7 @@ class PatientMedicalRecordTest extends TestCase
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
     private function createAppointment(
         array $context,
@@ -625,7 +617,7 @@ class PatientMedicalRecordTest extends TestCase
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
     private function createPhoto(
         array $context,
@@ -637,12 +629,12 @@ class PatientMedicalRecordTest extends TestCase
         return WcWoundPhoto::create([
             'WC_PHOTO_CODE' => (string) Str::uuid(),
             'WC_PHOTO_REG_DIAGNOSIS_CD' => $wound->WC_RDIAG_CODE,
-            'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => $detail?->WC_REVD_CODE,
+            'WC_PHOTO_REVIEW_DETAIL_CD' => $detail?->WC_REVD_CODE,
             'WC_PHOTO_STAGE' => $stage,
             'WC_PHOTO_PATH' => $path,
             'WC_PHOTO_CAPTION' => 'صورة '.$stage,
             'WC_PHOTO_TAKEN_AT' => '2026-05-11 10:30:00',
-            'WC_PHOTO_NURSE_CD' => $context['employee']->PER_EMP_CODE,
+            'WC_PHOTO_NURSE_CD' => $context['employee']->EMP_SERIAL,
             'WC_PHOTO_ENTRY_USER_CD' => $context['user']->PER_USER_CODE,
         ]);
     }
@@ -666,7 +658,7 @@ class PatientMedicalRecordTest extends TestCase
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
     private function createRegistration(
         array $context,
@@ -676,10 +668,10 @@ class PatientMedicalRecordTest extends TestCase
     ): WcRegistration {
         $request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $context['patient']->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $context['patient']->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $context['patient']->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $context['employee']->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $context['patient']->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $context['patient']->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $context['patient']->MRP_ID,
+            'WC_REQ_NURSE_CD' => $context['employee']->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $context['user']->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => $registrationDate,
@@ -688,21 +680,21 @@ class PatientMedicalRecordTest extends TestCase
         return WcRegistration::create([
             'WC_REG_CODE' => $registrationCode ?? (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $context['patient']->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $context['patient']->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $context['department']->WC_DEPT_CODE,
             'WC_REG_DATE' => $registrationDate,
-            'WC_REG_NURSE_CD' => $context['employee']->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $context['employee']->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $context['user']->PER_USER_CODE,
             'WC_REG_STATUS' => $status,
             'WC_REG_DISCHARGED_AT' => $status === 'DISCHARGED' ? $registrationDate : null,
             'WC_REG_DISCHARGED_BY_EMP_CD' => $status === 'DISCHARGED'
-                ? $context['employee']->PER_EMP_CODE
+                ? $context['employee']->EMP_SERIAL
                 : null,
         ]);
     }
 
     /**
-     * @param  array{user: User, employee: PerEmployee, department: WcDepartment, patient: MrPatient}  $context
+     * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
     private function jwtFor(User $user): string
     {
@@ -720,9 +712,19 @@ class PatientMedicalRecordTest extends TestCase
 
         return $this->call(
             'GET',
-            route('patients.show', $context['patient']->MR_PAT_CODE),
+            route('patients.show', $context['patient']->MRP_PATREC_CODE),
             [],
             ['hospital_token' => $token],
         );
+    }
+
+    /**
+     * EMPLOYEE_TB is read only through its model; the test edits the local copy directly.
+     */
+    private function renameEmployee(Employee $employee, string $firstName): void
+    {
+        DB::table($employee->getTable())
+            ->where(['EMP_SERIAL' => $employee->EMP_SERIAL, 'HOS_NO' => $employee->HOS_NO])
+            ->update(['EMP_FIRST_NAME_AR' => $firstName]);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDailyReviewRequest;
-use App\Models\PerEmployee;
+use App\Models\Employee;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDressing;
 use App\Models\WcMedication;
@@ -32,10 +32,8 @@ class DailyReviewController extends Controller
         $search = $request->input('search');
         $registrations = WcRegistration::query()
             ->where('WC_REG_STATUS', 'ACTIVE')
-            ->with(['patient', 'department', 'nurse', 'diagnoses.woundType', 'diagnoses.diagnosis'])
-            ->when($search, fn ($query) => $query->whereHas('patient', fn ($patientQuery) => $patientQuery
-                ->where('MR_PAT_FULL_NAME', 'like', "%{$search}%")
-                ->orWhere('MR_PAT_ID_NO', 'like', "%{$search}%")))
+            ->with(['patient.sex', 'department', 'nurse', 'diagnoses.woundType', 'diagnoses.diagnosis'])
+            ->when($search, fn ($query) => $query->whereHas('patient', fn ($patientQuery) => $patientQuery->matching($search)))
             ->whereDoesntHave('dailyReviews', fn ($query) => $query->whereDate('WC_DREV_VISIT_DATE', $today))
             ->orderByDesc('WC_REG_DATE')
             ->get();
@@ -50,13 +48,11 @@ class DailyReviewController extends Controller
         $registrations = WcRegistration::query()
             ->where('WC_REG_STATUS', 'ACTIVE')
             ->with([
-                'patient', 'department', 'nurse', 'diagnoses.woundType', 'diagnoses.diagnosis',
+                'patient.sex', 'department', 'nurse', 'diagnoses.woundType', 'diagnoses.diagnosis',
                 'dailyReviews' => fn ($query) => $query->whereDate('WC_DREV_VISIT_DATE', $today)->latest('WC_DREV_VISIT_DATE'),
                 'dailyReviews.nurse',
             ])
-            ->when($search, fn ($query) => $query->whereHas('patient', fn ($patientQuery) => $patientQuery
-                ->where('MR_PAT_FULL_NAME', 'like', "%{$search}%")
-                ->orWhere('MR_PAT_ID_NO', 'like', "%{$search}%")))
+            ->when($search, fn ($query) => $query->whereHas('patient', fn ($patientQuery) => $patientQuery->matching($search)))
             ->whereHas('dailyReviews', fn ($query) => $query->whereDate('WC_DREV_VISIT_DATE', $today))
             ->orderByDesc('WC_REG_DATE')
             ->get();
@@ -142,7 +138,7 @@ class DailyReviewController extends Controller
     /**
      * @return array{
      *   registration: WcRegistration,
-     *   employees: Collection<int, PerEmployee>,
+     *   employees: Collection<int, Employee>,
      *   dressings: Collection<int, WcDressing>,
      *   medications: Collection<int, WcMedication>,
      *   procedures: Collection<int, WcProcedure>,
@@ -154,7 +150,7 @@ class DailyReviewController extends Controller
     private function reviewFormData(WcRegistration $registration, ?WcScheduledReview $scheduledReview = null): array
     {
         $registration->load([
-            'patient', 'department', 'diagnoses.woundType', 'diagnoses.diagnosis',
+            'patient.sex', 'department', 'diagnoses.woundType', 'diagnoses.diagnosis',
             'diagnoses.latestAssessment.findings.choice',
             'diagnoses.latestAssessment.woundStatus',
             'diagnoses.latestAssessment.exudateAmount',
@@ -167,7 +163,7 @@ class DailyReviewController extends Controller
 
         return [
             'registration' => $registration,
-            'employees' => PerEmployee::query()->orderBy('PER_EMP_FULL_NAME')->get(),
+            ...Employee::pickLists(),
             'dressings' => WcDressing::query()->where('WC_DRESS_IS_ACTIVE', 1)->orderBy('WC_DRESS_NAME')->get(),
             'medications' => WcMedication::query()->where('WC_MED_IS_ACTIVE', 1)->orderBy('WC_MED_NAME')->get(),
             'procedures' => WcProcedure::query()->where('WC_PROC_IS_ACTIVE', 1)->orderBy('WC_PROC_NAME')->get(),

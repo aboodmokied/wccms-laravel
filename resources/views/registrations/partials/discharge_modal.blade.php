@@ -22,9 +22,9 @@
                         <label class="form-label fw-bold">الممرض المنفذ للتخريج <span class="text-danger">*</span></label>
                         <select name="discharging_nurse_code" class="form-select" required>
                             <option value="">اختر الممرض المنفذ للتخريج...</option>
-                            @foreach($employees as $emp)
-                                <option value="{{ $emp->PER_EMP_CODE }}" {{ (Auth::user()->employee?->PER_EMP_CODE === $emp->PER_EMP_CODE) ? 'selected' : '' }}>
-                                    {{ $emp->PER_EMP_FULL_NAME }} ({{ $emp->PER_EMP_JOB_TITLE ?? 'موظف عيادة' }})
+                            @foreach($nurses as $emp)
+                                <option value="{{ $emp->EMP_SERIAL }}" {{ (Auth::user()->employee?->EMP_SERIAL === $emp->EMP_SERIAL) ? 'selected' : '' }}>
+                                    {{ $emp->full_name }} ({{ $emp->job_title ?? 'موظف عيادة' }})
                                 </option>
                             @endforeach
                         </select>

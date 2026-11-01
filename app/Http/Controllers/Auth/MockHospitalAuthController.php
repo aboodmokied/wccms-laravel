@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\PerEmployee;
+use App\Models\Employee;
 use App\Models\User;
+use App\Support\Hospital;
+use App\Support\LocalHospitalCopy;
 use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,20 +51,22 @@ class MockHospitalAuthController extends Controller
             ]);
         }
 
-        // 2. Ensure Employee directory record exists if user is active
-        if ($isActive) {
-            if (! $user->employee) {
-                $defaultTitle = $role === 'ADMIN' ? 'مشرف سريري' : 'ممرض قانوني';
-                $defaultName = $fullName ?: ($role === 'ADMIN' ? 'د. مشرف العيادة' : 'ممرض '.$username);
+        // 2. Development only: give an active account an employee in the local copy of EMPLOYEE_TB.
+        //    The real hospital table (HOSPITAL_SCHEMA set) is never written to.
+        if ($isActive && ! Hospital::isExternal() && ! $user->employee) {
+            $defaultName = $fullName ?: ($role === 'ADMIN' ? 'د. مشرف العيادة' : 'ممرض '.$username);
+            $names = preg_split('/\s+/u', trim($defaultName)) ?: [$defaultName];
 
-                $employee = PerEmployee::create([
-                    'PER_EMP_CODE' => (string) Str::uuid(),
-                    'PER_EMP_FULL_NAME' => $defaultName,
-                    'PER_EMP_JOB_TITLE' => $defaultTitle,
-                ]);
+            $serial = (int) Employee::query()->max('EMP_SERIAL') + 1;
+            $employee = LocalHospitalCopy::firstOrInsert(Employee::class, ['EMP_SERIAL' => $serial], [
+                'EMP_FIRST_NAME_AR' => $names[0] ?? null,
+                'EMP_FATHER_NAME_AR' => count($names) > 2 ? $names[1] : null,
+                'EMP_GRANDFATHER_NAME_AR' => count($names) > 3 ? $names[2] : null,
+                'EMP_LAST_NAME_AR' => count($names) > 1 ? implode(' ', array_slice($names, min(count($names) - 1, 3))) : null,
+                'EMP_ACTIVE' => config('hospital.employees.active_value'),
+            ]);
 
-                $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
-            }
+            $user->update(['PER_USER_EMP_CD' => $employee->EMP_SERIAL, 'PER_USER_HOS_NO' => Hospital::number()]);
         }
 
         // 3. Issue Hospital SSO JWT Token

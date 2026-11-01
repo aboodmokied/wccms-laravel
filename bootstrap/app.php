@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\HospitalLinkException;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HospitalJwtAuthMiddleware;
 use Illuminate\Foundation\Application;
@@ -26,4 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // A patient/employee code that is not in the configured hospital (App\Models\Concerns\BelongsToHospital).
+        $exceptions->render(function (HospitalLinkException $exception, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => $exception->getMessage()], 422);
+            }
+
+            return back()->withInput()->with('error', $exception->getMessage());
+        });
     })->create();

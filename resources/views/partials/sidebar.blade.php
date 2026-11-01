@@ -89,11 +89,11 @@
     <div class="m8-sidebar-footer">
         <div class="m8-user-pill">
             <div class="m8-user-avatar">
-                {{ mb_substr(auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
+                {{ mb_substr(auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
             </div>
             <div class="d-flex flex-column text-truncate flex-grow-1">
                 <span class="fw-bold text-truncate" style="font-size: 0.82rem;">
-                    {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
+                    {{ auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
                 </span>
                 <span class="text-muted" style="font-size: 0.725rem;">
                     @if(auth()->user()?->PER_USER_ROLE === 'ADMIN') مسؤول النظام

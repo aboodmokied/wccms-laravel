@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
+use App\Models\WcDailyReview;
+use App\Models\WcRegistration;
+use App\Models\WcScheduledReview;
+use App\Support\Hospital;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
@@ -11,7 +14,7 @@ use Illuminate\Support\Facades\Lang;
 class ReportingService
 {
     /**
-     * Calculate executive KPI metrics with optional date period filtering.
+     * Calculate executive KPI metrics with optional date period filtering, for the configured hospital only.
      *
      * @param  string|null  $period  ('all', '30days', 'ytd')
      */
@@ -24,7 +27,10 @@ class ReportingService
         };
 
         // 1. Active Patients Count
+        $hospitalNo = Hospital::number();
+
         $activePatientsQuery = DB::table('wc_registration_tb')
+            ->where('WC_REG_HOS_NO', $hospitalNo)
             ->where('WC_REG_STATUS', 'REGISTERED');
         if ($startDate) {
             $activePatientsQuery->where('WC_REG_DATE', '>=', $startDate);
@@ -33,11 +39,12 @@ class ReportingService
 
         // 2. Pending Requests Count
         $pendingRequestsCount = DB::table('wc_request_reg_tb')
+            ->where('WC_REQ_HOS_NO', $hospitalNo)
             ->where('WC_REQ_STATUS', 'PENDING')
             ->count();
 
         // 3. Average Treatment Duration in Days
-        $registrationsQuery = DB::table('wc_registration_tb');
+        $registrationsQuery = DB::table('wc_registration_tb')->where('WC_REG_HOS_NO', $hospitalNo);
         if ($startDate) {
             $registrationsQuery->where('WC_REG_DATE', '>=', $startDate);
         }
@@ -62,7 +69,7 @@ class ReportingService
         $avgTreatmentDays = $countRegistrations > 0 ? (int) round($totalDays / $countRegistrations) : 0;
 
         // 4. Outcome Distribution
-        $reviewsQuery = DB::table('wc_daily_review_tb');
+        $reviewsQuery = DB::table('wc_daily_review_tb')->where('WC_DREV_HOS_NO', $hospitalNo);
         if ($startDate) {
             $reviewsQuery->where('WC_DREV_VISIT_DATE', '>=', $startDate);
         }
@@ -92,7 +99,10 @@ class ReportingService
         }
 
         // 5. Missed Appointment Rate
+        // Schedules have no HOS_NO of their own: they belong to the hospital of their registration.
         $scheduledQuery = DB::table('wc_scheduled_review_tb')
+            ->join('wc_registration_tb', 'wc_registration_tb.WC_REG_CODE', '=', 'wc_scheduled_review_tb.WC_SREV_REGISTRATION_CD')
+            ->where('wc_registration_tb.WC_REG_HOS_NO', $hospitalNo)
             ->whereIn('WC_SREV_STATUS', ['COMPLETED', 'MISSED', 'CANCELLED']);
         if ($startDate) {
             $scheduledQuery->where('WC_SREV_SCHEDULED_DATE', '>=', $startDate);
@@ -120,148 +130,108 @@ class ReportingService
     }
 
     /**
-     * Retrieve recent clinical activity log.
+     * Retrieve recent clinical activity log (configured hospital only).
      */
     public function getRecentActivities(int $limit = 10): array
     {
-        $patients = (new MrPatient)->getTable();
-        $employees = (new PerEmployee)->getTable();
-
-        // Upper-case aliases: Oracle returns unquoted identifiers in upper case
-        $reviews = DB::table('wc_daily_review_tb')
-            ->join('wc_registration_tb', 'wc_daily_review_tb.WC_DREV_REGISTRATION_CD', '=', 'wc_registration_tb.WC_REG_CODE')
-            ->join("{$patients} as PAT", 'wc_registration_tb.WC_REG_PATIENT_CD', '=', 'PAT.MR_PAT_CODE')
-            ->leftJoin("{$employees} as EMP", 'wc_daily_review_tb.WC_DREV_NURSE_CD', '=', 'EMP.PER_EMP_CODE')
-            ->select([
-                'wc_daily_review_tb.WC_DREV_CODE as ID',
-                'wc_daily_review_tb.WC_DREV_VISIT_DATE as VISIT_DATE',
-                'wc_daily_review_tb.WC_DREV_OVERALL_STATUS as STATUS',
-                'PAT.MR_PAT_FULL_NAME as PATIENT_NAME',
-                'PAT.MR_PAT_CODE as PATIENT_CODE',
-                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
-            ])
-            ->orderBy('wc_daily_review_tb.WC_DREV_VISIT_DATE', 'desc')
+        $reviews = WcDailyReview::query()
+            ->with(['registration.patient', 'nurse'])
+            ->orderByDesc('WC_DREV_VISIT_DATE')
             ->limit($limit)
             ->get();
 
-        return $reviews->map(function ($rev) {
-            $statusLabels = [
-                'DISCHARGED' => __('clinical.outcome_groups.DISCHARGED'),
-                'FOLLOWUP' => __('clinical.outcome_groups.FOLLOWUP'),
-                'WORSENED' => __('clinical.outcome_groups.WORSENED'),
-                'DECEASED' => __('clinical.outcome_groups.DECEASED'),
-            ];
+        $statusLabels = [
+            'DISCHARGED' => __('clinical.outcome_groups.DISCHARGED'),
+            'FOLLOWUP' => __('clinical.outcome_groups.FOLLOWUP'),
+            'WORSENED' => __('clinical.outcome_groups.WORSENED'),
+            'DECEASED' => __('clinical.outcome_groups.DECEASED'),
+        ];
+
+        return $reviews->map(function (WcDailyReview $review) use ($statusLabels) {
+            $patient = $review->registration?->patient;
 
             return [
-                'id' => $rev->ID,
-                'date' => $rev->VISIT_DATE,
-                'patient_name' => $rev->PATIENT_NAME ?? 'غير محدد',
-                'patient_code' => $rev->PATIENT_CODE,
-                'nurse_name' => $rev->NURSE_NAME ?? 'غير محدد',
-                'status_label' => $statusLabels[$rev->STATUS] ?? $rev->STATUS,
-                'status' => $rev->STATUS,
+                'id' => $review->WC_DREV_CODE,
+                'date' => $review->getRawOriginal('WC_DREV_VISIT_DATE'),
+                'patient_name' => $patient?->full_name ?: 'غير محدد',
+                'patient_code' => $patient?->MRP_PATREC_CODE,
+                'nurse_name' => $review->nurse?->full_name ?: 'غير محدد',
+                'status_label' => $statusLabels[$review->WC_DREV_OVERALL_STATUS] ?? $review->WC_DREV_OVERALL_STATUS,
+                'status' => $review->WC_DREV_OVERALL_STATUS,
             ];
         })->toArray();
     }
 
     /**
-     * Search patient clinical timeline and return unified history payload.
+     * Search patient clinical timeline and return unified history payload (configured hospital only).
+     *
+     * A number is tried as the document number (MRP_ID) or medical record number (MRP_PATREC_CODE) first, then the
+     * words are matched against the patient's Arabic names.
      */
     public function searchPatientHistory(?string $search): ?array
     {
-        if (! $search) {
+        $search = trim((string) $search);
+        if ($search === '') {
             return null;
         }
 
-        $employees = (new PerEmployee)->getTable();
-
-        $patient = DB::table((new MrPatient)->getTable())
-            ->where('MR_PAT_CODE', $search)
-            ->orWhere('MR_PAT_ID_NO', $search)
-            ->orWhere('MR_PAT_NATIONAL_ID', $search)
-            ->orWhere('MR_PAT_FULL_NAME', 'LIKE', "%{$search}%")
-            ->first();
+        $patient = MrPatient::query()->with('sex')->byNumber($search)->first()
+            ?? MrPatient::query()->with('sex')->matching($search)->orderedByName()->first();
 
         if (! $patient) {
             return null;
         }
 
-        // Registrations
-        $registrations = DB::table('wc_registration_tb')
-            ->leftJoin('wc_department_tb', 'wc_registration_tb.WC_REG_DEPARTMENT_CD', '=', 'wc_department_tb.WC_DEPT_CODE')
-            ->leftJoin("{$employees} as EMP", 'wc_registration_tb.WC_REG_NURSE_CD', '=', 'EMP.PER_EMP_CODE')
-            ->where('WC_REG_PATIENT_CD', $patient->MR_PAT_CODE)
-            ->select([
-                'wc_registration_tb.*',
-                'wc_department_tb.WC_DEPT_NAME as DEPARTMENT_NAME',
-                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
+        $registrations = WcRegistration::query()
+            ->where('WC_REG_PATIENT_CD', $patient->MRP_PATREC_CODE)
+            ->with([
+                'department',
+                'nurse',
+                'dailyReviews' => fn ($query) => $query->orderByDesc('WC_DREV_VISIT_DATE'),
+                'dailyReviews.nurse',
+                'scheduledReviews' => fn ($query) => $query->orderByDesc('WC_SREV_SCHEDULED_DATE'),
+                'scheduledReviews.createdBy.employee',
             ])
-            ->orderBy('WC_REG_DATE', 'desc')
+            ->orderByDesc('WC_REG_DATE')
             ->get();
-
-        $regIds = $registrations->pluck('WC_REG_CODE')->toArray();
-
-        // Daily Reviews
-        $dailyReviews = DB::table('wc_daily_review_tb')
-            ->leftJoin("{$employees} as EMP", 'wc_daily_review_tb.WC_DREV_NURSE_CD', '=', 'EMP.PER_EMP_CODE')
-            ->whereIn('WC_DREV_REGISTRATION_CD', $regIds)
-            ->select([
-                'wc_daily_review_tb.*',
-                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
-            ])
-            ->orderBy('WC_DREV_VISIT_DATE', 'desc')
-            ->get()
-            ->groupBy('WC_DREV_REGISTRATION_CD');
-
-        // Scheduled Reviews
-        $scheduledReviews = DB::table('wc_scheduled_review_tb')
-            ->leftJoin('per_users_tb', 'wc_scheduled_review_tb.WC_SREV_CREATED_BY_CD', '=', 'per_users_tb.PER_USER_CODE')
-            ->leftJoin("{$employees} as EMP", 'per_users_tb.PER_USER_EMP_CD', '=', 'EMP.PER_EMP_CODE')
-            ->whereIn('WC_SREV_REGISTRATION_CD', $regIds)
-            ->select([
-                'wc_scheduled_review_tb.*',
-                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
-            ])
-            ->orderBy('WC_SREV_SCHEDULED_DATE', 'desc')
-            ->get()
-            ->groupBy('WC_SREV_REGISTRATION_CD');
 
         return [
             'patient' => [
-                'code' => $patient->MR_PAT_CODE,
-                'name' => $patient->MR_PAT_FULL_NAME,
-                'civil_id' => $patient->MR_PAT_ID_NO ?? $patient->MR_PAT_NATIONAL_ID ?? 'غير مسجل',
-                'gender' => ($patient->MR_PAT_GENDER ?? 'M') === 'M' ? 'ذَكَر' : 'أُنثَى',
-                'phone' => $patient->MR_PAT_PHONE ?? 'غير مسجل',
-                'birth_date' => $patient->MR_PAT_DOB ?? null,
+                'code' => $patient->MRP_PATREC_CODE,
+                'name' => $patient->full_name,
+                'civil_id' => $patient->MRP_ID ?? 'غير مسجل',
+                // C_SEX_TB's Arabic name; never guessed from the code (config/hospital.php "sex").
+                'gender' => $patient->sex_label ?: 'غير معروف',
+                'phone' => $patient->MRP_MOBILE_NO ?? 'غير مسجل',
+                'birth_date' => $patient->MRP_DOB?->toDateString(),
             ],
-            'registrations' => $registrations->map(function ($reg) use ($dailyReviews, $scheduledReviews) {
+            'registrations' => $registrations->map(function (WcRegistration $reg) {
                 return [
                     'code' => $reg->WC_REG_CODE,
-                    'registration_date' => $reg->WC_REG_DATE,
-                    'discharge_date' => $reg->WC_REG_DISCHARGE_DATE,
+                    'registration_date' => $reg->getRawOriginal('WC_REG_DATE'),
+                    'discharge_date' => $reg->getRawOriginal('WC_REG_DISCHARGE_DATE'),
                     'status' => $reg->WC_REG_STATUS,
                     'status_label' => $reg->WC_REG_STATUS === 'REGISTERED' ? 'مسجل حالياً' : 'تم الخروج',
-                    'department' => $reg->DEPARTMENT_NAME ?? 'عام',
-                    'nurse' => $reg->NURSE_NAME ?? 'غير محدد',
-                    'daily_reviews' => ($dailyReviews->get($reg->WC_REG_CODE) ?? collect())->map(function ($rev) {
+                    'department' => $reg->department?->WC_DEPT_NAME ?? 'عام',
+                    'nurse' => $reg->nurse?->full_name ?: 'غير محدد',
+                    'daily_reviews' => $reg->dailyReviews->map(function (WcDailyReview $rev) {
                         return [
                             'code' => $rev->WC_DREV_CODE,
-                            'date' => $rev->WC_DREV_VISIT_DATE,
+                            'date' => $rev->getRawOriginal('WC_DREV_VISIT_DATE'),
                             'status_eval' => $rev->WC_DREV_OVERALL_STATUS,
                             'status_label' => Lang::has("clinical.overall_outcomes.{$rev->WC_DREV_OVERALL_STATUS}")
                                 ? __("clinical.overall_outcomes.{$rev->WC_DREV_OVERALL_STATUS}")
                                 : (string) $rev->WC_DREV_OVERALL_STATUS,
-                            'nurse' => $rev->NURSE_NAME ?? 'غير محدد',
+                            'nurse' => $rev->nurse?->full_name ?: 'غير محدد',
                             'notes' => $rev->WC_DREV_GENERAL_NOTES ?? 'لا توجد ملاحظات',
                         ];
                     })->values()->toArray(),
-                    'scheduled_reviews' => ($scheduledReviews->get($reg->WC_REG_CODE) ?? collect())->map(function ($srev) {
+                    'scheduled_reviews' => $reg->scheduledReviews->map(function (WcScheduledReview $srev) {
                         return [
                             'code' => $srev->WC_SREV_CODE,
-                            'scheduled_date' => $srev->WC_SREV_SCHEDULED_DATE,
+                            'scheduled_date' => $srev->getRawOriginal('WC_SREV_SCHEDULED_DATE'),
                             'status' => $srev->WC_SREV_STATUS,
-                            'nurse' => $srev->NURSE_NAME ?? 'غير محدد',
+                            'nurse' => $srev->createdBy?->employee?->full_name ?: 'غير محدد',
                         ];
                     })->values()->toArray(),
                 ];

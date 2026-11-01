@@ -94,9 +94,9 @@
                             <label for="attending_nurse_code" class="form-label fw-semibold">الممرض المحول / مسؤول القسم <span class="text-danger">*</span></label>
                             <select name="attending_nurse_code" id="attending_nurse_code" class="form-select @error('attending_nurse_code') is-invalid @enderror" required>
                                 <option value="">-- اختر الممرض المحول --</option>
-                                @foreach ($employees as $employee)
-                                    <option value="{{ $employee->PER_EMP_CODE }}" {{ old('attending_nurse_code') == $employee->PER_EMP_CODE ? 'selected' : '' }}>
-                                        {{ $employee->PER_EMP_FULL_NAME }} ({{ $employee->PER_EMP_JOB_TITLE ?? 'ممرض' }})
+                                @foreach ($nurses as $employee)
+                                    <option value="{{ $employee->EMP_SERIAL }}" {{ old('attending_nurse_code') == $employee->EMP_SERIAL ? 'selected' : '' }}>
+                                        {{ $employee->full_name }} ({{ $employee->job_title ?? 'ممرض' }})
                                     </option>
                                 @endforeach
                             </select>

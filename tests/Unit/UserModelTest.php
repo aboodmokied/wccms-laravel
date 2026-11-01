@@ -14,7 +14,7 @@ class UserModelTest extends TestCase
     {
         $user = new User;
 
-        $this->assertSame('per_users_tb', $user->getTable());
+        $this->assertSame('wc_users_tb', $user->getTable());
         $this->assertSame('PER_USER_CODE', $user->getKeyName());
         $this->assertFalse($user->getIncrementing());
         $this->assertSame('string', $user->getKeyType());
@@ -27,12 +27,11 @@ class UserModelTest extends TestCase
     {
         $employee = new Employee;
 
-        $this->assertSame('per_employee_tb', $employee->getTable());
-        $this->assertSame('PER_EMP_CODE', $employee->getKeyName());
+        $this->assertSame('EMPLOYEE_TB', $employee->getTable());
+        $this->assertSame('EMP_SERIAL', $employee->getKeyName());
         $this->assertFalse($employee->getIncrementing());
-        $this->assertSame('string', $employee->getKeyType());
+        $this->assertSame('int', $employee->getKeyType());
         $this->assertFalse($employee->timestamps);
-        $this->assertContains('PER_EMP_FULL_NAME', $employee->getFillable());
     }
 
     public function test_user_and_employee_relationships_are_defined_correctly(): void
@@ -42,8 +41,9 @@ class UserModelTest extends TestCase
 
         $this->assertInstanceOf(BelongsTo::class, $user->employee());
         $this->assertInstanceOf(HasOne::class, $employee->user());
-        $this->assertSame('PER_USER_EMP_CD', $user->employee()->getForeignKeyName());
-        $this->assertSame('PER_EMP_CODE', $user->employee()->getOwnerKeyName());
+        // The link resolves through linked_employee_code: PER_USER_EMP_CD, only when PER_USER_HOS_NO is this hospital.
+        $this->assertSame('linked_employee_code', $user->employee()->getForeignKeyName());
+        $this->assertSame('EMP_SERIAL', $user->employee()->getOwnerKeyName());
         $this->assertSame('PER_USER_EMP_CD', $employee->user()->getForeignKeyName());
     }
 

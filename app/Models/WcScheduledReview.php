@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasDbFirstAttributes;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class WcScheduledReview extends Model
@@ -30,6 +31,15 @@ class WcScheduledReview extends Model
         'WC_SREV_CREATED_ON',
         'WC_SREV_COMPLETED_ON',
     ];
+
+    /**
+     * A schedule has no HOS_NO of its own: it belongs to the hospital of its registration, so it is read through
+     * the registration's hospital filter.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('hospital', fn (Builder $query) => $query->whereHas('registration'));
+    }
 
     public function registration()
     {

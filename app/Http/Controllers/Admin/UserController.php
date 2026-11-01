@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserAccessRequest;
 use App\Models\Employee;
 use App\Models\User;
+use App\Support\Hospital;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -15,8 +16,8 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $users = User::with('employee')->get();
-        $unlinkedEmployees = Employee::whereDoesntHave('user')->get();
+        $users = User::with('employee.job')->get();
+        $unlinkedEmployees = Employee::query()->active()->whereDoesntHave('user')->orderedByName()->with('job')->get();
 
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
@@ -41,14 +42,16 @@ class UserController extends Controller
         ];
 
         if ($request->has('PER_EMP_CODE') && $request->input('PER_EMP_CODE')) {
-            $employeeCode = $request->input('PER_EMP_CODE');
+            $employeeCode = (int) $request->input('PER_EMP_CODE');
 
-            // An employee belongs to one account (UNIQUE): take it from any other account first
+            // An employee belongs to one account (UNIQUE on code + hospital): take it from any other account first
             User::where('PER_USER_EMP_CD', $employeeCode)
+                ->where('PER_USER_HOS_NO', Hospital::number())
                 ->where('PER_USER_CODE', '<>', $user->PER_USER_CODE)
                 ->update(['PER_USER_EMP_CD' => null]);
 
             $attributes['PER_USER_EMP_CD'] = $employeeCode;
+            $attributes['PER_USER_HOS_NO'] = Hospital::number();
         }
 
         $user->update($attributes);

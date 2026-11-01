@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EmployeeRole;
 use App\Http\Requests\AcceptRegistrationRequest;
 use App\Http\Requests\MarkIneligibleRequest;
 use App\Http\Requests\StoreRegistrationRequest;
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
@@ -20,6 +21,7 @@ use App\Models\WcWoundType;
 use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\HospitalPatientSyncServiceInterface;
 use App\Services\WoundPhotoStorage;
+use App\Support\HospitalCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -62,9 +64,9 @@ class RegistrationRequestController extends Controller
 
     public function create()
     {
-        $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
+        $nurses = Employee::query()->active()->inRole(EmployeeRole::Nurse)->orderedByName()->with('job')->get();
 
-        return view('requests.create', compact('employees'));
+        return view('requests.create', compact('nurses'));
     }
 
     public function searchPatient(Request $request, HospitalPatientSyncServiceInterface $syncService)
@@ -84,23 +86,23 @@ class RegistrationRequestController extends Controller
         /** @var MrPatient $patient */
         $patient = $result['patient'];
 
-        $hasPendingRequest = WcRequestReg::where('WC_REQ_PATIENT_CD', $patient->MR_PAT_CODE)
+        $hasPendingRequest = WcRequestReg::where('WC_REQ_PATIENT_CD', $patient->MRP_PATREC_CODE)
             ->whereIn('WC_REQ_STATUS', ['PENDING', 'VISIT_IN_PROGRESS'])
             ->exists();
 
-        $hasActiveRegistration = WcRegistration::where('WC_REG_PATIENT_CD', $patient->MR_PAT_CODE)
+        $hasActiveRegistration = WcRegistration::where('WC_REG_PATIENT_CD', $patient->MRP_PATREC_CODE)
             ->where('WC_REG_STATUS', 'ACTIVE')
             ->exists();
 
         return response()->json([
             'found' => true,
             'patient' => [
-                'code' => $patient->MR_PAT_CODE,
-                'id_number' => $patient->MR_PAT_ID_NO,
-                'full_name' => $patient->MR_PAT_FULL_NAME,
-                'gender' => $patient->MR_PAT_GENDER,
-                'dob' => $patient->MR_PAT_DOB,
-                'phone' => $patient->MR_PAT_PHONE,
+                'code' => $patient->MRP_PATREC_CODE,
+                'id_number' => $patient->MRP_ID,
+                'full_name' => $patient->full_name,
+                'gender' => $patient->sex_label ?? 'غير معروف',
+                'dob' => $patient->MRP_DOB?->toDateString(),
+                'phone' => $patient->MRP_MOBILE_NO,
             ],
             'admission' => $result['admission'],
             'has_pending_request' => $hasPendingRequest,
@@ -110,15 +112,15 @@ class RegistrationRequestController extends Controller
 
     public function store(StoreRegistrationRequest $request)
     {
-        $patient = MrPatient::where('MR_PAT_CODE', $request->validated('patient_code'))->firstOrFail();
+        $patient = MrPatient::query()->findOrFail((int) $request->validated('patient_code'));
         $userCode = Auth::user()?->PER_USER_CODE;
 
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MR_PAT_PHONE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => mb_substr($patient->full_name, 0, 150),
+            'WC_REQ_PAT_ID_SNAPSHOT' => (string) $patient->MRP_ID,
+            'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MRP_MOBILE_NO,
             'WC_REQ_NURSE_CD' => $request->validated('attending_nurse_code'),
             'WC_REQ_ENTRY_USER_CD' => $userCode,
             'WC_REQ_STATUS' => 'PENDING',
@@ -131,8 +133,8 @@ class RegistrationRequestController extends Controller
 
     public function show(WcRequestReg $requestModel)
     {
-        $requestModel->load(['patient', 'nurse', 'entryUser', 'reviewer']);
-        $employees = PerEmployee::orderBy('PER_EMP_FULL_NAME')->get();
+        $requestModel->load(['patient.sex', 'nurse', 'entryUser', 'reviewer']);
+        $staff = Employee::pickLists();
         $departments = WcDepartment::where('WC_DEPT_IS_ACTIVE', 1)->get();
         $procedures = WcProcedure::where('WC_PROC_IS_ACTIVE', 1)->get();
         $woundTypes = WcWoundType::where('WC_WTYPE_IS_ACTIVE', 1)->get();
@@ -148,7 +150,7 @@ class RegistrationRequestController extends Controller
 
         return view('requests.show', [
             'request' => $requestModel,
-            'employees' => $employees,
+            ...$staff,
             'departments' => $departments,
             'procedures' => $procedures,
             'woundTypes' => $woundTypes,
@@ -166,8 +168,8 @@ class RegistrationRequestController extends Controller
             return redirect()->back()->with('error', 'لا يمكن بدء الزيارة لطلب ليس في حالة قيد الانتظار');
         }
 
-        $clinicNurseCode = $request->input('clinic_nurse_code')
-            ?? PerEmployee::first()?->PER_EMP_CODE;
+        $clinicNurseCode = HospitalCode::parse($request->input('clinic_nurse_code'))
+            ?? Employee::query()->active()->inRole(EmployeeRole::Nurse)->value('EMP_SERIAL');
 
         $requestModel->update([
             'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
@@ -217,9 +219,9 @@ class RegistrationRequestController extends Controller
             return redirect()->back()->with('error', 'طلب التسجيل هذا قد تم البت فيه سابقاً');
         }
 
-        $clinicNurseCode = $request->input('clinic_nurse_code')
+        $clinicNurseCode = HospitalCode::parse($request->input('clinic_nurse_code'))
             ?? $requestModel->WC_REQ_REVIEWED_BY_CD
-            ?? PerEmployee::first()?->PER_EMP_CODE;
+            ?? Employee::query()->active()->inRole(EmployeeRole::Nurse)->value('EMP_SERIAL');
 
         $notes = $requestModel->WC_REQ_NOTES
             ? $requestModel->WC_REQ_NOTES."\n[سبب عدم الأهلية]: ".$request->validated('reason')

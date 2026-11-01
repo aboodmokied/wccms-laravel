@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcDepartment;
 use App\Models\WcRegistration;
@@ -19,7 +19,7 @@ class RegistrationListingTest extends TestCase
 
     private User $nurseUser;
 
-    private PerEmployee $nurseEmployee;
+    private Employee $nurseEmployee;
 
     private WcDepartment $department;
 
@@ -36,12 +36,9 @@ class RegistrationListingTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->nurseEmployee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض فحص تجريبي',
-        ]);
+        $this->nurseEmployee = Employee::factory()->named('ممرض فحص تجريبي')->create();
 
-        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE]);
+        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->EMP_SERIAL]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),
@@ -59,19 +56,16 @@ class RegistrationListingTest extends TestCase
 
     public function test_can_list_active_registrations_by_default(): void
     {
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '100200300',
-            'MR_PAT_FULL_NAME' => 'أحمد محمود علي',
-            'MR_PAT_GENDER' => 'MALE',
+        $patient = MrPatient::factory()->male()->named('أحمد محمود علي')->create([
+            'MRP_ID' => 100200300,
         ]);
 
         $request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -80,10 +74,10 @@ class RegistrationListingTest extends TestCase
         $registration = WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -97,19 +91,16 @@ class RegistrationListingTest extends TestCase
 
     public function test_can_filter_discharged_registrations(): void
     {
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '999888777',
-            'MR_PAT_FULL_NAME' => 'فاطمة خليل',
-            'MR_PAT_GENDER' => 'FEMALE',
+        $patient = MrPatient::factory()->female()->named('فاطمة خليل')->create([
+            'MRP_ID' => 999888777,
         ]);
 
         $request = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -118,14 +109,14 @@ class RegistrationListingTest extends TestCase
         WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $request->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'DISCHARGED',
             'WC_REG_DISCHARGED_AT' => now(),
-            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE,
+            'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
         ]);
 
         $response = $this->call('GET', '/registrations', ['status' => 'DISCHARGED'], ['hospital_token' => $this->jwtToken]);

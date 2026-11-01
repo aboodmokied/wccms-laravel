@@ -84,8 +84,8 @@
                         <tr>
                             <td>
                                 <div class="d-flex flex-column">
-                                    <span class="fw-bold text-dark fs-6">{{ $reg->patient?->MR_PAT_FULL_NAME ?? 'غير محدد' }}</span>
-                                    <span class="text-muted fs-7">رقم الهوية: {{ $reg->patient?->MR_PAT_ID_NO }}</span>
+                                    <span class="fw-bold text-dark fs-6">{{ $reg->patient?->full_name ?? 'غير محدد' }}</span>
+                                    <span class="text-muted fs-7">رقم الهوية: {{ $reg->patient?->MRP_ID }}</span>
                                 </div>
                             </td>
                             <td>
@@ -100,7 +100,7 @@
                             </td>
                             <td>
                                 <span class="text-secondary fs-7">
-                                    {{ $reg->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}
+                                    {{ $reg->nurse?->full_name ?? 'غير محدد' }}
                                 </span>
                             </td>
                             <td>

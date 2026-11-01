@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHospital;
 use App\Models\Concerns\HasDbFirstAttributes;
 use Illuminate\Database\Eloquent\Model;
 
 class WcDailyReview extends Model
 {
-    use HasDbFirstAttributes;
+    use BelongsToHospital, HasDbFirstAttributes;
+
+    public const HOSPITAL_NO_COLUMN = 'WC_DREV_HOS_NO';
 
     protected $table = 'wc_daily_review_tb';
 
@@ -29,12 +32,25 @@ class WcDailyReview extends Model
         'WC_DREV_OVERALL_STATUS',
         'WC_DREV_GENERAL_NOTES',
         'WC_DREV_SUBMISSION_KEY',
+        'WC_DREV_HOS_NO',
     ];
 
     protected function casts(): array
     {
         return [
             'WC_DREV_VISIT_DATE' => 'datetime',
+        ];
+    }
+
+    /**
+     * Patient and employee codes on this row, checked against the configured hospital before every save.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    protected function hospitalLinks(): array
+    {
+        return [
+            'WC_DREV_NURSE_CD' => Employee::class,
         ];
     }
 
@@ -50,7 +66,7 @@ class WcDailyReview extends Model
 
     public function nurse()
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_DREV_NURSE_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_DREV_NURSE_CD', 'EMP_SERIAL');
     }
 
     public function entryUser()

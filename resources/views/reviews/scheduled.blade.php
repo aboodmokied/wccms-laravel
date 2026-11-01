@@ -113,10 +113,10 @@
                                 <tr>
                                     <td>
                                         <div class="fw-bold text-dark">
-                                            {{ $item->registration?->patient?->MR_PAT_FULL_NAME ?? 'غير محدد' }}
+                                            {{ $item->registration?->patient?->full_name ?? 'غير محدد' }}
                                         </div>
                                         <div class="text-muted small">
-                                            رقم الهوية: {{ $item->registration?->patient?->MR_PAT_NATIONAL_ID ?? $item->registration?->patient?->MR_PAT_ID_NO ?? '-' }}
+                                            رقم الهوية: {{ $item->registration?->patient?->MRP_ID ?? '-' }}
                                         </div>
                                     </td>
                                     <td>

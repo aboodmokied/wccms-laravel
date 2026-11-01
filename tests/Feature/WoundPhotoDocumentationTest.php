@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\PerUser;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
@@ -27,7 +27,7 @@ class WoundPhotoDocumentationTest extends TestCase
 
     protected PerUser $user;
 
-    protected PerEmployee $employee;
+    protected Employee $employee;
 
     protected WcDepartment $department;
 
@@ -50,14 +50,9 @@ class WoundPhotoDocumentationTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->employee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'Nurse Sarah',
-            'PER_EMP_JOB_TITLE' => 'Nurse Specialist',
-            'PER_EMP_IS_ACTIVE' => 1,
-        ]);
+        $this->employee = Employee::factory()->named('Nurse Sarah')->create();
 
-        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->EMP_SERIAL]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),
@@ -97,19 +92,16 @@ class WoundPhotoDocumentationTest extends TestCase
         Storage::fake('public');
         $token = $this->generateJwt('test_nurse');
 
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '123456789',
-            'MR_PAT_FULL_NAME' => 'John Doe',
-            'MR_PAT_GENDER' => 'MALE',
+        $patient = MrPatient::factory()->male()->named('John Doe')->create([
+            'MRP_ID' => 123456789,
         ]);
 
         $requestModel = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -119,7 +111,7 @@ class WoundPhotoDocumentationTest extends TestCase
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('requests.accept', $requestModel->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+                'clinic_nurse_code' => $this->employee->EMP_SERIAL,
                 'department_code' => $this->department->WC_DEPT_CODE,
                 'has_allergies' => false,
                 'no_comorbidities' => true,
@@ -139,7 +131,7 @@ class WoundPhotoDocumentationTest extends TestCase
 
         $this->assertDatabaseHas('wc_wound_photo_tb', [
             'WC_PHOTO_STAGE' => 'INITIAL',
-            'WC_PHOTO_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_PHOTO_NURSE_CD' => $this->employee->EMP_SERIAL,
         ]);
 
         $photo = WcWoundPhoto::first();
@@ -152,19 +144,16 @@ class WoundPhotoDocumentationTest extends TestCase
         Storage::fake('public');
         $token = $this->generateJwt('test_nurse');
 
-        $patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '987654321',
-            'MR_PAT_FULL_NAME' => 'Jane Smith',
-            'MR_PAT_GENDER' => 'FEMALE',
+        $patient = MrPatient::factory()->female()->named('Jane Smith')->create([
+            'MRP_ID' => 987654321,
         ]);
 
         $requestModel = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'ACCEPTED',
             'WC_REQ_CREATED_AT' => now(),
@@ -173,10 +162,10 @@ class WoundPhotoDocumentationTest extends TestCase
         $registration = WcRegistration::create([
             'WC_REG_CODE' => (string) Str::uuid(),
             'WC_REG_REQUEST_CD' => $requestModel->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_DATE' => now(),
-            'WC_REG_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REG_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REG_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -186,7 +175,7 @@ class WoundPhotoDocumentationTest extends TestCase
             'WC_RDIAG_REGISTRATION_CD' => $registration->WC_REG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $this->woundType->WC_WTYPE_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $this->diagnosis->WC_DIAG_CODE,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $this->employee->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $this->employee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
         ]);
 
@@ -195,7 +184,7 @@ class WoundPhotoDocumentationTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('registrations.daily-reviews.store', $registration->WC_REG_CODE), [
                 'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->employee->PER_EMP_CODE,
+                'nurse_code' => $this->employee->EMP_SERIAL,
                 'overall_status' => 'WORSENED_STAY',
                 'general_notes' => 'متابعة سريرية للجرح',
                 'details' => [

@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\EmployeeRole;
 use App\Http\Requests\Concerns\ValidatesWoundAssessment;
-use App\Models\PerEmployee;
 use App\Models\WcRegistration;
+use App\Rules\HospitalEmployeeExists;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,9 +23,9 @@ class StoreDailyReviewRequest extends FormRequest
     {
         return [
             'submission_key' => ['required', 'uuid'],
-            'nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
-            'wct_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
-            'doctor_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'nurse_code' => ['required', new HospitalEmployeeExists(EmployeeRole::Nurse)],
+            'wct_employee_code' => ['nullable', new HospitalEmployeeExists(EmployeeRole::WoundCareTeam)],
+            'doctor_employee_code' => ['nullable', new HospitalEmployeeExists(EmployeeRole::Doctor)],
             'overall_status' => ['required', Rule::in(['IMPROVED_DISCHARGE', 'IMPROVED_SCHEDULED', 'IMPROVED_STAY', 'WORSENED_SCHEDULED', 'WORSENED_ADMISSION', 'WORSENED_STAY', 'DEATH'])],
             'general_notes' => ['nullable', 'string', 'max:5000'],
             'next_visit_date' => ['nullable', 'date', 'after_or_equal:today'],

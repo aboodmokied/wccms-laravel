@@ -52,12 +52,7 @@ class ScheduledReviewService
 
         if (! empty($filters['search'])) {
             $search = trim($filters['search']);
-            $query->whereHas('registration.patient', function ($q) use ($search) {
-                $q->where('MR_PAT_FULL_NAME', 'like', "%{$search}%")
-                    ->orWhere('MR_PAT_NATIONAL_ID', 'like', "%{$search}%")
-                    ->orWhere('MR_PAT_ID_NO', 'like', "%{$search}%")
-                    ->orWhere('MR_PAT_HOSPITAL_PATIENT_ID', 'like', "%{$search}%");
-            });
+            $query->whereHas('registration.patient', fn ($q) => $q->matching($search));
         }
 
         if (! empty($filters['date_from'])) {

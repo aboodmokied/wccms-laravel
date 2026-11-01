@@ -13,7 +13,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label text-muted small">اسم المريض</label>
-                        <div class="fw-bold text-dark fs-6">{{ $item->registration?->patient?->MR_PAT_FULL_NAME ?? 'غير محدد' }}</div>
+                        <div class="fw-bold text-dark fs-6">{{ $item->registration?->patient?->full_name ?? 'غير محدد' }}</div>
                     </div>
                     <div class="mb-3">
                         <label for="scheduled_date_{{ $item->WC_SREV_CODE }}" class="form-label fw-bold">تاريخ ووقت الموعد الجديد <span class="text-danger">*</span></label>

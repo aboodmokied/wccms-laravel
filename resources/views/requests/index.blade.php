@@ -58,8 +58,8 @@
                                 <div class="small text-muted">الطلب: <bdi>REQ-{{ substr($req->WC_REQ_CODE, 0, 8) }}</bdi></div>
                             </td>
                             <td>
-                                <div>{{ $req->nurse?->PER_EMP_FULL_NAME ?? 'غير محدد' }}</div>
-                                <div class="small text-muted">المراجع: {{ $req->reviewer?->PER_EMP_FULL_NAME ?? 'لم تبدأ الزيارة' }}</div>
+                                <div>{{ $req->nurse?->full_name ?? 'غير محدد' }}</div>
+                                <div class="small text-muted">المراجع: {{ $req->reviewer?->full_name ?? 'لم تبدأ الزيارة' }}</div>
                             </td>
                             <td><x-status-badge :status="$req->WC_REQ_STATUS" /></td>
                             <td>{{ \Carbon\Carbon::parse($req->WC_REQ_CREATED_AT)->format('Y-m-d H:i') }}</td>

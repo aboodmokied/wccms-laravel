@@ -2,12 +2,12 @@
 
 namespace App\Http\Requests;
 
-use App\Models\MrPatient;
-use App\Models\PerEmployee;
+use App\Enums\EmployeeRole;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
+use App\Rules\HospitalEmployeeExists;
+use App\Rules\HospitalPatientExists;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreRegistrationRequest extends FormRequest
 {
@@ -21,8 +21,7 @@ class StoreRegistrationRequest extends FormRequest
         return [
             'patient_code' => [
                 'required',
-                'string',
-                Rule::exists(MrPatient::class, 'MR_PAT_CODE'),
+                new HospitalPatientExists,
                 function ($attribute, $value, $fail) {
                     $hasPendingRequest = WcRequestReg::where('WC_REQ_PATIENT_CD', $value)
                         ->whereIn('WC_REQ_STATUS', ['PENDING', 'VISIT_IN_PROGRESS'])
@@ -43,7 +42,7 @@ class StoreRegistrationRequest extends FormRequest
                     }
                 },
             ],
-            'attending_nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'attending_nurse_code' => ['required', new HospitalEmployeeExists(EmployeeRole::Nurse)],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

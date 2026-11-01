@@ -55,7 +55,7 @@ class WcDailyReviewDetail extends Model
 
     public function woundPhotos()
     {
-        return $this->hasMany(WcWoundPhoto::class, 'WC_PHOTO_DAILY_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
+        return $this->hasMany(WcWoundPhoto::class, 'WC_PHOTO_REVIEW_DETAIL_CD', 'WC_REVD_CODE');
     }
 
     public function assessment(): HasOne

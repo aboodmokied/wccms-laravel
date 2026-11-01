@@ -27,7 +27,7 @@
             <button class="m8-header-user" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="قائمة الحساب">
                 <div class="d-flex flex-column text-end d-none d-md-flex">
                     <span class="fw-semibold" style="font-size: 0.82rem;">
-                        {{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
+                        {{ auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
                     </span>
                     <span class="text-muted" style="font-size: 0.7rem;">
                         @if(auth()->user()?->PER_USER_ROLE === 'ADMIN') مسؤول النظام
@@ -36,13 +36,13 @@
                     </span>
                 </div>
                 <div class="m8-header-avatar">
-                    {{ mb_substr(auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
+                    {{ mb_substr(auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
                 </div>
                 <i class="bi bi-chevron-down text-muted d-none d-md-inline" style="font-size: 0.65rem;"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-1 py-1" style="min-width: 220px;">
                 <li class="px-3 py-2 border-bottom bg-light">
-                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ auth()->user()?->employee?->PER_EMP_FULL_NAME ?? auth()->user()?->PER_USER_USERNAME }}</div>
+                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME }}</div>
                     <div class="text-muted" style="font-size: 0.72rem;">{{ auth()->user()?->PER_USER_USERNAME }}</div>
                 </li>
                 <li><a class="dropdown-item py-2" href="{{ route('requests.my') }}"><i class="bi bi-journal-text me-2 text-primary"></i>طلباتي</a></li>

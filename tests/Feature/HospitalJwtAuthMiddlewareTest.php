@@ -92,12 +92,12 @@ class HospitalJwtAuthMiddlewareTest extends TestCase
             ->get('/admin')
             ->assertOk();
 
-        $this->assertDatabaseHas('per_users_tb', [
+        $this->assertDatabaseHas('wc_users_tb', [
             'PER_USER_USERNAME' => 'new_nurse_01',
             'PER_USER_ROLE' => 'NURSE',
             'PER_USER_IS_ACTIVE' => 1,
         ]);
-        $this->assertDatabaseCount('per_users_tb', 1);
+        $this->assertDatabaseCount('wc_users_tb', 1);
     }
 
     public function test_deactivated_account_returns_403_access_disabled(): void

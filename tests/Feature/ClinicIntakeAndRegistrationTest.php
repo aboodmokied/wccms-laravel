@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\User;
 use App\Models\WcAssessmentChoice;
 use App\Models\WcDepartment;
@@ -25,7 +25,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     private User $user;
 
-    private PerEmployee $employee;
+    private Employee $employee;
 
     private MrPatient $patient;
 
@@ -46,22 +46,14 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->employee = PerEmployee::create([
-            'PER_EMP_CODE' => (string) Str::uuid(),
-            'PER_EMP_FULL_NAME' => 'ممرض عيادة الجروح',
-            'PER_EMP_JOB_TITLE' => 'ممرض متخصص',
-        ]);
+        $this->employee = Employee::factory()->named('ممرض عيادة الجروح')->create();
 
-        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->EMP_SERIAL]);
 
-        $this->patient = MrPatient::create([
-            'MR_PAT_CODE' => (string) Str::uuid(),
-            'MR_PAT_ID_NO' => '401234567',
-            'MR_PAT_FULL_NAME' => 'محمود مصطفى طه',
-            'MR_PAT_PHONE' => '0599223344',
-            'MR_PAT_GENDER' => 'MALE',
-            'MR_PAT_DOB' => '1990-01-01',
-            'MR_PAT_LAST_SYNCED_AT' => now(),
+        $this->patient = MrPatient::factory()->male()->named('محمود مصطفى طه')->create([
+            'MRP_ID' => 401234567,
+            'MRP_MOBILE_NO' => '0599223344',
+            'MRP_DOB' => '1990-01-01',
         ]);
 
         $this->department = WcDepartment::create([
@@ -89,10 +81,10 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -111,10 +103,10 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_CREATED_AT' => now(),
@@ -122,7 +114,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('requests.visit', $req->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+                'clinic_nurse_code' => $this->employee->EMP_SERIAL,
             ]);
 
         $response->assertStatus(302);
@@ -131,7 +123,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         $this->assertDatabaseHas('wc_request_reg_tb', [
             'WC_REQ_CODE' => $req->WC_REQ_CODE,
             'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
-            'WC_REQ_REVIEWED_BY_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_REVIEWED_BY_CD' => $this->employee->EMP_SERIAL,
         ]);
     }
 
@@ -141,13 +133,13 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
-            'WC_REQ_REVIEWED_BY_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_REVIEWED_BY_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
@@ -163,7 +155,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $this->assertDatabaseHas('wc_registration_tb', [
             'WC_REG_REQUEST_CD' => $req->WC_REQ_CODE,
-            'WC_REG_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REG_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REG_DEPARTMENT_CD' => $this->department->WC_DEPT_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
@@ -195,13 +187,13 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
-            'WC_REQ_REVIEWED_BY_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_REVIEWED_BY_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
@@ -223,7 +215,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_RDIAG_REGISTRATION_CD' => $registration->WC_REG_CODE,
             'WC_RDIAG_WOUND_TYPE_CD' => $woundType->WC_WTYPE_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $diagnosis->WC_DIAG_CODE,
-            'WC_RDIAG_CLINICAL_EMP_CD' => $this->employee->PER_EMP_CODE,
+            'WC_RDIAG_CLINICAL_EMP_CD' => $this->employee->EMP_SERIAL,
         ]);
     }
 
@@ -233,10 +225,10 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
             'WC_REQ_CREATED_AT' => now(),
@@ -245,7 +237,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->post(route('requests.ineligible', $req->WC_REQ_CODE), [
                 'reason' => 'الحالة السريرية للمريض لا تتطلب متابعة العيادة المتخصصة',
-                'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+                'clinic_nurse_code' => $this->employee->EMP_SERIAL,
             ]);
 
         $response->assertStatus(302);
@@ -281,13 +273,13 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
-            'WC_REQ_PATIENT_CD' => $this->patient->MR_PAT_CODE,
+            'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'محمود مصطفى طه',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
-            'WC_REQ_NURSE_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REQ_STATUS' => 'VISIT_IN_PROGRESS',
-            'WC_REQ_REVIEWED_BY_CD' => $this->employee->PER_EMP_CODE,
+            'WC_REQ_REVIEWED_BY_CD' => $this->employee->EMP_SERIAL,
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
@@ -330,7 +322,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         return [
             ...$shared,
             'department_code' => $this->department->WC_DEPT_CODE,
-            'clinic_nurse_code' => $this->employee->PER_EMP_CODE,
+            'clinic_nurse_code' => $this->employee->EMP_SERIAL,
             'has_allergies' => false,
             'no_comorbidities' => true,
             'next_visit_date' => now()->addWeek()->toDateString(),

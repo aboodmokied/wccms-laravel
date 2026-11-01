@@ -3,13 +3,18 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasDbFirstAttributes;
+use App\Models\Concerns\LinksHospitalEmployee;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class PerUser extends Authenticatable
 {
-    use HasDbFirstAttributes;
+    use HasDbFirstAttributes, LinksHospitalEmployee;
 
-    protected $table = 'per_users_tb';
+    public const HOSPITAL_NO_COLUMN = 'PER_USER_HOS_NO';
+
+    protected static bool $scopedToHospital = false;
+
+    protected $table = 'wc_users_tb';
 
     protected $primaryKey = 'PER_USER_CODE';
 
@@ -26,14 +31,10 @@ class PerUser extends Authenticatable
         'PER_USER_ROLE',
         'PER_USER_IS_ACTIVE',
         'PER_USER_EMP_CD',
+        'PER_USER_HOS_NO',
     ];
 
     protected $hidden = [
         'PER_USER_PASSWORD',
     ];
-
-    public function employee()
-    {
-        return $this->belongsTo(PerEmployee::class, 'PER_USER_EMP_CD', 'PER_EMP_CODE');
-    }
 }

@@ -95,6 +95,7 @@ return [
         'MALE' => 'Male',
         'FEMALE' => 'Female',
         'UNSPECIFIED' => 'Unspecified',
+        'UNKNOWN' => 'Unknown',
     ],
 
     /** Past medical history recorded as "no comorbidities" (workbook value). */

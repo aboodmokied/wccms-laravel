@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Models\PerEmployee;
+use App\Enums\EmployeeRole;
+use App\Rules\HospitalEmployeeExists;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class DischargeRegistrationRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ class DischargeRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'discharging_nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'discharging_nurse_code' => ['required', new HospitalEmployeeExists(EmployeeRole::Nurse)],
         ];
     }
 

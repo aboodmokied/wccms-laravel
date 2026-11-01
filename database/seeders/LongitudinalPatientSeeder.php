@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Employee;
 use App\Models\MrPatient;
-use App\Models\PerEmployee;
 use App\Models\PerUser;
+use App\Models\SexLookup;
 use App\Models\WcDailyReview;
 use App\Models\WcDailyReviewDetail;
 use App\Models\WcDepartment;
@@ -18,18 +19,36 @@ use App\Models\WcRequestReg;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundPhoto;
 use App\Models\WcWoundType;
+use App\Support\Hospital;
+use App\Support\LocalHospitalCopy;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * One demo patient with a long wound history. The patient and the nurse are rows of the LOCAL copies of
+ * MR_PATIENT_TB and EMPLOYEE_TB in the configured hospital (HOSPITAL_NO); with HOSPITAL_SCHEMA set those tables are
+ * the real hospital ones, which WCCMS never writes to, so the seeder does nothing.
+ */
 class LongitudinalPatientSeeder extends Seeder
 {
-    public const PATIENT_CODE = '11333333-3333-4333-8333-333333333333';
+    /** MR_PATIENT_TB.MRP_PATREC_CODE (medical record number) of the demo patient. */
+    public const PATIENT_CODE = 900001;
 
-    public const PATIENT_ID = 'PAT-LONG-001';
+    /** MR_PATIENT_TB.MRP_ID (document number) of the demo patient. */
+    public const PATIENT_ID = 400900001;
+
+    /** EMPLOYEE_TB.EMP_SERIAL of the demo nurse. */
+    public const EMPLOYEE_SERIAL = 9101;
 
     public function run(): void
     {
+        if (Hospital::isExternal()) {
+            $this->command?->warn('LongitudinalPatientSeeder skipped: HOSPITAL_SCHEMA points at the real hospital tables, which WCCMS never writes to.');
+
+            return;
+        }
+
         $this->call([
             WcDepartmentSeeder::class,
             WcDiagnosisSeeder::class,
@@ -68,38 +87,35 @@ class LongitudinalPatientSeeder extends Seeder
                 'PER_USER_IS_ACTIVE' => 1,
             ]);
 
-            $clinicalEmployee = $entryUser->employee ?? PerEmployee::query()->firstOrCreate(
-                ['PER_EMP_CODE' => '11222222-2222-4222-8222-222222222222'],
+            // Hospital rows are only created when missing, never updated (they are the hospital's data).
+            $clinicalEmployee = $entryUser->employee ?? LocalHospitalCopy::firstOrInsert(
+                Employee::class,
+                ['EMP_SERIAL' => self::EMPLOYEE_SERIAL],
                 [
-                    'PER_EMP_FULL_NAME' => 'الممرضة التجريبية للسجل الطولي',
-                    'PER_EMP_JOB_TITLE' => 'ممرضة عناية بالجروح',
+                    'EMP_FIRST_NAME_AR' => 'الممرضة التجريبية',
+                    'EMP_LAST_NAME_AR' => 'للسجل الطولي',
+                    'EMP_ACTIVE' => config('hospital.employees.active_value'),
                 ],
             );
-            $clinicalEmployee->update([
-                'PER_EMP_FULL_NAME' => 'الممرضة التجريبية للسجل الطولي',
-                'PER_EMP_JOB_TITLE' => 'ممرضة عناية بالجروح',
-            ]);
-            $entryUser->update(['PER_USER_EMP_CD' => $clinicalEmployee->PER_EMP_CODE]);
+            $entryUser->update(['PER_USER_EMP_CD' => $clinicalEmployee->EMP_SERIAL, 'PER_USER_HOS_NO' => Hospital::number()]);
 
-            $patient = MrPatient::query()->where('MR_PAT_ID_NO', self::PATIENT_ID)->first();
+            // Demo code only: WCCMS never assumes which code is male; reports classify by SEX_NAME_EN.
+            $male = SexLookup::query()->where('SEX_NAME_EN', config('hospital.sex.male_name_en'))->first()
+                ?? LocalHospitalCopy::firstOrInsert(SexLookup::class, ['SEX_CODE' => 2], ['SEX_NAME_AR' => 'ذكر', 'SEX_NAME_EN' => config('hospital.sex.male_name_en')]);
 
-            if ($patient === null) {
-                $patient = MrPatient::query()->create([
-                    'MR_PAT_CODE' => self::PATIENT_CODE,
-                    'MR_PAT_ID_NO' => self::PATIENT_ID,
-                    'MR_PAT_FULL_NAME' => 'مريض تجريبي — سجل طولي',
-                    'MR_PAT_PHONE' => '0599001100',
-                    'MR_PAT_GENDER' => 'MALE',
-                    'MR_PAT_DOB' => '1978-04-15',
-                ]);
-            } else {
-                $patient->update([
-                    'MR_PAT_FULL_NAME' => 'مريض تجريبي — سجل طولي',
-                    'MR_PAT_PHONE' => '0599001100',
-                    'MR_PAT_GENDER' => 'MALE',
-                    'MR_PAT_DOB' => '1978-04-15',
-                ]);
-            }
+            $patient = LocalHospitalCopy::firstOrInsert(
+                MrPatient::class,
+                ['MRP_PATREC_CODE' => self::PATIENT_CODE],
+                [
+                    'MRP_ID_TYPE_CD' => 1,
+                    'MRP_ID' => self::PATIENT_ID,
+                    'MRP_FIRST_NAME_AR' => 'مريض تجريبي',
+                    'MRP_LAST_NAME_AR' => 'سجل طولي',
+                    'MRP_MOBILE_NO' => '0599001100',
+                    'MRP_SEX_CD' => $male->SEX_CODE,
+                    'MRP_DOB' => '1978-04-15',
+                ],
+            );
 
             $currentOpenedAt = now()->subDays(24)->setTime(9, 0);
             $historicalOpenedAt = now()->subDays(220)->setTime(9, 0);
@@ -108,13 +124,13 @@ class LongitudinalPatientSeeder extends Seeder
             $currentRequest = WcRequestReg::query()->updateOrCreate(
                 ['WC_REQ_CODE' => '11444444-4444-4444-8444-444444444441'],
                 [
-                    'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-                    'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-                    'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-                    'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MR_PAT_PHONE,
-                    'WC_REQ_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+                    'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+                    'WC_REQ_PAT_ID_SNAPSHOT' => (string) $patient->MRP_ID,
+                    'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MRP_MOBILE_NO,
+                    'WC_REQ_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_REQ_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
-                    'WC_REQ_REVIEWED_BY_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REQ_REVIEWED_BY_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_REQ_STATUS' => 'ACCEPTED',
                     'WC_REQ_NOTES' => 'طلب التسجيل الحالي لاختبار السجل الطبي الطولي.',
                     'WC_REQ_CREATED_AT' => $currentOpenedAt->copy()->subDay(),
@@ -125,13 +141,13 @@ class LongitudinalPatientSeeder extends Seeder
             $historicalRequest = WcRequestReg::query()->updateOrCreate(
                 ['WC_REQ_CODE' => '11444444-4444-4444-8444-444444444442'],
                 [
-                    'WC_REQ_PATIENT_CD' => $patient->MR_PAT_CODE,
-                    'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->MR_PAT_FULL_NAME,
-                    'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MR_PAT_ID_NO,
-                    'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MR_PAT_PHONE,
-                    'WC_REQ_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+                    'WC_REQ_PAT_NAME_SNAPSHOT' => $patient->full_name,
+                    'WC_REQ_PAT_ID_SNAPSHOT' => (string) $patient->MRP_ID,
+                    'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MRP_MOBILE_NO,
+                    'WC_REQ_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_REQ_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
-                    'WC_REQ_REVIEWED_BY_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REQ_REVIEWED_BY_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_REQ_STATUS' => 'ACCEPTED',
                     'WC_REQ_NOTES' => 'طلب تسجيل سابق مكتمل لاختبار التاريخ الطبي.',
                     'WC_REQ_CREATED_AT' => $historicalOpenedAt->copy()->subDay(),
@@ -143,12 +159,12 @@ class LongitudinalPatientSeeder extends Seeder
                 ['WC_REG_CODE' => '11555555-5555-4555-8555-555555555551'],
                 [
                     'WC_REG_REQUEST_CD' => $currentRequest->WC_REQ_CODE,
-                    'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+                    'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
                     'WC_REG_DEPARTMENT_CD' => $department->WC_DEPT_CODE,
                     'WC_REG_PROCEDURE_CD' => $procedure->WC_PROC_CODE,
                     'WC_REG_PMH_NOTES' => 'سكري من النوع الثاني وضغط دم تحت السيطرة.',
                     'WC_REG_DATE' => $currentOpenedAt,
-                    'WC_REG_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REG_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_REG_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                     'WC_REG_STATUS' => 'ACTIVE',
                     'WC_REG_DISCHARGED_AT' => null,
@@ -160,16 +176,16 @@ class LongitudinalPatientSeeder extends Seeder
                 ['WC_REG_CODE' => '11555555-5555-4555-8555-555555555552'],
                 [
                     'WC_REG_REQUEST_CD' => $historicalRequest->WC_REQ_CODE,
-                    'WC_REG_PATIENT_CD' => $patient->MR_PAT_CODE,
+                    'WC_REG_PATIENT_CD' => $patient->MRP_PATREC_CODE,
                     'WC_REG_DEPARTMENT_CD' => $department->WC_DEPT_CODE,
                     'WC_REG_PROCEDURE_CD' => $procedure->WC_PROC_CODE,
                     'WC_REG_PMH_NOTES' => 'تسجيل سابق لعلاج جرح جراحي حتى اكتمال الالتئام.',
                     'WC_REG_DATE' => $historicalOpenedAt,
-                    'WC_REG_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REG_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_REG_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                     'WC_REG_STATUS' => 'DISCHARGED',
                     'WC_REG_DISCHARGED_AT' => $historicalDischargedAt,
-                    'WC_REG_DISCHARGED_BY_EMP_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_REG_DISCHARGED_BY_EMP_CD' => $clinicalEmployee->EMP_SERIAL,
                 ],
             );
 
@@ -180,7 +196,7 @@ class LongitudinalPatientSeeder extends Seeder
                     'WC_RDIAG_DIAGNOSIS_CD' => $currentDiagnosis->WC_DIAG_CODE,
                     'WC_RDIAG_WOUND_TYPE_CD' => $currentWoundType->WC_WTYPE_CODE,
                     'WC_RDIAG_DESCRIPTION' => 'جرح في القدم اليمنى، ما زال تحت المتابعة والغيار الدوري.',
-                    'WC_RDIAG_CLINICAL_EMP_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_RDIAG_CLINICAL_EMP_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_RDIAG_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                 ],
             );
@@ -192,7 +208,7 @@ class LongitudinalPatientSeeder extends Seeder
                     'WC_RDIAG_DIAGNOSIS_CD' => $historicalDiagnosis->WC_DIAG_CODE,
                     'WC_RDIAG_WOUND_TYPE_CD' => $historicalWoundType->WC_WTYPE_CODE,
                     'WC_RDIAG_DESCRIPTION' => 'جرح جراحي سابق اكتمل التئامه قبل تخريج المريض.',
-                    'WC_RDIAG_CLINICAL_EMP_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_RDIAG_CLINICAL_EMP_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_RDIAG_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                 ],
             );
@@ -245,7 +261,7 @@ class LongitudinalPatientSeeder extends Seeder
                     'WC_DREV_REGISTRATION_CD' => $currentRegistration->WC_REG_CODE,
                     'WC_DREV_SCHEDULED_REVIEW_CD' => null,
                     'WC_DREV_VISIT_DATE' => now()->subDays(18)->setTime(10, 0),
-                    'WC_DREV_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_DREV_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_DREV_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                     'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
                     'WC_DREV_GENERAL_NOTES' => 'كانت الإفرازات أكثر في بداية التسجيل الحالي.',
@@ -258,7 +274,7 @@ class LongitudinalPatientSeeder extends Seeder
                     'WC_DREV_REGISTRATION_CD' => $currentRegistration->WC_REG_CODE,
                     'WC_DREV_SCHEDULED_REVIEW_CD' => null,
                     'WC_DREV_VISIT_DATE' => now()->subDays(4)->setTime(10, 0),
-                    'WC_DREV_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_DREV_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_DREV_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                     'WC_DREV_OVERALL_STATUS' => 'IMPROVED_STAY',
                     'WC_DREV_GENERAL_NOTES' => 'انخفاض الإفرازات وتحسن الأنسجة في المراجعة الأخيرة.',
@@ -271,7 +287,7 @@ class LongitudinalPatientSeeder extends Seeder
                     'WC_DREV_REGISTRATION_CD' => $historicalRegistration->WC_REG_CODE,
                     'WC_DREV_SCHEDULED_REVIEW_CD' => null,
                     'WC_DREV_VISIT_DATE' => now()->subDays(205)->setTime(11, 0),
-                    'WC_DREV_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_DREV_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_DREV_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                     'WC_DREV_OVERALL_STATUS' => 'IMPROVED_SCHEDULED',
                     'WC_DREV_GENERAL_NOTES' => 'تحسن تدريجي للجرح ضمن التسجيل السابق.',
@@ -284,7 +300,7 @@ class LongitudinalPatientSeeder extends Seeder
                     'WC_DREV_REGISTRATION_CD' => $historicalRegistration->WC_REG_CODE,
                     'WC_DREV_SCHEDULED_REVIEW_CD' => $historicalAppointment->WC_SREV_CODE,
                     'WC_DREV_VISIT_DATE' => $historicalDischargedAt,
-                    'WC_DREV_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                    'WC_DREV_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                     'WC_DREV_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
                     'WC_DREV_OVERALL_STATUS' => 'IMPROVED_DISCHARGE',
                     'WC_DREV_GENERAL_NOTES' => 'اكتمل الالتئام وتم تخريج المريض من التسجيل السابق.',
@@ -401,7 +417,7 @@ class LongitudinalPatientSeeder extends Seeder
 
         $this->storeDemoImages();
 
-        $this->command?->info("Longitudinal demo patient seeded: {$patient->MR_PAT_ID_NO} ({$patient->MR_PAT_CODE})");
+        $this->command?->info("Longitudinal demo patient seeded: {$patient->MRP_ID} ({$patient->MRP_PATREC_CODE})");
     }
 
     private function seedPhoto(
@@ -412,19 +428,19 @@ class LongitudinalPatientSeeder extends Seeder
         string $path,
         string $caption,
         mixed $takenAt,
-        PerEmployee $clinicalEmployee,
+        Employee $clinicalEmployee,
         PerUser $entryUser,
     ): void {
         WcWoundPhoto::query()->updateOrCreate(
             ['WC_PHOTO_CODE' => $code],
             [
                 'WC_PHOTO_REG_DIAGNOSIS_CD' => $wound->WC_RDIAG_CODE,
-                'WC_PHOTO_DAILY_REVIEW_DETAIL_CD' => $detail?->WC_REVD_CODE,
+                'WC_PHOTO_REVIEW_DETAIL_CD' => $detail?->WC_REVD_CODE,
                 'WC_PHOTO_STAGE' => $stage,
                 'WC_PHOTO_PATH' => $path,
                 'WC_PHOTO_CAPTION' => $caption,
                 'WC_PHOTO_TAKEN_AT' => $takenAt,
-                'WC_PHOTO_NURSE_CD' => $clinicalEmployee->PER_EMP_CODE,
+                'WC_PHOTO_NURSE_CD' => $clinicalEmployee->EMP_SERIAL,
                 'WC_PHOTO_ENTRY_USER_CD' => $entryUser->PER_USER_CODE,
             ],
         );

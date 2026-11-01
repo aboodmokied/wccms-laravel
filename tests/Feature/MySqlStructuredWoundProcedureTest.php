@@ -15,13 +15,13 @@ class MySqlStructuredWoundProcedureTest extends TestCase
 
         $names = collect(DB::select(
             'SELECT ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME IN (?, ?, ?)',
-            ['SP_WC_ACCEPT_REGISTRATION_WITH_ASSESSMENTS', 'SP_WC_ADD_WOUND_WITH_ASSESSMENT', 'SP_WC_COMPLETE_REVIEW_WITH_ASSESSMENTS']
+            ['SP_WC_ACCEPT_REGISTRATION', 'SP_WC_ADD_WOUND', 'SP_WC_COMPLETE_REVIEW']
         ))->pluck('ROUTINE_NAME')->sort()->values()->all();
 
         $this->assertSame([
-            'SP_WC_ACCEPT_REGISTRATION_WITH_ASSESSMENTS',
-            'SP_WC_ADD_WOUND_WITH_ASSESSMENT',
-            'SP_WC_COMPLETE_REVIEW_WITH_ASSESSMENTS',
+            'SP_WC_ACCEPT_REGISTRATION',
+            'SP_WC_ADD_WOUND',
+            'SP_WC_COMPLETE_REVIEW',
         ], $names);
     }
 }

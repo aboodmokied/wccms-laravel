@@ -49,7 +49,7 @@ class ReadmissionReportTest extends TestCase
 
     public function test_counts_a_previous_registration_from_any_earlier_time(): void
     {
-        $patient = $this->reportPatient(['MR_PAT_ID_NO' => '']);
+        $patient = $this->reportPatient();
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2024-10-05 09:00')]);
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-11-03 09:00')]);
 

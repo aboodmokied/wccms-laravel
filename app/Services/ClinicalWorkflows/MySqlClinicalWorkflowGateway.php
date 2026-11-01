@@ -19,7 +19,7 @@ class MySqlClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
      */
     public function acceptRegistration(WcRequestReg $request, array $payload): WcRegistration
     {
-        $row = $this->call('CALL SP_WC_ACCEPT_REGISTRATION_WITH_ASSESSMENTS(?, ?)', [
+        $row = $this->call('CALL SP_WC_ACCEPT_REGISTRATION(?, ?)', [
             $request->WC_REQ_CODE,
             $this->encode($payload),
         ]);
@@ -32,7 +32,7 @@ class MySqlClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
      */
     public function addWound(WcRegistration $registration, array $payload): WcRegDiagnosis
     {
-        $row = $this->call('CALL SP_WC_ADD_WOUND_WITH_ASSESSMENT(?, ?)', [
+        $row = $this->call('CALL SP_WC_ADD_WOUND(?, ?)', [
             $registration->WC_REG_CODE,
             $this->encode($payload),
         ]);
@@ -48,7 +48,7 @@ class MySqlClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
         array $payload,
         ?WcScheduledReview $scheduledReview = null
     ): WcDailyReview {
-        $row = $this->call('CALL SP_WC_COMPLETE_REVIEW_WITH_ASSESSMENTS(?, ?, ?)', [
+        $row = $this->call('CALL SP_WC_COMPLETE_REVIEW(?, ?, ?)', [
             $registration->WC_REG_CODE,
             $scheduledReview?->WC_SREV_CODE,
             $this->encode($payload),

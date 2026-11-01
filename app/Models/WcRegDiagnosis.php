@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHospital;
 use App\Models\Concerns\HasDbFirstAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class WcRegDiagnosis extends Model
 {
-    use HasDbFirstAttributes;
+    use BelongsToHospital, HasDbFirstAttributes;
+
+    public const HOSPITAL_NO_COLUMN = 'WC_RDIAG_HOS_NO';
 
     protected $table = 'wc_reg_diagnosis_tb';
 
@@ -29,7 +32,20 @@ class WcRegDiagnosis extends Model
         'WC_RDIAG_DESCRIPTION',
         'WC_RDIAG_CLINICAL_EMP_CD',
         'WC_RDIAG_ENTRY_USER_CD',
+        'WC_RDIAG_HOS_NO',
     ];
+
+    /**
+     * Patient and employee codes on this row, checked against the configured hospital before every save.
+     *
+     * @return array<string, class-string<Model>>
+     */
+    protected function hospitalLinks(): array
+    {
+        return [
+            'WC_RDIAG_CLINICAL_EMP_CD' => Employee::class,
+        ];
+    }
 
     public function registration()
     {
@@ -48,7 +64,7 @@ class WcRegDiagnosis extends Model
 
     public function clinicalEmployee()
     {
-        return $this->belongsTo(PerEmployee::class, 'WC_RDIAG_CLINICAL_EMP_CD', 'PER_EMP_CODE');
+        return $this->belongsTo(Employee::class, 'WC_RDIAG_CLINICAL_EMP_CD', 'EMP_SERIAL');
     }
 
     public function entryUser()

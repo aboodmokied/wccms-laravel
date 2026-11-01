@@ -59,7 +59,7 @@ class ClinicalTermsDisplayTest extends StructuredWoundTestCase
     {
         [$registration, $wound] = $this->registrationWithWound();
         app(ClinicalWorkflowGatewayInterface::class)->completeReview($registration, [
-            'submission_key' => (string) Str::uuid(), 'nurse_code' => $this->employee->PER_EMP_CODE,
+            'submission_key' => (string) Str::uuid(), 'nurse_code' => $this->employee->EMP_SERIAL,
             'entry_user_code' => $this->user->PER_USER_CODE, 'overall_status' => 'IMPROVED_STAY',
             'details' => [$this->followupAssessment($wound)],
         ]);
