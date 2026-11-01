@@ -54,7 +54,9 @@ class HospitalStartupCheckTest extends TestCase
             ->expectsOutputToContain('قوائم الأطباء (من الإعداد HOSPITAL_DOCTOR_JOB_CODES) تعرض الوظائف: 2 (طبيب / Doctor)')
             ->expectsOutputToContain('اكتُشفت وظائف التمريض تلقائياً بالأسماء (تمريض، ممرض، ممرضة، Nurse، Nursing): 31 (ممرض / Nurse)')
             ->expectsOutputToContain('HOSPITAL_NURSE_JOB_CODES=31')
-            ->expectsOutputToContain('EMP_REC_CD = 1 في قوائم الأطباء')
+            ->expectsOutputToContain('الممرضون النشطون بالوظيفة: 1؛ بـ USER_TYPE = 3: 1؛ في الاثنين معاً: 1.')
+            ->expectsOutputToContain('وظائف موظفي USER_TYPE = 3: 31 (ممرض / Nurse) ×1.')
+            ->expectsOutputToContain('الموظف النشط: بلا شرط على EMP_ACTIVE في كل القوائم؛ EMP_REC_CD = 1 في كل القوائم.')
             ->expectsOutputToContain('عدد الأطباء النشطين: 1')
             ->expectsOutputToContain('عدد الممرضين النشطين: 1')
             ->expectsOutputToContain('التحذيرات: 0')
@@ -155,6 +157,49 @@ class HospitalStartupCheckTest extends TestCase
         $this->assertStringContainsString('HOSPITAL_EMP_REC_CD', $warning['fix']);
     }
 
+    public function test_warns_when_the_nursing_jobs_and_user_type_differ_a_lot(): void
+    {
+        $this->completeHospital();
+        $this->job(40, 'فني عناية', 'Care technician');
+        Employee::factory()->count(3)->create(['EMP_JOB_CD' => 40, 'USER_TYPE' => 3]);
+        // Not counted: another hospital's employee, and a former employee.
+        Employee::factory()->forHospital(2)->create(['EMP_JOB_CD' => 40, 'USER_TYPE' => 3]);
+        Employee::factory()->create(['EMP_JOB_CD' => 40, 'USER_TYPE' => 3, 'EMP_REC_CD' => 0]);
+
+        $findings = app(HospitalStartupCheck::class)->run();
+
+        $this->assertFinding($findings, 'الممرضون النشطون بالوظيفة: 1؛ بـ USER_TYPE = 3: 4؛ في الاثنين معاً: 1.');
+        $this->assertFinding($findings, '40 (فني عناية / Care technician) ×3، 31 (ممرض / Nurse) ×1');
+        $warning = $this->warningContaining($findings, 'يختلف الممرضون بالوظيفة (1) عن موظفي USER_TYPE = 3 (4) كثيراً');
+        $this->assertStringContainsString('المشترك 1 فقط (25%', $warning['message']);
+        $this->assertStringContainsString('HOSPITAL_NURSE_JOB_CODES=31,40', $warning['fix']);
+        $this->assertStringContainsString('HOSPITAL_NURSE_USER_TYPE=', $warning['fix']);
+    }
+
+    public function test_a_small_difference_with_user_type_is_not_a_warning(): void
+    {
+        $this->completeHospital();
+        Employee::factory()->count(4)->create(['EMP_JOB_CD' => 31, 'USER_TYPE' => 3]);
+        Employee::factory()->create(['EMP_JOB_CD' => 31, 'USER_TYPE' => null]);
+
+        $findings = app(HospitalStartupCheck::class)->run();
+
+        $this->assertFinding($findings, 'الممرضون النشطون بالوظيفة: 6؛ بـ USER_TYPE = 3: 5؛ في الاثنين معاً: 5.');
+        $this->assertSame([], $this->warnings($findings));
+    }
+
+    public function test_the_user_type_comparison_can_be_turned_off(): void
+    {
+        $this->completeHospital();
+        Employee::factory()->count(3)->create(['EMP_JOB_CD' => 2, 'USER_TYPE' => 3]);
+        config(['hospital.employees.nurse_user_type' => '']);
+
+        $findings = app(HospitalStartupCheck::class)->run();
+
+        $this->assertFinding($findings, 'المقارنة مع USER_TYPE موقوفة');
+        $this->assertSame([], $this->warnings($findings));
+    }
+
     private function completeHospital(): void
     {
         $this->hospital(1, 'مجمع الشفاء الطبي', current: true);
@@ -164,7 +209,7 @@ class HospitalStartupCheckTest extends TestCase
         $this->job(2, 'طبيب', 'Doctor');
         $this->job(31, 'ممرض', 'Nurse');
         Employee::factory()->create(['EMP_JOB_CD' => 2]);
-        Employee::factory()->create(['EMP_JOB_CD' => 31]);
+        Employee::factory()->create(['EMP_JOB_CD' => 31, 'USER_TYPE' => 3]);
     }
 
     private function hospital(int $code, string $name, bool $current): void

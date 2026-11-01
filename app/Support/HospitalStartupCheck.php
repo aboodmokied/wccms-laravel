@@ -17,7 +17,8 @@ use Throwable;
  * 1. Hospital: HOSPITAL_NO and the current hospital of this database (C_HOSPITAL_TB WHERE H_CURR = 1).
  * 2. Sex: every C_SEX_TB code of this hospital and how it is classified (exact SEX_NAME_EN).
  * 3. Doctors: the C_JOB_TB name of each HOSPITAL_DOCTOR_JOB_CODES code.
- * 4. Nurses: the codes of HOSPITAL_NURSE_JOB_CODES, or the ones detected by name, with their names.
+ * 4. Nurses: the codes of HOSPITAL_NURSE_JOB_CODES, or the ones detected by name, with their names, compared
+ *    with the employees whose USER_TYPE is the nurse type (counts, and a warning when they differ a lot).
  * 5. Staff: the "active employee" rule and the number of active doctors and nurses.
  * 6. Every C_JOB_TB job of this hospital, when a job warning was raised (to choose codes from).
  */
@@ -38,6 +39,16 @@ class HospitalStartupCheck
     public const SECTION_STAFF = 'الموظفون النشطون';
 
     public const SECTION_JOBS = 'كل الوظائف (C_JOB_TB)';
+
+    /**
+     * The nurses by job and by USER_TYPE must share at least this part of the larger group.
+     */
+    private const NURSE_AGREEMENT = 0.8;
+
+    /**
+     * A job is suggested for HOSPITAL_NURSE_JOB_CODES when it holds at least this part of the USER_TYPE nurses.
+     */
+    private const SUGGESTED_JOB_SHARE = 0.05;
 
     private const GRANT_FIX = 'تأكد أن مستخدم WCCMS يملك GRANT SELECT على جداول HOS (القسم 2 من wccms_oracle_schema.sql)، وأن HOSPITAL_SCHEMA=HOS في .env.';
 
@@ -207,7 +218,7 @@ class HospitalStartupCheck
         StaffJobs::forgetDetectedNurses();
         $nurses = StaffJobs::nurses();
 
-        return match ($nurses['source']) {
+        $findings = match ($nurses['source']) {
             StaffJobs::SOURCE_SETTING => $this->describeCodes($s, EmployeeRole::Nurse, $nurses['codes'], 'من الإعداد HOSPITAL_NURSE_JOB_CODES'),
             StaffJobs::SOURCE_DETECTED => [
                 $this->info($s, sprintf(
@@ -226,6 +237,93 @@ class HospitalStartupCheck
                 'اضبط HOSPITAL_NURSE_JOB_CODES في .env بأكواد وظائف التمريض من قسم «كل الوظائف» في هذا الفحص (مفصولة بفواصل).'
             )],
         };
+
+        return [...$findings, ...$this->compareNursesWithUserType($nurses['codes'])];
+    }
+
+    /**
+     * Cross-check of the nursing jobs: the active employees in those jobs against the active employees whose
+     * EMPLOYEE_TB.USER_TYPE is the nurse type (HOS_USERS_VW: 3 = nurse). Warns when the two groups share less than
+     * NURSE_AGREEMENT of the larger one. Never changes what the lists show.
+     *
+     * @param  list<int>  $codes
+     * @return list<array{level: string, section: string, message: string, fix: ?string}>
+     */
+    private function compareNursesWithUserType(array $codes): array
+    {
+        $s = self::SECTION_NURSES;
+        $type = config('hospital.employees.nurse_user_type');
+
+        if (blank($type)) {
+            return [$this->info($s, 'المقارنة مع USER_TYPE موقوفة (HOSPITAL_NURSE_USER_TYPE فارغ).')];
+        }
+
+        $type = (int) $type;
+
+        try {
+            $byType = Employee::query()->active()->where('USER_TYPE', $type)->count();
+            $byJob = $codes === [] ? null : Employee::query()->active()->whereIn('EMP_JOB_CD', $codes)->count();
+            $both = $codes === [] ? null : Employee::query()->active()->whereIn('EMP_JOB_CD', $codes)->where('USER_TYPE', $type)->count();
+            $typeJobs = Employee::query()->active()->where('USER_TYPE', $type)->toBase()
+                ->selectRaw('EMP_JOB_CD AS JOB_CODE, COUNT(*) AS EMPLOYEES')
+                ->groupBy('EMP_JOB_CD')
+                ->get()
+                ->mapWithKeys(fn (object $row): array => [(int) $row->JOB_CODE => (int) $row->EMPLOYEES])
+                ->sortDesc();
+            $jobNames = JobLookup::query()->whereIn('JOB_CODE', $typeJobs->keys()->filter()->all())->get()
+                ->mapWithKeys(fn (JobLookup $job): array => [(int) $job->JOB_CODE => StaffJobs::jobName($job)]);
+        } catch (Throwable $exception) {
+            return [$this->warning($s, sprintf(
+                'تعذرت مقارنة وظائف التمريض مع USER_TYPE = %d في %s. السبب: %s',
+                $type, Hospital::table('employees'), $exception->getMessage()
+            ), 'لا يؤثر على التشغيل. تأكد من وجود العمود USER_TYPE في EMPLOYEE_TB، أو أوقف المقارنة بـ HOSPITAL_NURSE_USER_TYPE= (فارغ).')];
+        }
+
+        $suggested = $typeJobs
+            ->filter(fn (int $count, int $code): bool => $code > 0 && $count >= max(1, $byType * self::SUGGESTED_JOB_SHARE))
+            ->keys()->sort()->values()->all();
+
+        $findings = [$this->info($s, sprintf(
+            'مقارنة مع USER_TYPE = %d (ممرض في HOS_USERS_VW): الممرضون النشطون بالوظيفة: %s؛ بـ USER_TYPE = %d: %d؛ في الاثنين معاً: %s.',
+            $type,
+            $byJob === null ? 'غير معروف (لا أكواد تمريض)' : (string) $byJob,
+            $type,
+            $byType,
+            $both === null ? '—' : (string) $both
+        ))];
+
+        if ($typeJobs->isNotEmpty()) {
+            $findings[] = $this->info($s, sprintf(
+                'وظائف موظفي USER_TYPE = %d: %s%s.',
+                $type,
+                $typeJobs->take(10)->map(fn (int $count, int $code): string => sprintf(
+                    '%s ×%d',
+                    $code > 0 ? $code.' ('.($jobNames[$code] ?? 'غير موجودة في C_JOB_TB').')' : '(بلا وظيفة)',
+                    $count
+                ))->implode('، '),
+                $typeJobs->count() > 10 ? '، ...' : ''
+            ));
+        }
+
+        if ($byJob !== null && max($byJob, $byType) > 0 && $both < self::NURSE_AGREEMENT * max($byJob, $byType)) {
+            $findings[] = $this->warning($s, sprintf(
+                'يختلف الممرضون بالوظيفة (%d) عن موظفي USER_TYPE = %d (%d) كثيراً: المشترك %d فقط (%d%% من الأكبر، والمطلوب %d%% على الأقل).',
+                $byJob, $type, $byType, $both,
+                (int) floor(100 * $both / max($byJob, $byType)),
+                (int) (100 * self::NURSE_AGREEMENT)
+            ), sprintf(
+                'قارن «وظائف موظفي USER_TYPE = %d» أعلاه بأكواد التمريض. إن كانت وظائفهم هي التمريض الصحيح فاضبط HOSPITAL_NURSE_JOB_CODES=%s في .env؛ وإن كان USER_TYPE لا يدل على التمريض في هذا المستشفى فأوقف المقارنة بـ HOSPITAL_NURSE_USER_TYPE= (فارغ).',
+                $type,
+                $suggested === [] ? '<الأكواد>' : implode(',', $suggested)
+            ));
+        } elseif ($byJob === null && $suggested !== []) {
+            $findings[] = $this->info($s, sprintf(
+                'أكواد مقترحة من وظائف موظفي USER_TYPE = %d (راجع أسماءها أعلاه قبل استعمالها): HOSPITAL_NURSE_JOB_CODES=%s',
+                $type, implode(',', $suggested)
+            ));
+        }
+
+        return $findings;
     }
 
     /**
@@ -288,10 +386,11 @@ class HospitalStartupCheck
 
                 if ($count === 0) {
                     $findings[] = $this->warning($s, sprintf('لا يوجد أي موظف نشط في قوائم %s؛ ستكون حقولهم فارغة.', $role->label()), sprintf(
-                        'راجع %s، وHOSPITAL_EMP_ACTIVE (الآن %s)، و%s.',
+                        'راجع %s، وHOSPITAL_EMP_REC_CD (الآن %s)، وHOSPITAL_EMP_REC_CD_LISTS (الآن %s)، وHOSPITAL_EMP_ACTIVE (الآن %s).',
                         $role->envVariable(),
-                        blank($active) ? 'فارغ' : $active,
-                        $role === EmployeeRole::Doctor ? 'HOSPITAL_EMP_REC_CD (الآن '.(blank($record) ? 'فارغ' : $record).')' : 'HOSPITAL_EMP_REC_CD_LISTS'
+                        blank($record) ? 'فارغ' : $record,
+                        config('hospital.employees.record_status_lists'),
+                        blank($active) ? 'فارغ' : $active
                     ));
                 } else {
                     $findings[] = $this->info($s, sprintf('عدد %s النشطين: %d%s.', $role->label(), $count, $unfiltered));

@@ -467,8 +467,10 @@ class TestSeeder extends Seeder
                 'EMP_FIRST_NAME_AR' => $firstName,
                 'EMP_LAST_NAME_AR' => $lastName,
                 'EMP_JOB_CD' => $jobCode,
-                'EMP_ACTIVE' => config('hospital.employees.active_value'),
+                'EMP_ACTIVE' => 1,
                 'EMP_REC_CD' => 1,
+                // Demo: job 1 is the nurse job here, and USER_TYPE 3 a nurse (HOS_USERS_VW).
+                'USER_TYPE' => $jobCode === 1 ? 3 : null,
             ]
         );
     }

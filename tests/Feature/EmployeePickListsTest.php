@@ -127,23 +127,39 @@ class EmployeePickListsTest extends TestCase
             ->assertSee('تعرض كل الموظفين النشطين');
     }
 
-    public function test_doctor_lists_follow_the_hospitals_record_status(): void
+    public function test_every_list_follows_the_hospitals_record_status_by_default(): void
     {
-        $current = $this->employee('طبيب حالي', self::DOCTOR_JOB);
-        $former = $this->employee('طبيب سابق', self::DOCTOR_JOB, recordStatus: 2);
-        $nurseWithOtherStatus = $this->employee('ممرض', self::NURSE_JOB, recordStatus: 2);
+        $doctor = $this->employee('طبيب حالي', self::DOCTOR_JOB);
+        $formerDoctor = $this->employee('طبيب سابق', self::DOCTOR_JOB, recordStatus: 2);
+        $nurse = $this->employee('ممرض حالي', self::NURSE_JOB);
+        $formerNurse = $this->employee('ممرض سابق', self::NURSE_JOB, recordStatus: 2);
         $doctorRule = ['code' => [new HospitalEmployeeExists(EmployeeRole::Doctor)]];
 
         $lists = Employee::pickLists();
-        $this->assertSame([$current->EMP_SERIAL], $lists['doctors']->modelKeys());
-        $this->assertSame([$nurseWithOtherStatus->EMP_SERIAL], $lists['nurses']->modelKeys());
-        $this->assertFalse(Validator::make(['code' => $former->EMP_SERIAL], $doctorRule)->passes());
+        $this->assertSame([$doctor->EMP_SERIAL], $lists['doctors']->modelKeys());
+        $this->assertSame([$nurse->EMP_SERIAL], $lists['nurses']->modelKeys());
+        $this->assertEqualsCanonicalizing([$doctor->EMP_SERIAL, $nurse->EMP_SERIAL], $lists['woundCareTeam']->modelKeys());
+        $this->assertFalse(Validator::make(['code' => $formerDoctor->EMP_SERIAL], $doctorRule)->passes());
 
-        config(['hospital.employees.record_status_lists' => 'all']);
-        $this->assertSame([], Employee::pickLists()['nurses']->modelKeys());
+        // HOSPITAL_EMP_REC_CD_LISTS=doctors: only the doctor lists keep the condition.
+        config(['hospital.employees.record_status_lists' => 'doctors']);
+        $this->assertSame([$doctor->EMP_SERIAL], Employee::pickLists()['doctors']->modelKeys());
+        $this->assertEqualsCanonicalizing([$nurse->EMP_SERIAL, $formerNurse->EMP_SERIAL], Employee::pickLists()['nurses']->modelKeys());
 
-        config(['hospital.employees.record_status' => '', 'hospital.employees.record_status_lists' => 'doctors']);
-        $this->assertEqualsCanonicalizing([$current->EMP_SERIAL, $former->EMP_SERIAL], Employee::pickLists()['doctors']->modelKeys());
+        // HOSPITAL_EMP_REC_CD= (empty): no condition anywhere.
+        config(['hospital.employees.record_status' => '']);
+        $this->assertEqualsCanonicalizing([$doctor->EMP_SERIAL, $formerDoctor->EMP_SERIAL], Employee::pickLists()['doctors']->modelKeys());
+    }
+
+    public function test_emp_active_is_not_a_condition_unless_configured(): void
+    {
+        $withoutLogin = $this->employee('ممرض بلا حساب', self::NURSE_JOB, active: 0);
+        $withLogin = $this->employee('ممرض له حساب', self::NURSE_JOB);
+
+        $this->assertEqualsCanonicalizing([$withoutLogin->EMP_SERIAL, $withLogin->EMP_SERIAL], Employee::pickLists()['nurses']->modelKeys());
+
+        config(['hospital.employees.active_value' => '1']);
+        $this->assertSame([$withLogin->EMP_SERIAL], Employee::pickLists()['nurses']->modelKeys());
     }
 
     public function test_validation_rejects_an_employee_outside_the_fields_role(): void
@@ -183,14 +199,14 @@ class EmployeePickListsTest extends TestCase
             ->assertDontSee('كاتب الاستقبال');
     }
 
-    private function employee(string $firstName, ?int $jobCode, int $recordStatus = 1): Employee
+    private function employee(string $firstName, ?int $jobCode, int $recordStatus = 1, int $active = 1): Employee
     {
         if ($jobCode !== null) {
             LocalHospitalCopy::firstOrInsert(JobLookup::class, ['JOB_CODE' => $jobCode], ['JOB_NAME_AR' => 'وظيفة '.$jobCode]);
         }
 
         return Employee::factory()->named($firstName, null, null, 'الاختبار')
-            ->create(['EMP_JOB_CD' => $jobCode, 'EMP_REC_CD' => $recordStatus]);
+            ->create(['EMP_JOB_CD' => $jobCode, 'EMP_REC_CD' => $recordStatus, 'EMP_ACTIVE' => $active]);
     }
 
     private function job(int $code, ?string $nameAr, ?string $nameEn): void

@@ -63,6 +63,7 @@ return new class extends Migration
             $table->integer('EMP_JOB_CD')->nullable()->comment('المسمى الوظيفي (C_JOB_TB)');
             $table->integer('EMP_ACTIVE')->nullable()->comment('1 = على رأس عمله');
             $table->integer('EMP_REC_CD')->nullable()->comment('حالة سجل الموظف (1 في قوائم المستشفى)');
+            $table->integer('USER_TYPE')->nullable()->comment('نوع المستخدم (3 = ممرض في HOS_USERS_VW)');
             $table->primary(['EMP_SERIAL', 'HOS_NO'], 'EMP_SERIAL_PK');
             $table->comment('نسخة محلية من HOS.EMPLOYEE_TB (موظفو المستشفى)');
         });

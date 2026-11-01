@@ -94,7 +94,7 @@ class LongitudinalPatientSeeder extends Seeder
                 [
                     'EMP_FIRST_NAME_AR' => 'الممرضة التجريبية',
                     'EMP_LAST_NAME_AR' => 'للسجل الطولي',
-                    'EMP_ACTIVE' => config('hospital.employees.active_value'),
+                    'EMP_ACTIVE' => 1,
                     'EMP_REC_CD' => 1,
                 ],
             );

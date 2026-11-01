@@ -29,8 +29,9 @@ class EmployeeFactory extends Factory
             'EMP_GRANDFATHER_NAME_AR' => fake()->randomElement(['محمد', 'سالم', 'عيسى']),
             'EMP_LAST_NAME_AR' => fake()->randomElement(['العلي', 'الأغا', 'شبير', 'الفرا']),
             'EMP_JOB_CD' => null,
-            'EMP_ACTIVE' => config('hospital.employees.active_value'),
+            'EMP_ACTIVE' => 1,
             'EMP_REC_CD' => 1,
+            'USER_TYPE' => null,
         ];
     }
 
@@ -67,11 +68,12 @@ class EmployeeFactory extends Factory
 
     public function nurse(): static
     {
-        return $this->inRole(EmployeeRole::Nurse);
+        return $this->inRole(EmployeeRole::Nurse)->state(['USER_TYPE' => config('hospital.employees.nurse_user_type')]);
     }
 
     public function inactive(): static
     {
-        return $this->state(['EMP_ACTIVE' => 0]);
+        // Left the hospital: the hospital's lists keep EMP_REC_CD = 1 only.
+        return $this->state(['EMP_ACTIVE' => 0, 'EMP_REC_CD' => 0]);
     }
 }

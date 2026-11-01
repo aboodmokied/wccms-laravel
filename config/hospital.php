@@ -89,15 +89,20 @@ return [
     ],
 
     'employees' => [
-        // An employee at work, for every pick list: EMP_ACTIVE = this value (the hospital's HOS_USERS_VW filters
-        // EMP_ACTIVE = 1). Empty = no EMP_ACTIVE filter.
-        'active_value' => env('HOSPITAL_EMP_ACTIVE', 1),
-
-        // EMP_REC_CD = this value: the hospital's own employee lists use it (68 places, e.g. GET_DOCTORS_NAMES:
-        // EMP_JOB_CD = 2 AND EMP_REC_CD = 1). Applied to the doctor lists, or to every list with
-        // HOSPITAL_EMP_REC_CD_LISTS=all. Empty = no EMP_REC_CD filter.
+        // An employee at work: EMP_REC_CD = this value, as the hospital's own employee lists do (68 places, e.g.
+        // GET_DOCTORS_NAMES: EMP_JOB_CD = 2 AND EMP_REC_CD = 1). On every list (all), or the doctor lists only
+        // (doctors). Empty = no EMP_REC_CD condition.
         'record_status' => env('HOSPITAL_EMP_REC_CD', 1),
-        'record_status_lists' => env('HOSPITAL_EMP_REC_CD_LISTS', 'doctors'),
+        'record_status_lists' => env('HOSPITAL_EMP_REC_CD_LISTS', 'all'),
+
+        // EMP_ACTIVE = this value on every list. Not used by default: in the hospital's code only HOS_USERS_VW (the
+        // users of the sign-in) filters EMP_ACTIVE = 1, so it likely means "has an active login", and would hide
+        // staff without one. Empty = no EMP_ACTIVE condition.
+        'active_value' => env('HOSPITAL_EMP_ACTIVE', ''),
+
+        // EMPLOYEE_TB.USER_TYPE of a nurse (HOS_USERS_VW: 3 = nurse). Not a filter: wccms:check-hospital compares
+        // the nurses found by job with the employees of this USER_TYPE.
+        'nurse_user_type' => env('HOSPITAL_NURSE_USER_TYPE', 3),
 
         // C_JOB_TB.JOB_CODE values (EMPLOYEE_TB.EMP_JOB_CD), comma separated, that fill the employee pick lists:
         // the doctor fields list doctors only, the nurse fields nurses only, and the wound care team field both.

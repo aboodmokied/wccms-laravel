@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * The role an employee field asks for:
  * - job: EMPLOYEE_TB.EMP_JOB_CD among the role's C_JOB_TB codes (App\Support\StaffJobs);
- * - doctors also need EMP_REC_CD = hospital.employees.record_status, as the hospital's own doctor lists do.
+ * - doctors always need EMP_REC_CD = hospital.employees.record_status, as the hospital's own doctor lists do; with
+ *   HOSPITAL_EMP_REC_CD_LISTS=all (the default) Employee::scopeActive applies it to every list.
  * A role whose codes are unknown does not filter on the job; Employee::pickLists() reports it on the screen.
  * The wound care team is doctors and nurses.
  */

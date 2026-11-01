@@ -63,7 +63,7 @@ class MockHospitalAuthController extends Controller
                 'EMP_FATHER_NAME_AR' => count($names) > 2 ? $names[1] : null,
                 'EMP_GRANDFATHER_NAME_AR' => count($names) > 3 ? $names[2] : null,
                 'EMP_LAST_NAME_AR' => count($names) > 1 ? implode(' ', array_slice($names, min(count($names) - 1, 3))) : null,
-                'EMP_ACTIVE' => config('hospital.employees.active_value'),
+                'EMP_ACTIVE' => 1,
                 'EMP_REC_CD' => 1,
             ]);
 
