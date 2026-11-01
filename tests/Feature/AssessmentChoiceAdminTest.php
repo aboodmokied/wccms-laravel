@@ -55,17 +55,13 @@ class AssessmentChoiceAdminTest extends TestCase
         $this->assertSame($englishName, $choice->fresh()->WC_ACH_LABEL_EN);
     }
 
-    public function test_non_admin_cannot_manage_choices_and_retired_label_remains_readable(): void
+    public function test_a_nurse_can_retire_a_choice_and_its_label_remains_readable(): void
     {
         $this->seed(WcAssessmentChoiceSeeder::class);
         $choice = WcAssessmentChoice::query()->firstOrFail();
         $label = $choice->WC_ACH_LABEL_AR;
 
         $this->withHeader('Authorization', 'Bearer '.$this->token('NURSE'))
-            ->patch(route('admin.assessment_choices.toggle', $choice))
-            ->assertForbidden();
-
-        $this->withHeader('Authorization', 'Bearer '.$this->token('ADMIN'))
             ->patch(route('admin.assessment_choices.toggle', $choice))
             ->assertRedirect();
 

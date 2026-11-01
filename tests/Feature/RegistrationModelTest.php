@@ -32,8 +32,9 @@ class RegistrationModelTest extends TestCase
         $nurseEmp = PerEmployee::create([
             'PER_EMP_FULL_NAME' => 'Nurse Sarah',
             'PER_EMP_JOB_TITLE' => 'Staff Nurse',
-            'PER_EMP_USER_CD' => $entryUser->PER_USER_CODE,
         ]);
+
+        $entryUser->update(['PER_USER_EMP_CD' => $nurseEmp->PER_EMP_CODE]);
 
         $supervisorEmp = PerEmployee::create([
             'PER_EMP_FULL_NAME' => 'Supervisor Dr. Ahmed',

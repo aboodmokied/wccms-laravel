@@ -11,14 +11,24 @@ use Ramsey\Uuid\Uuid;
  * (22 tables, their CHECK constraints, the 46 assessment choices and, on MySQL, the 4 clinical stored procedures),
  * so `php artisan migrate` alone gives a working system on a developer machine.
  *
- * per_users_tb, per_employee_tb and mr_patient_tb belong to the hospital system in production (see the SQL file);
- * they are created here so the system runs locally.
+ * per_employee_tb and mr_patient_tb belong to the hospital system in production (config/hospital.php points the
+ * models at the real tables); they are created here so the system runs locally. Production on Oracle is built by
+ * wccms_oracle_schema.sql, never by this migration.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        // 1. User Accounts
+        // 1. Employee Directory (hospital-owned in production: WCCMS never writes to it there)
+        Schema::create('per_employee_tb', function (Blueprint $table) {
+            $table->char('PER_EMP_CODE', 36)->primary()->comment('المعرّف الفريد للموظف (UUID) - المفتاح الأساسي');
+            $table->string('PER_EMP_FULL_NAME', 255)->comment('الاسم الكامل للموظف');
+            $table->string('PER_EMP_JOB_TITLE', 150)->nullable()->comment('المسمى الوظيفي للموظف');
+            $table->smallInteger('PER_EMP_IS_ACTIVE')->default(1)->comment('حالة الموظف: 1 = على رأس عمله، 0 = غير فعّال');
+            $table->comment('دليل الموظفين (ممرضون، أطباء، إداريون)');
+        });
+
+        // 2. User Accounts (owned by WCCMS; the user-to-employee link lives here, not on the hospital table)
         Schema::create('per_users_tb', function (Blueprint $table) {
             $table->char('PER_USER_CODE', 36)->primary()->comment('المعرّف الفريد للمستخدم (UUID) - المفتاح الأساسي');
             $table->string('PER_USER_FULL_NAME', 255)->nullable()->comment('الاسم الكامل للمستخدم');
@@ -27,22 +37,13 @@ return new class extends Migration
             $table->string('PER_USER_PASSWORD', 255)->nullable()->comment('كلمة المرور المشفرة (Hash)');
             $table->string('PER_USER_ROLE', 20)->nullable()->comment('دور وصلاحيات المستخدم (ADMIN / NURSE)');
             $table->smallInteger('PER_USER_IS_ACTIVE')->default(1)->comment('حالة حساب المستخدم: 1 = فعّال، 0 = معطّل');
-            $table->comment('حسابات المستخدمين الذين يسجلون الدخول إلى النظام');
-        });
+            $table->char('PER_USER_EMP_CD', 36)->nullable()->unique()->comment('الموظف المرتبط بالحساب في جدول موظفي المستشفى (اختياري، موظف واحد لكل حساب)');
 
-        // 2. Employee Directory
-        Schema::create('per_employee_tb', function (Blueprint $table) {
-            $table->char('PER_EMP_CODE', 36)->primary()->comment('المعرّف الفريد للموظف (UUID) - المفتاح الأساسي');
-            $table->string('PER_EMP_FULL_NAME', 255)->comment('الاسم الكامل للموظف');
-            $table->string('PER_EMP_JOB_TITLE', 150)->nullable()->comment('المسمى الوظيفي للموظف');
-            $table->char('PER_EMP_USER_CD', 36)->nullable()->index()->comment('ربط بحساب المستخدم في PER_USERS_TB (اختياري)');
-            $table->smallInteger('PER_EMP_IS_ACTIVE')->default(1)->comment('حالة الموظف: 1 = على رأس عمله، 0 = غير فعّال');
-
-            $table->foreign('PER_EMP_USER_CD')
-                ->references('PER_USER_CODE')
-                ->on('per_users_tb')
+            $table->foreign('PER_USER_EMP_CD')
+                ->references('PER_EMP_CODE')
+                ->on('per_employee_tb')
                 ->nullOnDelete();
-            $table->comment('دليل الموظفين (ممرضون، أطباء، إداريون)');
+            $table->comment('حسابات المستخدمين الذين يسجلون الدخول إلى النظام');
         });
 
         // 3. Patient Master Index
@@ -55,7 +56,7 @@ return new class extends Migration
             $table->string('MR_PAT_PHONE', 30)->nullable()->comment('رقم هاتف المريض');
             $table->string('MR_PAT_GENDER', 10)->comment('جنس المريض (ذكر/أنثى)');
             $table->date('MR_PAT_DOB')->nullable()->comment('تاريخ ميلاد المريض');
-            $table->string('MR_PAT_SUPERVISING_DOCTOR', 255)->nullable()->comment('اسم الطبيب المشرف على حالة المريض');
+            $table->char('MR_PAT_SUPERVISING_DOCTOR_CD', 36)->nullable()->comment('رمز الطبيب المشرف على حالة المريض في جدول الموظفين');
             $table->string('MR_PAT_HOSPITAL_DEPARTMENT', 255)->nullable()->comment('القسم الذي يرقد فيه المريض بالمستشفى');
             $table->date('MR_PAT_HOSPITAL_ADMISSION_DATE')->nullable()->comment('تاريخ دخول المريض للمستشفى');
             $table->dateTime('MR_PAT_LAST_SYNCED_AT')->nullable()->comment('تاريخ ووقت آخر مزامنة لبيانات المريض من المستشفى');

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\MrPatient;
+use App\Models\PerEmployee;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Lang;
@@ -66,7 +68,7 @@ class ReportingService
         }
 
         $outcomeCounts = $reviewsQuery
-            ->select('WC_DREV_OVERALL_STATUS', DB::raw('COUNT(*) as total'))
+            ->select('WC_DREV_OVERALL_STATUS', DB::raw('COUNT(*) as "total"'))
             ->groupBy('WC_DREV_OVERALL_STATUS')
             ->pluck('total', 'WC_DREV_OVERALL_STATUS')
             ->toArray();
@@ -97,7 +99,7 @@ class ReportingService
         }
 
         $scheduledStats = $scheduledQuery
-            ->select('WC_SREV_STATUS', DB::raw('COUNT(*) as total'))
+            ->select('WC_SREV_STATUS', DB::raw('COUNT(*) as "total"'))
             ->groupBy('WC_SREV_STATUS')
             ->pluck('total', 'WC_SREV_STATUS')
             ->toArray();
@@ -122,17 +124,21 @@ class ReportingService
      */
     public function getRecentActivities(int $limit = 10): array
     {
+        $patients = (new MrPatient)->getTable();
+        $employees = (new PerEmployee)->getTable();
+
+        // Upper-case aliases: Oracle returns unquoted identifiers in upper case
         $reviews = DB::table('wc_daily_review_tb')
             ->join('wc_registration_tb', 'wc_daily_review_tb.WC_DREV_REGISTRATION_CD', '=', 'wc_registration_tb.WC_REG_CODE')
-            ->join('mr_patient_tb', 'wc_registration_tb.WC_REG_PATIENT_CD', '=', 'mr_patient_tb.MR_PAT_CODE')
-            ->leftJoin('per_employee_tb', 'wc_daily_review_tb.WC_DREV_NURSE_CD', '=', 'per_employee_tb.PER_EMP_CODE')
+            ->join("{$patients} as PAT", 'wc_registration_tb.WC_REG_PATIENT_CD', '=', 'PAT.MR_PAT_CODE')
+            ->leftJoin("{$employees} as EMP", 'wc_daily_review_tb.WC_DREV_NURSE_CD', '=', 'EMP.PER_EMP_CODE')
             ->select([
-                'wc_daily_review_tb.WC_DREV_CODE as id',
-                'wc_daily_review_tb.WC_DREV_VISIT_DATE as date',
-                'wc_daily_review_tb.WC_DREV_OVERALL_STATUS as status',
-                'mr_patient_tb.MR_PAT_FULL_NAME as patient_name',
-                'mr_patient_tb.MR_PAT_CODE as patient_code',
-                'per_employee_tb.PER_EMP_FULL_NAME as nurse_name',
+                'wc_daily_review_tb.WC_DREV_CODE as ID',
+                'wc_daily_review_tb.WC_DREV_VISIT_DATE as VISIT_DATE',
+                'wc_daily_review_tb.WC_DREV_OVERALL_STATUS as STATUS',
+                'PAT.MR_PAT_FULL_NAME as PATIENT_NAME',
+                'PAT.MR_PAT_CODE as PATIENT_CODE',
+                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
             ])
             ->orderBy('wc_daily_review_tb.WC_DREV_VISIT_DATE', 'desc')
             ->limit($limit)
@@ -147,13 +153,13 @@ class ReportingService
             ];
 
             return [
-                'id' => $rev->id,
-                'date' => $rev->date,
-                'patient_name' => $rev->patient_name ?? 'غير محدد',
-                'patient_code' => $rev->patient_code,
-                'nurse_name' => $rev->nurse_name ?? 'غير محدد',
-                'status_label' => $statusLabels[$rev->status] ?? $rev->status,
-                'status' => $rev->status,
+                'id' => $rev->ID,
+                'date' => $rev->VISIT_DATE,
+                'patient_name' => $rev->PATIENT_NAME ?? 'غير محدد',
+                'patient_code' => $rev->PATIENT_CODE,
+                'nurse_name' => $rev->NURSE_NAME ?? 'غير محدد',
+                'status_label' => $statusLabels[$rev->STATUS] ?? $rev->STATUS,
+                'status' => $rev->STATUS,
             ];
         })->toArray();
     }
@@ -167,7 +173,9 @@ class ReportingService
             return null;
         }
 
-        $patient = DB::table('mr_patient_tb')
+        $employees = (new PerEmployee)->getTable();
+
+        $patient = DB::table((new MrPatient)->getTable())
             ->where('MR_PAT_CODE', $search)
             ->orWhere('MR_PAT_ID_NO', $search)
             ->orWhere('MR_PAT_NATIONAL_ID', $search)
@@ -181,12 +189,12 @@ class ReportingService
         // Registrations
         $registrations = DB::table('wc_registration_tb')
             ->leftJoin('wc_department_tb', 'wc_registration_tb.WC_REG_DEPARTMENT_CD', '=', 'wc_department_tb.WC_DEPT_CODE')
-            ->leftJoin('per_employee_tb', 'wc_registration_tb.WC_REG_NURSE_CD', '=', 'per_employee_tb.PER_EMP_CODE')
+            ->leftJoin("{$employees} as EMP", 'wc_registration_tb.WC_REG_NURSE_CD', '=', 'EMP.PER_EMP_CODE')
             ->where('WC_REG_PATIENT_CD', $patient->MR_PAT_CODE)
             ->select([
                 'wc_registration_tb.*',
-                'wc_department_tb.WC_DEPT_NAME as department_name',
-                'per_employee_tb.PER_EMP_FULL_NAME as nurse_name',
+                'wc_department_tb.WC_DEPT_NAME as DEPARTMENT_NAME',
+                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
             ])
             ->orderBy('WC_REG_DATE', 'desc')
             ->get();
@@ -195,11 +203,11 @@ class ReportingService
 
         // Daily Reviews
         $dailyReviews = DB::table('wc_daily_review_tb')
-            ->leftJoin('per_employee_tb', 'wc_daily_review_tb.WC_DREV_NURSE_CD', '=', 'per_employee_tb.PER_EMP_CODE')
+            ->leftJoin("{$employees} as EMP", 'wc_daily_review_tb.WC_DREV_NURSE_CD', '=', 'EMP.PER_EMP_CODE')
             ->whereIn('WC_DREV_REGISTRATION_CD', $regIds)
             ->select([
                 'wc_daily_review_tb.*',
-                'per_employee_tb.PER_EMP_FULL_NAME as nurse_name',
+                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
             ])
             ->orderBy('WC_DREV_VISIT_DATE', 'desc')
             ->get()
@@ -208,11 +216,11 @@ class ReportingService
         // Scheduled Reviews
         $scheduledReviews = DB::table('wc_scheduled_review_tb')
             ->leftJoin('per_users_tb', 'wc_scheduled_review_tb.WC_SREV_CREATED_BY_CD', '=', 'per_users_tb.PER_USER_CODE')
-            ->leftJoin('per_employee_tb', 'per_users_tb.PER_USER_CODE', '=', 'per_employee_tb.PER_EMP_USER_CD')
+            ->leftJoin("{$employees} as EMP", 'per_users_tb.PER_USER_EMP_CD', '=', 'EMP.PER_EMP_CODE')
             ->whereIn('WC_SREV_REGISTRATION_CD', $regIds)
             ->select([
                 'wc_scheduled_review_tb.*',
-                'per_employee_tb.PER_EMP_FULL_NAME as nurse_name',
+                'EMP.PER_EMP_FULL_NAME as NURSE_NAME',
             ])
             ->orderBy('WC_SREV_SCHEDULED_DATE', 'desc')
             ->get()
@@ -234,8 +242,8 @@ class ReportingService
                     'discharge_date' => $reg->WC_REG_DISCHARGE_DATE,
                     'status' => $reg->WC_REG_STATUS,
                     'status_label' => $reg->WC_REG_STATUS === 'REGISTERED' ? 'مسجل حالياً' : 'تم الخروج',
-                    'department' => $reg->department_name ?? 'عام',
-                    'nurse' => $reg->nurse_name ?? 'غير محدد',
+                    'department' => $reg->DEPARTMENT_NAME ?? 'عام',
+                    'nurse' => $reg->NURSE_NAME ?? 'غير محدد',
                     'daily_reviews' => ($dailyReviews->get($reg->WC_REG_CODE) ?? collect())->map(function ($rev) {
                         return [
                             'code' => $rev->WC_DREV_CODE,
@@ -244,7 +252,7 @@ class ReportingService
                             'status_label' => Lang::has("clinical.overall_outcomes.{$rev->WC_DREV_OVERALL_STATUS}")
                                 ? __("clinical.overall_outcomes.{$rev->WC_DREV_OVERALL_STATUS}")
                                 : (string) $rev->WC_DREV_OVERALL_STATUS,
-                            'nurse' => $rev->nurse_name ?? 'غير محدد',
+                            'nurse' => $rev->NURSE_NAME ?? 'غير محدد',
                             'notes' => $rev->WC_DREV_GENERAL_NOTES ?? 'لا توجد ملاحظات',
                         ];
                     })->values()->toArray(),
@@ -253,7 +261,7 @@ class ReportingService
                             'code' => $srev->WC_SREV_CODE,
                             'scheduled_date' => $srev->WC_SREV_SCHEDULED_DATE,
                             'status' => $srev->WC_SREV_STATUS,
-                            'nurse' => $srev->nurse_name ?? 'غير محدد',
+                            'nurse' => $srev->NURSE_NAME ?? 'غير محدد',
                         ];
                     })->values()->toArray(),
                 ];

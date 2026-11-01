@@ -48,8 +48,9 @@ class UserManagementTest extends TestCase
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'أ. فاطمة الزهراني',
             'PER_EMP_JOB_TITLE' => 'ممرض جروح',
-            'PER_EMP_USER_CD' => $userCode,
         ]);
+
+        $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
 
         $token = $this->generateJwt('nurse_fatima');
 
@@ -99,7 +100,6 @@ class UserManagementTest extends TestCase
             'PER_EMP_CODE' => $employeeCode,
             'PER_EMP_FULL_NAME' => 'م. أحمد خالد',
             'PER_EMP_JOB_TITLE' => 'ممرض جروح',
-            'PER_EMP_USER_CD' => null,
         ]);
 
         $token = $this->generateJwt('admin_user');
@@ -119,9 +119,9 @@ class UserManagementTest extends TestCase
             'PER_USER_IS_ACTIVE' => 1,
         ]);
 
-        $this->assertDatabaseHas('per_employee_tb', [
-            'PER_EMP_CODE' => $employeeCode,
-            'PER_EMP_USER_CD' => $targetUserCode,
+        $this->assertDatabaseHas('per_users_tb', [
+            'PER_USER_CODE' => $targetUserCode,
+            'PER_USER_EMP_CD' => $employeeCode,
         ]);
     }
 

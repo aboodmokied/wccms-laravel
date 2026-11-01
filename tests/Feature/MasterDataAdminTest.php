@@ -60,9 +60,9 @@ class MasterDataAdminTest extends TestCase
     }
 
     /**
-     * US4 (T019): Non-admin users are denied access to master data admin endpoints (HTTP 403).
+     * Settings are open to every signed-in user; the hospital permission system decides who reaches WCCMS.
      */
-    public function test_non_admin_users_cannot_access_master_data_admin_routes(): void
+    public function test_nurses_can_access_master_data_admin_routes(): void
     {
         $response = $this->call(
             'GET',
@@ -71,7 +71,7 @@ class MasterDataAdminTest extends TestCase
             ['hospital_token' => $this->nurseJwtToken]
         );
 
-        $response->assertStatus(403);
+        $response->assertOk();
     }
 
     /**

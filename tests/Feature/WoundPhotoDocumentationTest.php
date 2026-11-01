@@ -54,9 +54,10 @@ class WoundPhotoDocumentationTest extends TestCase
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'Nurse Sarah',
             'PER_EMP_JOB_TITLE' => 'Nurse Specialist',
-            'PER_EMP_USER_CD' => $this->user->PER_USER_CODE,
             'PER_EMP_IS_ACTIVE' => 1,
         ]);
+
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),

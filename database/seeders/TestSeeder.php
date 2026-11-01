@@ -68,13 +68,11 @@ class TestSeeder extends Seeder
             ]
         );
 
-        $empAdmin = PerEmployee::firstOrCreate(
-            ['PER_EMP_USER_CD' => $userAdmin->PER_USER_CODE],
-            [
-                'PER_EMP_CODE' => (string) Str::uuid(),
-                'PER_EMP_FULL_NAME' => 'د. أحمد السوري (مدير النظام)',
-            ]
-        );
+        $empAdmin = $userAdmin->employee ?? PerEmployee::create([
+            'PER_EMP_CODE' => (string) Str::uuid(),
+            'PER_EMP_FULL_NAME' => 'د. أحمد السوري (مدير النظام)',
+        ]);
+        $userAdmin->update(['PER_USER_EMP_CD' => $empAdmin->PER_EMP_CODE]);
 
         $userSarah = PerUser::firstOrCreate(
             ['PER_USER_USERNAME' => 'nurse_sarah'],
@@ -84,13 +82,11 @@ class TestSeeder extends Seeder
             ]
         );
 
-        $empSarah = PerEmployee::firstOrCreate(
-            ['PER_EMP_USER_CD' => $userSarah->PER_USER_CODE],
-            [
-                'PER_EMP_CODE' => (string) Str::uuid(),
-                'PER_EMP_FULL_NAME' => 'الممرضة سارة أحمد',
-            ]
-        );
+        $empSarah = $userSarah->employee ?? PerEmployee::create([
+            'PER_EMP_CODE' => (string) Str::uuid(),
+            'PER_EMP_FULL_NAME' => 'الممرضة سارة أحمد',
+        ]);
+        $userSarah->update(['PER_USER_EMP_CD' => $empSarah->PER_EMP_CODE]);
 
         $userKhaled = PerUser::firstOrCreate(
             ['PER_USER_USERNAME' => 'nurse_khaled'],
@@ -100,13 +96,11 @@ class TestSeeder extends Seeder
             ]
         );
 
-        $empKhaled = PerEmployee::firstOrCreate(
-            ['PER_EMP_USER_CD' => $userKhaled->PER_USER_CODE],
-            [
-                'PER_EMP_CODE' => (string) Str::uuid(),
-                'PER_EMP_FULL_NAME' => 'الممرض خالد العلي',
-            ]
-        );
+        $empKhaled = $userKhaled->employee ?? PerEmployee::create([
+            'PER_EMP_CODE' => (string) Str::uuid(),
+            'PER_EMP_FULL_NAME' => 'الممرض خالد العلي',
+        ]);
+        $userKhaled->update(['PER_USER_EMP_CD' => $empKhaled->PER_EMP_CODE]);
 
         // 3. Patients
         $pat1 = MrPatient::firstOrCreate(

@@ -39,8 +39,9 @@ class MyRequestsAndCancellationTest extends TestCase
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'ممرض القسم صاحب الطلب',
             'PER_EMP_JOB_TITLE' => 'ممرض قانوني',
-            'PER_EMP_USER_CD' => $this->user->PER_USER_CODE,
         ]);
+
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
 
         $this->patient = MrPatient::create([
             'MR_PAT_CODE' => (string) Str::uuid(),

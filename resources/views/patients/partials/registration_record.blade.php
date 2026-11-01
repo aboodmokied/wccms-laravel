@@ -52,9 +52,9 @@
         </span>
 
         <span class="patient-registration-counts" aria-label="ملخص محتوى التسجيل">
-            <span><strong>{{ $registration->diagnoses_count }}</strong> جروح</span>
-            <span><strong>{{ $registration->daily_reviews_count }}</strong> مراجعات</span>
-            <span><strong>{{ $registration->scheduled_reviews_count }}</strong> مواعيد</span>
+            <span><strong>{{ $registration->DIAGNOSES_COUNT }}</strong> جروح</span>
+            <span><strong>{{ $registration->DAILY_REVIEWS_COUNT }}</strong> مراجعات</span>
+            <span><strong>{{ $registration->SCHEDULED_REVIEWS_COUNT }}</strong> مواعيد</span>
         </span>
 
         <a

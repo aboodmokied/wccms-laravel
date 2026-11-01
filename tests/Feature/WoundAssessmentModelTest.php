@@ -153,8 +153,8 @@ class WoundAssessmentModelTest extends TestCase
         ]);
         $employee = PerEmployee::create([
             'PER_EMP_FULL_NAME' => 'ممرضة الاختبار',
-            'PER_EMP_USER_CD' => $user->PER_USER_CODE,
         ]);
+        $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
         $patient = MrPatient::create([
             'MR_PAT_ID_NO' => 'ASSESSMENT-001',
             'MR_PAT_FULL_NAME' => 'مريض الاختبار',

@@ -41,21 +41,24 @@
 --        أجنبي يشير إلى view.
 --    (ب) جداول حقيقية في قاعدة النظام تُملأ بمزامنة دورية من نظام المستشفى (هذا ما ينشئه الملف كما هو).
 --    في الحالتين النظام يكتب في هذه الجداول اليوم (التفاصيل في ملاحظة «قرار مطلوب» تحت كل جدول منها):
---      - per_users_tb: إضافة صف «قيد الموافقة» عند أول دخول، وتعديل PER_USER_ROLE و PER_USER_IS_ACTIVE.
---      - per_employee_tb: تعديل PER_EMP_USER_CD (ربط المستخدم بالموظف).
---      - mr_patient_tb: البحث عن المرضى الحالي محاكاة تنشئ مريضاً وهمياً؛ يجب استبدالها بربط حقيقي بنظام المستشفى.
---    إذا كانت هذه الجداول للقراءة فقط فستتعطل: دخول المستخدمين الجدد، وشاشة إدارة المستخدمين، والبحث عن المرضى.
+--      - per_users_tb: إضافة صف «قيد الموافقة» عند أول دخول، وتعديل PER_USER_ROLE و PER_USER_IS_ACTIVE
+--        و PER_USER_EMP_CD (ربط المستخدم بالموظف).
+--      - per_employee_tb: لا يكتب فيه (ربط المستخدم بالموظف انتقل إلى per_users_tb.PER_USER_EMP_CD).
+--      - mr_patient_tb: لا يكتب فيه (البحث عن المريض قراءة فقط، ولا يُنشئ مريضاً إن لم يجده).
+--    إذا كان per_users_tb للقراءة فقط فستتعطل: دخول المستخدمين الجدد، وشاشة إدارة المستخدمين.
+--    على Oracle: per_users_tb جدول من جداول النظام، والجدولان الآخران يُقرآن مباشرة من المستشفى
+--    (wccms_oracle_schema.sql و MIGRATION_GUIDE.md).
 --    المطلوب من المبرمج: السماح بهذه الكتابات (view قابلة للتحديث أو صلاحيات على هذه الأعمدة)، أو قبول تعطّلها.
 --
 -- 4) المفاتيح الأجنبية التي تشير إلى جداول المستشفى (22) — تُحذف إذا كانت جداول المستشفى views
 --    -> mr_patient_tb:    wc_registration_tb.WC_REG_PATIENT_CD, wc_request_reg_tb.WC_REQ_PATIENT_CD
---    -> per_employee_tb:  wc_daily_review_tb.WC_DREV_NURSE_CD, wc_reg_diagnosis_tb.WC_RDIAG_CLINICAL_EMP_CD,
+--    -> per_employee_tb:  per_users_tb.PER_USER_EMP_CD, wc_daily_review_tb.WC_DREV_NURSE_CD, wc_reg_diagnosis_tb.WC_RDIAG_CLINICAL_EMP_CD,
 --                         wc_registration_tb.WC_REG_DISCHARGED_BY_EMP_CD, wc_registration_tb.WC_REG_NURSE_CD,
 --                         wc_registration_tb.WC_REG_PROCEDURE_PERFORMED_BY_CD, wc_request_reg_tb.WC_REQ_NURSE_CD,
 --                         wc_request_reg_tb.WC_REQ_REVIEWED_BY_CD, wc_wound_assessment_tb.WC_WA_CLINICAL_EMP_CD,
 --                         wc_wound_assessment_tb.WC_WA_DOCTOR_EMP_CD, wc_wound_assessment_tb.WC_WA_WCT_EMP_CD,
 --                         wc_wound_photo_tb.WC_PHOTO_NURSE_CD
---    -> per_users_tb:     per_employee_tb.PER_EMP_USER_CD, wc_daily_review_tb.WC_DREV_ENTRY_USER_CD,
+--    -> per_users_tb:     wc_daily_review_tb.WC_DREV_ENTRY_USER_CD,
 --                         wc_reg_diagnosis_tb.WC_RDIAG_ENTRY_USER_CD, wc_registration_tb.WC_REG_ENTRY_USER_CD,
 --                         wc_report_export_tb.WC_RPEX_USER_CD, wc_request_reg_tb.WC_REQ_ENTRY_USER_CD,
 --                         wc_scheduled_review_tb.WC_SREV_CREATED_BY_CD, wc_wound_assessment_tb.WC_WA_ENTRY_USER_CD,
@@ -99,8 +102,9 @@ SET TIME_ZONE = '+00:00';
 --   - app/Http/Middleware/HospitalJwtAuthMiddleware.php: ينشئ صفاً «قيد الموافقة» (PER_USER_ROLE فارغ،
 --     PER_USER_IS_ACTIVE = 0) لأي مستخدم يدخل النظام أول مرة.
 --   - app/Http/Controllers/Admin/UserController.php (update): يغيّر PER_USER_ROLE و PER_USER_IS_ACTIVE من شاشة
---     إدارة المستخدمين.
---   - app/Http/Controllers/Auth/MockHospitalAuthController.php: دخول تجريبي للتطوير فقط؛ ينشئ المستخدم ويغيّر دوره.
+--     إدارة المستخدمين، ويغيّر PER_USER_EMP_CD لربط المستخدم بالموظف (ويُلغي ربط الموظف بأي حساب آخر).
+--   - app/Http/Controllers/Auth/MockHospitalAuthController.php: دخول تجريبي للتطوير فقط؛ ينشئ المستخدم ويغيّر دوره،
+--     وينشئ له موظفاً ويربطه به في PER_USER_EMP_CD.
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `per_users_tb`;
 CREATE TABLE `per_users_tb` (
@@ -111,49 +115,46 @@ CREATE TABLE `per_users_tb` (
   `PER_USER_PASSWORD` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'كلمة المرور المشفرة (Hash)',
   `PER_USER_ROLE` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'دور وصلاحيات المستخدم (ADMIN / NURSE)',
   `PER_USER_IS_ACTIVE` smallint NOT NULL DEFAULT '1' COMMENT 'حالة حساب المستخدم: 1 = فعّال، 0 = معطّل',
+  `PER_USER_EMP_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'الموظف المرتبط بالحساب في جدول موظفي المستشفى (اختياري، موظف واحد لكل حساب)',
   PRIMARY KEY (`PER_USER_CODE`),
-  UNIQUE KEY `per_users_tb_per_user_username_unique` (`PER_USER_USERNAME`)
+  UNIQUE KEY `per_users_tb_per_user_username_unique` (`PER_USER_USERNAME`),
+  UNIQUE KEY `per_users_tb_per_user_emp_cd_unique` (`PER_USER_EMP_CD`),
+  CONSTRAINT `per_users_tb_per_user_emp_cd_foreign` FOREIGN KEY (`PER_USER_EMP_CD`) REFERENCES `per_employee_tb` (`PER_EMP_CODE`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='حسابات المستخدمين الذين يسجلون الدخول إلى النظام';
 
 -- Data for `per_users_tb`
-INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`) VALUES ('2759d629-76e6-4c59-bfd2-3a4aeadc2c54', NULL, 'nurse_demo', NULL, NULL, 'NURSE', '1');
-INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`) VALUES ('d928b57e-42ef-41e7-9148-31b1df353d77', NULL, 'admin_user', NULL, NULL, 'ADMIN', '1');
-INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`) VALUES ('da612d56-593a-4a66-a6ea-16ffafbf73bd', NULL, 'nurse_sarah', NULL, NULL, 'NURSE', '1');
-INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`) VALUES ('fc73994f-6aff-4020-a32c-0c00fd2ea484', NULL, 'nurse_khaled', NULL, NULL, 'NURSE', '1');
+INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`, `PER_USER_EMP_CD`) VALUES ('2759d629-76e6-4c59-bfd2-3a4aeadc2c54', NULL, 'nurse_demo', NULL, NULL, 'NURSE', '1', 'a817e223-7e7c-461c-90db-93742a8fd86d');
+INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`, `PER_USER_EMP_CD`) VALUES ('d928b57e-42ef-41e7-9148-31b1df353d77', NULL, 'admin_user', NULL, NULL, 'ADMIN', '1', 'e0cc2613-30b9-4be5-90e0-4a3b169bdba1');
+INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`, `PER_USER_EMP_CD`) VALUES ('da612d56-593a-4a66-a6ea-16ffafbf73bd', NULL, 'nurse_sarah', NULL, NULL, 'NURSE', '1', 'bb948a14-477e-4d1b-84d3-6afec72e4ef3');
+INSERT INTO `per_users_tb` (`PER_USER_CODE`, `PER_USER_FULL_NAME`, `PER_USER_USERNAME`, `PER_USER_EMAIL`, `PER_USER_PASSWORD`, `PER_USER_ROLE`, `PER_USER_IS_ACTIVE`, `PER_USER_EMP_CD`) VALUES ('fc73994f-6aff-4020-a32c-0c00fd2ea484', NULL, 'nurse_khaled', NULL, NULL, 'NURSE', '1', '15bd4d3b-25dc-4e12-a5cf-3df7dc6b78b9');
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `per_employee_tb`
 -- الحالة: [خارجي — من نظام المستشفى] نظامنا يقرأ هذا الجدول ولا ينشئه؛ تعريفه هنا مرجع لمطابقة البنية فقط، والبيانات أدناه للتطوير والاختبار.
--- ⚠ قرار مطلوب (انظر «قرار مطلوب: جداول نظام المستشفى» في رأس الملف). نظامنا يكتب في هذا الجدول اليوم:
---   - app/Http/Controllers/Admin/UserController.php (update): يغيّر PER_EMP_USER_CD لربط المستخدم بالموظف
---     (ويُلغي ربطه السابق).
---   - app/Http/Controllers/Auth/MockHospitalAuthController.php: دخول تجريبي للتطوير فقط؛ ينشئ موظفاً للمستخدم.
+-- نظامنا لا يكتب في هذا الجدول في الإنتاج؛ ربط المستخدم بالموظف محفوظ في per_users_tb.PER_USER_EMP_CD.
+--   - الاستثناء الوحيد: app/Http/Controllers/Auth/MockHospitalAuthController.php، دخول تجريبي للتطوير فقط؛ ينشئ
+--     موظفاً للمستخدم.
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `per_employee_tb`;
 CREATE TABLE `per_employee_tb` (
   `PER_EMP_CODE` char(36) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'المعرّف الفريد للموظف (UUID) - المفتاح الأساسي',
   `PER_EMP_FULL_NAME` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'الاسم الكامل للموظف',
   `PER_EMP_JOB_TITLE` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'المسمى الوظيفي للموظف',
-  `PER_EMP_USER_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ربط بحساب المستخدم في PER_USERS_TB (اختياري)',
   `PER_EMP_IS_ACTIVE` smallint NOT NULL DEFAULT '1' COMMENT 'حالة الموظف: 1 = على رأس عمله، 0 = غير فعّال',
-  PRIMARY KEY (`PER_EMP_CODE`),
-  KEY `per_employee_tb_per_emp_user_cd_index` (`PER_EMP_USER_CD`),
-  CONSTRAINT `per_employee_tb_per_emp_user_cd_foreign` FOREIGN KEY (`PER_EMP_USER_CD`) REFERENCES `per_users_tb` (`PER_USER_CODE`) ON DELETE SET NULL
+  PRIMARY KEY (`PER_EMP_CODE`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='دليل الموظفين (ممرضون، أطباء، إداريون)';
 
 -- Data for `per_employee_tb`
-INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_USER_CD`, `PER_EMP_IS_ACTIVE`) VALUES ('15bd4d3b-25dc-4e12-a5cf-3df7dc6b78b9', 'الممرض خالد العلي', NULL, 'fc73994f-6aff-4020-a32c-0c00fd2ea484', '1');
-INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_USER_CD`, `PER_EMP_IS_ACTIVE`) VALUES ('a817e223-7e7c-461c-90db-93742a8fd86d', 'ممرض تجربة الصور السريرية', 'ممرض عيادة الجروح', '2759d629-76e6-4c59-bfd2-3a4aeadc2c54', '1');
-INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_USER_CD`, `PER_EMP_IS_ACTIVE`) VALUES ('bb948a14-477e-4d1b-84d3-6afec72e4ef3', 'الممرضة سارة أحمد', NULL, 'da612d56-593a-4a66-a6ea-16ffafbf73bd', '1');
-INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_USER_CD`, `PER_EMP_IS_ACTIVE`) VALUES ('e0cc2613-30b9-4be5-90e0-4a3b169bdba1', 'د. أحمد السوري (مدير النظام)', NULL, 'd928b57e-42ef-41e7-9148-31b1df353d77', '1');
+INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_IS_ACTIVE`) VALUES ('15bd4d3b-25dc-4e12-a5cf-3df7dc6b78b9', 'الممرض خالد العلي', NULL, '1');
+INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_IS_ACTIVE`) VALUES ('a817e223-7e7c-461c-90db-93742a8fd86d', 'ممرض تجربة الصور السريرية', 'ممرض عيادة الجروح', '1');
+INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_IS_ACTIVE`) VALUES ('bb948a14-477e-4d1b-84d3-6afec72e4ef3', 'الممرضة سارة أحمد', NULL, '1');
+INSERT INTO `per_employee_tb` (`PER_EMP_CODE`, `PER_EMP_FULL_NAME`, `PER_EMP_JOB_TITLE`, `PER_EMP_IS_ACTIVE`) VALUES ('e0cc2613-30b9-4be5-90e0-4a3b169bdba1', 'د. أحمد السوري (مدير النظام)', NULL, '1');
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `mr_patient_tb`
 -- الحالة: [خارجي — من نظام المستشفى] نظامنا يقرأ هذا الجدول ولا ينشئه؛ تعريفه هنا مرجع لمطابقة البنية فقط، والبيانات أدناه للتطوير والاختبار.
--- ⚠ قرار مطلوب (انظر «قرار مطلوب: جداول نظام المستشفى» في رأس الملف). نظامنا يكتب في هذا الجدول اليوم:
---   - app/Services/HospitalPatientSyncService.php (searchAndSyncPatient): محاكاة للتطوير وليست اتصالاً بنظام
---     المستشفى؛ إن لم يجد المريض ينشئ مريضاً وهمياً (رقم هاتف عشوائي، تاريخ ميلاد 1988-06-15).
---     يجب استبدالها باتصال حقيقي بنظام المستشفى قبل الإنتاج أياً كان القرار.
+-- نظامنا لا يكتب في هذا الجدول: app/Services/HospitalPatientSyncService.php يبحث فيه فقط، ويُرجع «غير موجود»
+-- (404) إذا لم يجد المريض.
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `mr_patient_tb`;
 CREATE TABLE `mr_patient_tb` (
@@ -165,7 +166,7 @@ CREATE TABLE `mr_patient_tb` (
   `MR_PAT_PHONE` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'رقم هاتف المريض',
   `MR_PAT_GENDER` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'جنس المريض (ذكر/أنثى)',
   `MR_PAT_DOB` date DEFAULT NULL COMMENT 'تاريخ ميلاد المريض',
-  `MR_PAT_SUPERVISING_DOCTOR` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'اسم الطبيب المشرف على حالة المريض',
+  `MR_PAT_SUPERVISING_DOCTOR_CD` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'رمز الطبيب المشرف على حالة المريض في جدول الموظفين',
   `MR_PAT_HOSPITAL_DEPARTMENT` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'القسم الذي يرقد فيه المريض بالمستشفى',
   `MR_PAT_HOSPITAL_ADMISSION_DATE` date DEFAULT NULL COMMENT 'تاريخ دخول المريض للمستشفى',
   `MR_PAT_LAST_SYNCED_AT` datetime DEFAULT NULL COMMENT 'تاريخ ووقت آخر مزامنة لبيانات المريض من المستشفى',
@@ -174,12 +175,12 @@ CREATE TABLE `mr_patient_tb` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='الفهرس الرئيسي للمرضى (Master Patient Index)';
 
 -- Data for `mr_patient_tb`
-INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('13cfac53-76f5-4f2b-b73e-a91cd7a02e3d', 'PAT-1004', NULL, NULL, 'خالد الزهراني', NULL, 'MALE', NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('3dd77f14-fb20-4a8c-a789-a05bb0fdd88b', 'PAT-1003', NULL, NULL, 'يوسف التميمي', NULL, 'MALE', NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('5a019650-e8e4-42b2-af41-e5801070ec65', '409998877', NULL, NULL, 'خالد عبد الله المنصور (تجربة توثيق الصور)', '0599112233', 'MALE', '1985-05-15', NULL, NULL, NULL, NULL);
-INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('6ab65c84-ac86-4fee-addc-e5b57fbe1ca4', 'PAT-1001', NULL, NULL, 'عبدالله المحمد', NULL, 'MALE', NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('6ad0543e-05b5-4355-9197-ae19ea463db2', 'PAT-1005', NULL, NULL, 'فاطمة النجار', NULL, 'FEMALE', NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('e2215585-de10-4f9a-8caa-5f2d606f0466', 'PAT-1002', NULL, NULL, 'مريم العباسي', NULL, 'FEMALE', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR_CD`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('13cfac53-76f5-4f2b-b73e-a91cd7a02e3d', 'PAT-1004', NULL, NULL, 'خالد الزهراني', NULL, 'MALE', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR_CD`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('3dd77f14-fb20-4a8c-a789-a05bb0fdd88b', 'PAT-1003', NULL, NULL, 'يوسف التميمي', NULL, 'MALE', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR_CD`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('5a019650-e8e4-42b2-af41-e5801070ec65', '409998877', NULL, NULL, 'خالد عبد الله المنصور (تجربة توثيق الصور)', '0599112233', 'MALE', '1985-05-15', NULL, NULL, NULL, NULL);
+INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR_CD`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('6ab65c84-ac86-4fee-addc-e5b57fbe1ca4', 'PAT-1001', NULL, NULL, 'عبدالله المحمد', NULL, 'MALE', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR_CD`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('6ad0543e-05b5-4355-9197-ae19ea463db2', 'PAT-1005', NULL, NULL, 'فاطمة النجار', NULL, 'FEMALE', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `mr_patient_tb` (`MR_PAT_CODE`, `MR_PAT_ID_NO`, `MR_PAT_HOSPITAL_PATIENT_ID`, `MR_PAT_NATIONAL_ID`, `MR_PAT_FULL_NAME`, `MR_PAT_PHONE`, `MR_PAT_GENDER`, `MR_PAT_DOB`, `MR_PAT_SUPERVISING_DOCTOR_CD`, `MR_PAT_HOSPITAL_DEPARTMENT`, `MR_PAT_HOSPITAL_ADMISSION_DATE`, `MR_PAT_LAST_SYNCED_AT`) VALUES ('e2215585-de10-4f9a-8caa-5f2d606f0466', 'PAT-1002', NULL, NULL, 'مريم العباسي', NULL, 'FEMALE', NULL, NULL, NULL, NULL, NULL);
 
 -- ----------------------------------------------------------------------------
 -- Table Structure for `wc_department_tb`

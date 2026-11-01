@@ -76,6 +76,11 @@ class RegistrationRequestController extends Controller
         }
 
         $result = $syncService->searchAndSyncPatient($query);
+
+        if (! $result['found']) {
+            return response()->json(['found' => false, 'message' => 'المريض غير موجود في سجلات المستشفى'], 404);
+        }
+
         /** @var MrPatient $patient */
         $patient = $result['patient'];
 

@@ -44,29 +44,19 @@ class HospitalJwtAuthMiddleware
             return $this->invalidTokenResponse($request);
         }
 
-        $user = User::where('PER_USER_USERNAME', $username)->first();
-
-        if (! $user) {
-            $user = User::create([
+        // Who may open WCCMS is decided by the hospital permission system that issues the token, so a first-time
+        // user is provisioned active with full access; there is no approval step and no first admin to seed.
+        $user = User::firstOrCreate(
+            ['PER_USER_USERNAME' => $username],
+            [
                 'PER_USER_CODE' => (string) Str::uuid(),
-                'PER_USER_USERNAME' => $username,
-                'PER_USER_ROLE' => null,
-                'PER_USER_IS_ACTIVE' => false,
-            ]);
-
-            return $this->forbiddenResponse($request, 'pending_approval', 'حسابك قيد المراجعة والاعتماد من قبل مسؤول النظام');
-        }
+                'PER_USER_ROLE' => 'NURSE',
+                'PER_USER_IS_ACTIVE' => true,
+            ],
+        );
 
         if (! $user->PER_USER_IS_ACTIVE) {
-            if ($user->PER_USER_ROLE === null) {
-                return $this->forbiddenResponse($request, 'pending_approval', 'حسابك قيد المراجعة والاعتماد من قبل مسؤول النظام');
-            }
-
             return $this->forbiddenResponse($request, 'access_disabled', 'تم إيقاف صلاحية الوصول لنظام العيادة، يرجى مراجعة المسؤول');
-        }
-
-        if ($user->PER_USER_ROLE === null) {
-            return $this->forbiddenResponse($request, 'pending_approval', 'حسابك قيد المراجعة والاعتماد من قبل مسؤول النظام');
         }
 
         Auth::login($user);

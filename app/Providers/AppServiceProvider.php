@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\ClinicalWorkflows\MySqlClinicalWorkflowGateway;
+use App\Services\ClinicalWorkflows\OracleClinicalWorkflowGateway;
 use App\Services\ClinicalWorkflows\SqliteClinicalWorkflowGateway;
 use App\Services\HospitalPatientSyncService;
 use App\Services\HospitalPatientSyncServiceInterface;
@@ -20,8 +21,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(HospitalPatientSyncServiceInterface::class, HospitalPatientSyncService::class);
         $this->app->bind(ClinicalWorkflowGatewayInterface::class, function ($app) {
-            if ($app->environment('testing') && $app['db']->connection()->getDriverName() === 'sqlite') {
+            $driver = $app['db']->connection()->getDriverName();
+
+            if ($app->environment('testing') && $driver === 'sqlite') {
                 return new SqliteClinicalWorkflowGateway;
+            }
+
+            if ($driver === 'oracle') {
+                return new OracleClinicalWorkflowGateway;
             }
 
             return new MySqlClinicalWorkflowGateway;

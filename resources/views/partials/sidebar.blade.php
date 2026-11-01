@@ -77,13 +77,11 @@
             <span>طلباتي</span>
         </a>
 
-        @if(auth()->user()?->PER_USER_ROLE === 'ADMIN')
-            <a href="{{ route('admin.index') }}"
-               class="m8-nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}" @if(request()->routeIs('admin.*')) aria-current="page" @endif>
-                <i class="bi bi-gear-fill"></i>
-                <span>الإدارة</span>
-            </a>
-        @endif
+        <a href="{{ route('admin.index') }}"
+           class="m8-nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}" @if(request()->routeIs('admin.*')) aria-current="page" @endif>
+            <i class="bi bi-gear-fill"></i>
+            <span>الإدارة</span>
+        </a>
 
     </nav>
 

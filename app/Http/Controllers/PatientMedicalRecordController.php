@@ -131,9 +131,9 @@ class PatientMedicalRecordController extends Controller
                             'scheduledReviews.dailyReview',
                         ])
                         ->withCount([
-                            'diagnoses',
-                            'dailyReviews',
-                            'scheduledReviews',
+                            'diagnoses as DIAGNOSES_COUNT',
+                            'dailyReviews as DAILY_REVIEWS_COUNT',
+                            'scheduledReviews as SCHEDULED_REVIEWS_COUNT',
                         ])
                         ->orderByRaw("CASE WHEN WC_REG_STATUS = 'ACTIVE' THEN 0 ELSE 1 END")
                         ->orderByDesc('WC_REG_DATE')

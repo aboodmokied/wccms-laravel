@@ -39,8 +39,9 @@ class RegistrationListingTest extends TestCase
         $this->nurseEmployee = PerEmployee::create([
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'ممرض فحص تجريبي',
-            'PER_EMP_USER_CD' => $this->nurseUser->PER_USER_CODE,
         ]);
+
+        $this->nurseUser->update(['PER_USER_EMP_CD' => $this->nurseEmployee->PER_EMP_CODE]);
 
         $this->department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),

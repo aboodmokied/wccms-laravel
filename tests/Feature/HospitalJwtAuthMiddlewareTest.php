@@ -80,24 +80,24 @@ class HospitalJwtAuthMiddlewareTest extends TestCase
         ]);
     }
 
-    public function test_first_time_user_is_auto_provisioned_with_null_role_and_inactive_status(): void
+    public function test_first_time_user_is_provisioned_active_and_signed_in_without_approval(): void
     {
         $token = $this->generateJwt('new_nurse_01');
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/dashboard');
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/dashboard')
+            ->assertOk();
 
-        $response->assertStatus(403);
-        $response->assertJson([
-            'error' => 'pending_approval',
-            'message' => 'حسابك قيد المراجعة والاعتماد من قبل مسؤول النظام',
-        ]);
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->get('/admin')
+            ->assertOk();
 
         $this->assertDatabaseHas('per_users_tb', [
             'PER_USER_USERNAME' => 'new_nurse_01',
-            'PER_USER_ROLE' => null,
-            'PER_USER_IS_ACTIVE' => 0,
+            'PER_USER_ROLE' => 'NURSE',
+            'PER_USER_IS_ACTIVE' => 1,
         ]);
+        $this->assertDatabaseCount('per_users_tb', 1);
     }
 
     public function test_deactivated_account_returns_403_access_disabled(): void

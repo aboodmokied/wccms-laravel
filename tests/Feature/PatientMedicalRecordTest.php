@@ -471,9 +471,10 @@ class PatientMedicalRecordTest extends TestCase
         $employee = PerEmployee::create([
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'ممرض السجل الطولي',
-            'PER_EMP_USER_CD' => $user->PER_USER_CODE,
             'PER_EMP_IS_ACTIVE' => 1,
         ]);
+
+        $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
 
         $department = WcDepartment::create([
             'WC_DEPT_CODE' => (string) Str::uuid(),

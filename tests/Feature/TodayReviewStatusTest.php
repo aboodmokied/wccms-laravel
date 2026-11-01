@@ -47,9 +47,10 @@ class TodayReviewStatusTest extends TestCase
         $this->nurse = PerEmployee::create([
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'الممرض التجريبي',
-            'PER_EMP_USER_CD' => $this->user->PER_USER_CODE,
             'PER_EMP_IS_ACTIVE' => 1,
         ]);
+
+        $this->user->update(['PER_USER_EMP_CD' => $this->nurse->PER_EMP_CODE]);
 
         $this->patient = MrPatient::create([
             'MR_PAT_CODE' => (string) Str::uuid(),

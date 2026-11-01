@@ -4,18 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Employee extends Model
 {
     use HasFactory;
-
-    /**
-     * Database table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'per_employee_tb';
 
     /**
      * Primary key column name.
@@ -54,14 +47,21 @@ class Employee extends Model
         'PER_EMP_CODE',
         'PER_EMP_FULL_NAME',
         'PER_EMP_JOB_TITLE',
-        'PER_EMP_USER_CD',
     ];
 
     /**
-     * Get the associated user account.
+     * The hospital employees table, read directly (config/hospital.php).
      */
-    public function user(): BelongsTo
+    public function getTable(): string
     {
-        return $this->belongsTo(User::class, 'PER_EMP_USER_CD', 'PER_USER_CODE');
+        return config('hospital.tables.employees');
+    }
+
+    /**
+     * Get the associated user account; the link lives on PER_USERS_TB.PER_USER_EMP_CD.
+     */
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class, 'PER_USER_EMP_CD', 'PER_EMP_CODE');
     }
 }

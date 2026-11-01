@@ -68,10 +68,9 @@ class LongitudinalPatientSeeder extends Seeder
                 'PER_USER_IS_ACTIVE' => 1,
             ]);
 
-            $clinicalEmployee = PerEmployee::query()->firstOrCreate(
-                ['PER_EMP_USER_CD' => $entryUser->PER_USER_CODE],
+            $clinicalEmployee = $entryUser->employee ?? PerEmployee::query()->firstOrCreate(
+                ['PER_EMP_CODE' => '11222222-2222-4222-8222-222222222222'],
                 [
-                    'PER_EMP_CODE' => '11222222-2222-4222-8222-222222222222',
                     'PER_EMP_FULL_NAME' => 'الممرضة التجريبية للسجل الطولي',
                     'PER_EMP_JOB_TITLE' => 'ممرضة عناية بالجروح',
                 ],
@@ -80,6 +79,7 @@ class LongitudinalPatientSeeder extends Seeder
                 'PER_EMP_FULL_NAME' => 'الممرضة التجريبية للسجل الطولي',
                 'PER_EMP_JOB_TITLE' => 'ممرضة عناية بالجروح',
             ]);
+            $entryUser->update(['PER_USER_EMP_CD' => $clinicalEmployee->PER_EMP_CODE]);
 
             $patient = MrPatient::query()->where('MR_PAT_ID_NO', self::PATIENT_ID)->first();
 

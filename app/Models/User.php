@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -56,6 +56,7 @@ class User extends Authenticatable
         'PER_USER_USERNAME',
         'PER_USER_ROLE',
         'PER_USER_IS_ACTIVE',
+        'PER_USER_EMP_CD',
     ];
 
     /**
@@ -68,11 +69,11 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the associated employee profile.
+     * Get the associated hospital employee profile (PER_USER_EMP_CD).
      */
-    public function employee(): HasOne
+    public function employee(): BelongsTo
     {
-        return $this->hasOne(Employee::class, 'PER_EMP_USER_CD', 'PER_USER_CODE');
+        return $this->belongsTo(Employee::class, 'PER_USER_EMP_CD', 'PER_EMP_CODE');
     }
 
     /**

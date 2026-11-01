@@ -51,18 +51,17 @@ class MockHospitalAuthController extends Controller
 
         // 2. Ensure Employee directory record exists if user is active
         if ($isActive) {
-            $employee = PerEmployee::where('PER_EMP_USER_CD', $user->PER_USER_CODE)->first();
-
-            if (! $employee) {
+            if (! $user->employee) {
                 $defaultTitle = $role === 'ADMIN' ? 'مشرف سريري' : 'ممرض قانوني';
                 $defaultName = $fullName ?: ($role === 'ADMIN' ? 'د. مشرف العيادة' : 'ممرض '.$username);
 
-                PerEmployee::create([
+                $employee = PerEmployee::create([
                     'PER_EMP_CODE' => (string) Str::uuid(),
                     'PER_EMP_FULL_NAME' => $defaultName,
                     'PER_EMP_JOB_TITLE' => $defaultTitle,
-                    'PER_EMP_USER_CD' => $user->PER_USER_CODE,
                 ]);
+
+                $user->update(['PER_USER_EMP_CD' => $employee->PER_EMP_CODE]);
             }
         }
 

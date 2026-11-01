@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesWoundAssessment;
+use App\Models\PerEmployee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,9 +22,9 @@ class AcceptRegistrationRequest extends FormRequest
         return [
             'department_code' => ['required', 'uuid', Rule::exists('wc_department_tb', 'WC_DEPT_CODE')->where('WC_DEPT_IS_ACTIVE', 1)],
             'procedure_code' => ['nullable', 'uuid', Rule::exists('wc_procedure_tb', 'WC_PROC_CODE')->where('WC_PROC_IS_ACTIVE', 1)],
-            'clinic_nurse_code' => ['required', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
-            'wct_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
-            'doctor_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'clinic_nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'wct_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'doctor_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
             'has_allergies' => ['required', 'boolean'],
             'allergies_description' => ['exclude_unless:has_allergies,1', 'required_if:has_allergies,1', 'nullable', 'string', 'max:2000'],
             'no_comorbidities' => ['required', 'boolean'],

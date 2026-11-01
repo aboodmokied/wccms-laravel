@@ -39,12 +39,20 @@ class WardReferralSubmissionTest extends TestCase
             'PER_EMP_CODE' => (string) Str::uuid(),
             'PER_EMP_FULL_NAME' => 'ممرض قسم الجراحة',
             'PER_EMP_JOB_TITLE' => 'ممرض قانوني',
-            'PER_EMP_USER_CD' => $this->user->PER_USER_CODE,
+        ]);
+
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
+
+        $doctor = PerEmployee::create([
+            'PER_EMP_CODE' => (string) Str::uuid(),
+            'PER_EMP_FULL_NAME' => 'د. سامي الخطيب',
+            'PER_EMP_JOB_TITLE' => 'طبيب استشاري',
         ]);
 
         $this->patient = MrPatient::create([
             'MR_PAT_CODE' => (string) Str::uuid(),
             'MR_PAT_ID_NO' => '401234567',
+            'MR_PAT_SUPERVISING_DOCTOR_CD' => $doctor->PER_EMP_CODE,
             'MR_PAT_FULL_NAME' => 'أحمد علي حسن',
             'MR_PAT_PHONE' => '0599123456',
             'MR_PAT_GENDER' => 'MALE',
@@ -80,9 +88,24 @@ class WardReferralSubmissionTest extends TestCase
                 'id_number' => '401234567',
                 'full_name' => 'أحمد علي حسن',
             ],
+            'admission' => ['attending_doctor' => 'د. سامي الخطيب'],
             'has_pending_request' => false,
             'has_active_registration' => false,
         ]);
+    }
+
+    public function test_searching_unknown_id_number_returns_not_found_without_creating_patient(): void
+    {
+        $token = $this->generateJwt('ward_nurse_1');
+        $patientCountBefore = MrPatient::count();
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson(route('requests.search_patient', ['query' => '000000000']));
+
+        $response->assertNotFound();
+        $response->assertJson(['found' => false]);
+        $this->assertSame($patientCountBefore, MrPatient::count());
+        $this->assertDatabaseMissing(MrPatient::class, ['MR_PAT_ID_NO' => '000000000']);
     }
 
     public function test_ward_nurse_can_submit_referral_request_with_snapshot_data(): void

@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MrPatient;
+use App\Models\PerEmployee;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRegistrationRequest extends FormRequest
 {
@@ -19,7 +22,7 @@ class StoreRegistrationRequest extends FormRequest
             'patient_code' => [
                 'required',
                 'string',
-                'exists:mr_patient_tb,MR_PAT_CODE',
+                Rule::exists(MrPatient::class, 'MR_PAT_CODE'),
                 function ($attribute, $value, $fail) {
                     $hasPendingRequest = WcRequestReg::where('WC_REQ_PATIENT_CD', $value)
                         ->whereIn('WC_REQ_STATUS', ['PENDING', 'VISIT_IN_PROGRESS'])
@@ -40,7 +43,7 @@ class StoreRegistrationRequest extends FormRequest
                     }
                 },
             ],
-            'attending_nurse_code' => ['required', 'string', 'exists:per_employee_tb,PER_EMP_CODE'],
+            'attending_nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

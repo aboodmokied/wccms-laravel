@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesWoundAssessment;
+use App\Models\PerEmployee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,9 +20,9 @@ class StoreWoundDiagnosisRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'clinical_nurse_code' => ['required', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
-            'wct_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
-            'doctor_employee_code' => ['nullable', 'uuid', Rule::exists('per_employee_tb', 'PER_EMP_CODE')],
+            'clinical_nurse_code' => ['required', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'wct_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
+            'doctor_employee_code' => ['nullable', 'string', Rule::exists(PerEmployee::class, 'PER_EMP_CODE')],
             'assessment' => ['required', 'array'],
             ...$this->woundAssessmentRules('assessment', true),
         ];

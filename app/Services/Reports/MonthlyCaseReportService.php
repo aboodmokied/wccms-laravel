@@ -197,7 +197,7 @@ class MonthlyCaseReportService
             'department',
             'procedure',
             'pmhConditions',
-            'diagnoses' => fn ($query) => $query->withCount('woundPhotos'),
+            'diagnoses' => fn ($query) => $query->withCount('woundPhotos as WOUND_PHOTOS_COUNT'),
             'diagnoses.diagnosis',
             'diagnoses.woundType',
             'diagnoses.assessments.dressing',
@@ -264,7 +264,7 @@ class MonthlyCaseReportService
                     ? __('clinical.swab_procedure')
                     : null,
             ]),
-            photoCount: (int) $wounds->sum('wound_photos_count'),
+            photoCount: (int) $wounds->sum('WOUND_PHOTOS_COUNT'),
             dischargeDate: $isClosed && $closedAt ? $this->immutable($closedAt)->startOfDay() : null,
             outcome: $this->outcome($registration),
         );

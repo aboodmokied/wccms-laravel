@@ -40,9 +40,11 @@ class UserModelTest extends TestCase
         $user = new User;
         $employee = new Employee;
 
-        $this->assertInstanceOf(HasOne::class, $user->employee());
-        $this->assertInstanceOf(BelongsTo::class, $employee->user());
-        $this->assertSame('PER_EMP_USER_CD', $user->employee()->getForeignKeyName());
+        $this->assertInstanceOf(BelongsTo::class, $user->employee());
+        $this->assertInstanceOf(HasOne::class, $employee->user());
+        $this->assertSame('PER_USER_EMP_CD', $user->employee()->getForeignKeyName());
+        $this->assertSame('PER_EMP_CODE', $user->employee()->getOwnerKeyName());
+        $this->assertSame('PER_USER_EMP_CD', $employee->user()->getForeignKeyName());
     }
 
     public function test_user_role_helper_methods(): void

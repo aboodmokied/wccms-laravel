@@ -32,8 +32,8 @@ This application follows a **Database-First (DB-First)** approach. The database 
 
 5. **Schema Reference**:
    - **`mr_patient_tb`**: `MR_PAT_CODE` (PK)
-   - **`per_employee_tb`**: `PER_EMP_CODE` (PK), foreign key `PER_EMP_USER_CD`
-   - **`per_users_tb`**: `PER_USER_CODE` (PK)
+   - **`per_employee_tb`**: `PER_EMP_CODE` (PK). Hospital-owned in production (table from `config/hospital.php`); WCCMS never writes to it
+   - **`per_users_tb`**: `PER_USER_CODE` (PK), foreign key `PER_USER_EMP_CD` (UNIQUE, the linked hospital employee)
    - **`wc_registration_tb`**: `WC_REG_CODE` (PK), foreign key `WC_REG_PATIENT_CD`, `WC_REG_NURSE_CD`, `WC_REG_DEPARTMENT_CD`, `WC_REG_REQUEST_CD`, etc.
    - **`wc_department_tb`**: `WC_DEPT_CODE` (PK)
    - **`wc_daily_review_tb`**: `WC_DREV_CODE` (PK), foreign key `WC_DREV_REGISTRATION_CD`

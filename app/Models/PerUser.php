@@ -25,6 +25,7 @@ class PerUser extends Authenticatable
         'PER_USER_PASSWORD',
         'PER_USER_ROLE',
         'PER_USER_IS_ACTIVE',
+        'PER_USER_EMP_CD',
     ];
 
     protected $hidden = [
@@ -33,6 +34,6 @@ class PerUser extends Authenticatable
 
     public function employee()
     {
-        return $this->hasOne(PerEmployee::class, 'PER_EMP_USER_CD', 'PER_USER_CODE');
+        return $this->belongsTo(PerEmployee::class, 'PER_USER_EMP_CD', 'PER_EMP_CODE');
     }
 }

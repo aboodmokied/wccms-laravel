@@ -40,7 +40,8 @@ abstract class StructuredWoundTestCase extends TestCase
         parent::setUp();
         $this->seed(WcAssessmentChoiceSeeder::class);
         $this->user = User::create(['PER_USER_CODE' => (string) Str::uuid(), 'PER_USER_USERNAME' => 'structured_user', 'PER_USER_ROLE' => 'NURSE', 'PER_USER_IS_ACTIVE' => 1]);
-        $this->employee = PerEmployee::create(['PER_EMP_CODE' => (string) Str::uuid(), 'PER_EMP_FULL_NAME' => 'ممرض منظم', 'PER_EMP_USER_CD' => $this->user->PER_USER_CODE]);
+        $this->employee = PerEmployee::create(['PER_EMP_CODE' => (string) Str::uuid(), 'PER_EMP_FULL_NAME' => 'ممرض منظم']);
+        $this->user->update(['PER_USER_EMP_CD' => $this->employee->PER_EMP_CODE]);
         $this->patient = MrPatient::create(['MR_PAT_CODE' => (string) Str::uuid(), 'MR_PAT_ID_NO' => '99112233', 'MR_PAT_FULL_NAME' => 'مريض التقييم المنظم', 'MR_PAT_GENDER' => 'MALE']);
         $this->department = WcDepartment::create(['WC_DEPT_CODE' => (string) Str::uuid(), 'WC_DEPT_NAME' => 'عيادة الجروح', 'WC_DEPT_IS_ACTIVE' => 1]);
         $this->woundType = WcWoundType::create(['WC_WTYPE_CODE' => (string) Str::uuid(), 'WC_WTYPE_NAME' => 'قرحة', 'WC_WTYPE_IS_ACTIVE' => 1]);

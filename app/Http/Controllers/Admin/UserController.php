@@ -16,9 +16,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = User::with('employee')->get();
-        $unlinkedEmployees = Employee::whereNull('PER_EMP_USER_CD')
-            ->orWhere('PER_EMP_USER_CD', '')
-            ->get();
+        $unlinkedEmployees = Employee::whereDoesntHave('user')->get();
 
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
@@ -37,18 +35,23 @@ class UserController extends Controller
     {
         $user = User::where('PER_USER_CODE', $userCode)->firstOrFail();
 
-        $user->update([
+        $attributes = [
             'PER_USER_ROLE' => $request->input('PER_USER_ROLE'),
             'PER_USER_IS_ACTIVE' => $request->boolean('PER_USER_IS_ACTIVE'),
-        ]);
+        ];
 
         if ($request->has('PER_EMP_CODE') && $request->input('PER_EMP_CODE')) {
-            // Remove previous link for this user
-            Employee::where('PER_EMP_USER_CD', $user->PER_USER_CODE)->update(['PER_EMP_USER_CD' => null]);
+            $employeeCode = $request->input('PER_EMP_CODE');
 
-            // Assign new link
-            Employee::where('PER_EMP_CODE', $request->input('PER_EMP_CODE'))->update(['PER_EMP_USER_CD' => $user->PER_USER_CODE]);
+            // An employee belongs to one account (UNIQUE): take it from any other account first
+            User::where('PER_USER_EMP_CD', $employeeCode)
+                ->where('PER_USER_CODE', '<>', $user->PER_USER_CODE)
+                ->update(['PER_USER_EMP_CD' => null]);
+
+            $attributes['PER_USER_EMP_CD'] = $employeeCode;
         }
+
+        $user->update($attributes);
 
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([

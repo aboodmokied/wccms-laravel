@@ -222,10 +222,15 @@ trait WorkbookSyntheticCases
 
     protected function reportEmployee(): PerEmployee
     {
-        return $this->reportEmployee ??= PerEmployee::create([
-            'PER_EMP_FULL_NAME' => 'ممرض التقارير',
-            'PER_EMP_USER_CD' => $this->reportUser()->PER_USER_CODE,
-        ]);
+        if ($this->reportEmployee === null) {
+            $this->reportEmployee = PerEmployee::create([
+                'PER_EMP_FULL_NAME' => 'ممرض التقارير',
+            ]);
+
+            $this->reportUser()->update(['PER_USER_EMP_CD' => $this->reportEmployee->PER_EMP_CODE]);
+        }
+
+        return $this->reportEmployee;
     }
 
     /**
