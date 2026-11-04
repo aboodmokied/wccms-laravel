@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Models\WcDepartment;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -22,8 +21,6 @@ class RegistrationListingTest extends TestCase
     private Employee $nurseEmployee;
 
     private WcDepartment $department;
-
-    private string $jwtToken;
 
     protected function setUp(): void
     {
@@ -45,13 +42,6 @@ class RegistrationListingTest extends TestCase
             'WC_DEPT_NAME' => 'قسم الجراحة',
             'WC_DEPT_IS_ACTIVE' => 1,
         ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-        $this->jwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
     }
 
     public function test_can_list_active_registrations_by_default(): void
@@ -82,7 +72,7 @@ class RegistrationListingTest extends TestCase
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
 
-        $response = $this->call('GET', '/registrations', [], ['hospital_token' => $this->jwtToken]);
+        $response = $this->get('/registrations');
 
         $response->assertStatus(200);
         $response->assertSee('أحمد محمود علي');
@@ -119,7 +109,7 @@ class RegistrationListingTest extends TestCase
             'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
         ]);
 
-        $response = $this->call('GET', '/registrations', ['status' => 'DISCHARGED'], ['hospital_token' => $this->jwtToken]);
+        $response = $this->call('GET', '/registrations', ['status' => 'DISCHARGED']);
 
         $response->assertStatus(200);
         $response->assertSee('فاطمة خليل');

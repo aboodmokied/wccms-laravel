@@ -5,15 +5,12 @@ namespace Tests\Feature;
 use App\Enums\EmployeeRole;
 use App\Models\Employee;
 use App\Models\JobLookup;
-use App\Models\User;
 use App\Rules\HospitalEmployeeExists;
 use App\Support\LocalHospitalCopy;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -121,7 +118,7 @@ class EmployeePickListsTest extends TestCase
         Log::shouldHaveReceived('warning')->withArgs(fn (string $message) => str_contains($message, 'لم توجد في C_JOB_TB')
             && str_contains($message, 'HOSPITAL_NURSE_JOB_CODES'));
 
-        $this->call('GET', route('requests.create'), [], ['hospital_token' => $this->hospitalToken()])
+        $this->get(route('requests.create'))
             ->assertOk()
             ->assertSee('كاتب الاستقبال')
             ->assertSee('تعرض كل الموظفين النشطين');
@@ -192,7 +189,7 @@ class EmployeePickListsTest extends TestCase
         $this->employee('طبيب الجراحة', self::DOCTOR_JOB);
         $this->employee('كاتب الاستقبال', self::CLERK_JOB);
 
-        $this->call('GET', route('requests.create'), [], ['hospital_token' => $this->hospitalToken()])
+        $this->get(route('requests.create'))
             ->assertOk()
             ->assertSee('ممرضة القسم')
             ->assertDontSee('طبيب الجراحة')
@@ -212,19 +209,5 @@ class EmployeePickListsTest extends TestCase
     private function job(int $code, ?string $nameAr, ?string $nameEn): void
     {
         LocalHospitalCopy::firstOrInsert(JobLookup::class, ['JOB_CODE' => $code], ['JOB_NAME_AR' => $nameAr, 'JOB_NAME_EN' => $nameEn]);
-    }
-
-    private function hospitalToken(): string
-    {
-        $user = User::create([
-            'PER_USER_CODE' => (string) Str::uuid(), 'PER_USER_USERNAME' => 'jobs_'.Str::random(8),
-            'PER_USER_ROLE' => 'ADMIN', 'PER_USER_IS_ACTIVE' => 1,
-        ]);
-
-        return JWT::encode(
-            ['sub' => $user->PER_USER_USERNAME, 'iat' => time(), 'exp' => time() + 3600],
-            config('services.hospital_auth.jwt_secret'),
-            'HS256'
-        );
     }
 }

@@ -8,7 +8,7 @@ use Ramsey\Uuid\Uuid;
 
 /**
  * The complete WCCMS clinic schema for development and tests (MySQL / SQLite). Production is Oracle and is built by
- * wccms_oracle_schema.sql and wccms_oracle_procedures.sql, never by this migration.
+ * wccms_oracle_install.sql, never by this migration.
  *
  * Section 1 builds local copies of the hospital system tables (schema HOS in production) with their real names, the
  * columns WCCMS reads and their composite keys (code, HOS_NO), so the system runs on a developer machine. WCCMS
@@ -20,7 +20,7 @@ use Ramsey\Uuid\Uuid;
  * config('hospital.foreign_keys') is on; the application checks each link before saving either way
  * (App\Models\Concerns\BelongsToHospital).
  *
- * Every identifier stays within Oracle 11g's 30 characters and matches wccms_oracle_schema.sql.
+ * Every identifier stays within Oracle 11g's 30 characters and matches wccms_oracle_install.sql.
  */
 return new class extends Migration
 {
@@ -33,7 +33,8 @@ return new class extends Migration
             $table->integer('MRP_SEX_CD')->nullable()->comment('الجنس (C_SEX_TB)');
             $table->date('MRP_DOB')->nullable()->comment('تاريخ الميلاد');
             $table->integer('MRP_ID_TYPE_CD')->default(1)->comment('نوع الوثيقة');
-            $table->integer('MRP_ID')->comment('رقم الوثيقة');
+            // HOS: MODIFY ("MRP_ID" NOT NULL DISABLE), so the column can hold NULL there.
+            $table->integer('MRP_ID')->nullable()->comment('رقم الوثيقة');
             $table->string('MRP_FIRST_NAME_AR', 50)->nullable()->comment('الاسم الأول بالعربي');
             $table->string('MRP_FATHER_NAME_AR', 50)->nullable()->comment('اسم الأب بالعربي');
             $table->string('MRP_GRANDFATHER_NAME_AR', 50)->nullable()->comment('اسم الجد بالعربي');
@@ -196,8 +197,8 @@ return new class extends Migration
             $table->char('WC_REQ_CODE', 36)->primary()->comment('المعرّف الفريد لطلب التسجيل (UUID) - المفتاح الأساسي');
             $table->integer('WC_REQ_HOS_NO')->comment('رقم المستشفى لرموز المريض والموظفين في هذا الصف (HOS_NO)، من HOSPITAL_NO');
             $table->integer('WC_REQ_PATIENT_CD')->comment('رمز المريض المرجعي (FK -> MR_PATIENT_TB)');
-            $table->string('WC_REQ_PAT_NAME_SNAPSHOT', 150)->comment('نسخة ثابتة من اسم المريض وقت تقديم الطلب');
-            $table->string('WC_REQ_PAT_ID_SNAPSHOT', 50)->comment('نسخة ثابتة من رقم هوية المريض وقت تقديم الطلب');
+            $table->string('WC_REQ_PAT_NAME_SNAPSHOT', 150)->nullable()->comment('نسخة ثابتة من اسم المريض وقت تقديم الطلب');
+            $table->string('WC_REQ_PAT_ID_SNAPSHOT', 50)->nullable()->comment('نسخة ثابتة من رقم هوية المريض وقت تقديم الطلب');
             $table->string('WC_REQ_PAT_PHONE_SNAPSHOT', 30)->nullable()->comment('نسخة ثابتة من هاتف المريض وقت تقديم الطلب');
             $table->integer('WC_REQ_NURSE_CD')->comment('الممرض/ة مقدّم الطلب (FK -> EMPLOYEE_TB)');
             $table->char('WC_REQ_ENTRY_USER_CD', 36)->index('IX_WC_REQ_ENTRY_USER')->comment('المستخدم مدخل الطلب في النظام (FK -> WC_USERS_TB)');
@@ -482,7 +483,7 @@ return new class extends Migration
             DB::statement('ALTER TABLE wc_wound_assessment_tb ADD CONSTRAINT wc_wa_measurement_check CHECK ((WC_WA_LENGTH_MM IS NULL OR (WC_WA_LENGTH_MM > 0 AND WC_WA_LENGTH_MM <= 1000)) AND (WC_WA_WIDTH_MM IS NULL OR (WC_WA_WIDTH_MM > 0 AND WC_WA_WIDTH_MM <= 1000)) AND (WC_WA_DEPTH_MM IS NULL OR (WC_WA_DEPTH_MM >= 0 AND WC_WA_DEPTH_MM <= 1000)))');
         }
 
-        // 14. Assessment choices required by the forms (same rows as wccms_oracle_schema.sql)
+        // 14. Assessment choices required by the forms (same rows as wccms_oracle_install.sql)
         $this->insertAssessmentChoices();
 
         // 15. Clinical stored procedures (MySQL only; tests on SQLite use App\Services\ClinicalWorkflows\SqliteClinicalWorkflowGateway)

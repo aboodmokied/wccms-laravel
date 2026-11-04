@@ -9,7 +9,7 @@ use App\Models\InpatientStay;
 use App\Models\MrPatient;
 use App\Models\User;
 use App\Models\WcRequestReg;
-use Firebase\JWT\JWT;
+use App\Support\SystemUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -24,12 +24,9 @@ class WardReferralSubmissionTest extends TestCase
 
     private MrPatient $patient;
 
-    private string $secret = 'secret-key-change-in-production-32bytes';
-
     protected function setUp(): void
     {
         parent::setUp();
-        config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = User::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -64,24 +61,9 @@ class WardReferralSubmissionTest extends TestCase
         ]);
     }
 
-    private function generateJwt(string $username): string
-    {
-        $payload = [
-            'sub' => $username,
-            'iat' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'hospital-auth-system',
-        ];
-
-        return JWT::encode($payload, $this->secret, 'HS256');
-    }
-
     public function test_ward_nurse_can_search_patient_and_receive_admission_details(): void
     {
-        $token = $this->generateJwt('ward_nurse_1');
-
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson(route('requests.search_patient', ['query' => '401234567']));
+        $response = $this->getJson(route('requests.search_patient', ['query' => '401234567']));
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -99,11 +81,9 @@ class WardReferralSubmissionTest extends TestCase
 
     public function test_searching_unknown_id_number_returns_not_found_without_creating_patient(): void
     {
-        $token = $this->generateJwt('ward_nurse_1');
         $patientCountBefore = MrPatient::count();
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson(route('requests.search_patient', ['query' => '000000000']));
+        $response = $this->getJson(route('requests.search_patient', ['query' => '000000000']));
 
         $response->assertNotFound();
         $response->assertJson(['found' => false]);
@@ -113,14 +93,11 @@ class WardReferralSubmissionTest extends TestCase
 
     public function test_ward_nurse_can_submit_referral_request_with_snapshot_data(): void
     {
-        $token = $this->generateJwt('ward_nurse_1');
-
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.store'), [
-                'patient_code' => $this->patient->MRP_PATREC_CODE,
-                'attending_nurse_code' => $this->employee->EMP_SERIAL,
-                'notes' => 'جرح ما بعد العملية الجراحية يحتاج تقييم العيادة',
-            ]);
+        $response = $this->post(route('requests.store'), [
+            'patient_code' => $this->patient->MRP_PATREC_CODE,
+            'attending_nurse_code' => $this->employee->EMP_SERIAL,
+            'notes' => 'جرح ما بعد العملية الجراحية يحتاج تقييم العيادة',
+        ]);
 
         $response->assertStatus(302);
         $response->assertRedirect(route('requests.my'));
@@ -130,16 +107,32 @@ class WardReferralSubmissionTest extends TestCase
             'WC_REQ_PAT_NAME_SNAPSHOT' => 'أحمد علي حسن',
             'WC_REQ_PAT_ID_SNAPSHOT' => '401234567',
             'WC_REQ_NURSE_CD' => $this->employee->EMP_SERIAL,
-            'WC_REQ_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
+            'WC_REQ_ENTRY_USER_CD' => SystemUser::CODE,
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_NOTES' => 'جرح ما بعد العملية الجراحية يحتاج تقييم العيادة',
         ]);
     }
 
+    public function test_referral_for_patient_without_id_number_or_name_stores_null_snapshots(): void
+    {
+        // HOS.MR_PATIENT_TB allows MRP_ID and every name column to be NULL; on Oracle '' is NULL too.
+        $patient = MrPatient::factory()->named(null)->create(['MRP_ID' => null]);
+
+        $response = $this->post(route('requests.store'), [
+            'patient_code' => $patient->MRP_PATREC_CODE,
+            'attending_nurse_code' => $this->employee->EMP_SERIAL,
+        ]);
+
+        $response->assertRedirect(route('requests.my'));
+        $this->assertDatabaseHas('wc_request_reg_tb', [
+            'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
+            'WC_REQ_PAT_NAME_SNAPSHOT' => null,
+            'WC_REQ_PAT_ID_SNAPSHOT' => null,
+        ]);
+    }
+
     public function test_duplicate_referral_submission_is_prevented(): void
     {
-        $token = $this->generateJwt('ward_nurse_1');
-
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -151,12 +144,11 @@ class WardReferralSubmissionTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.store'), [
-                'patient_code' => $this->patient->MRP_PATREC_CODE,
-                'attending_nurse_code' => $this->employee->EMP_SERIAL,
-                'notes' => 'طلب مكرر',
-            ]);
+        $response = $this->post(route('requests.store'), [
+            'patient_code' => $this->patient->MRP_PATREC_CODE,
+            'attending_nurse_code' => $this->employee->EMP_SERIAL,
+            'notes' => 'طلب مكرر',
+        ]);
 
         $response->assertSessionHasErrors(['patient_code']);
     }

@@ -12,8 +12,8 @@ class User extends Authenticatable
     use HasFactory, LinksHospitalEmployee, Notifiable;
 
     /**
-     * Hospital number of the employee link (PER_USER_EMP_CD). Accounts themselves are not filtered by it: the login
-     * (JWT sub) finds the account whatever hospital its employee link belongs to.
+     * Hospital number of the employee link (PER_USER_EMP_CD). Accounts themselves are not filtered by it: the only
+     * account is the system one (App\Support\SystemUser), found by its code whatever hospital is configured.
      */
     public const HOSPITAL_NO_COLUMN = 'PER_USER_HOS_NO';
 

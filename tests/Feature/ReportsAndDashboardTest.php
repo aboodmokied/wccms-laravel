@@ -3,48 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\MrPatient;
-use App\Models\User;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ReportsAndDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $adminUser;
-
-    private string $adminJwtToken;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->adminUser = User::create([
-            'PER_USER_CODE' => (string) Str::uuid(),
-            'PER_USER_USERNAME' => 'admin_tester',
-            'PER_USER_ROLE' => 'ADMIN',
-            'PER_USER_IS_ACTIVE' => 1,
-        ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-
-        $this->adminJwtToken = JWT::encode([
-            'sub' => $this->adminUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
-    }
-
     public function test_dashboard_renders_live_kpis_and_recent_activities(): void
     {
-        $response = $this->call(
-            'GET',
-            '/dashboard',
-            [],
-            ['hospital_token' => $this->adminJwtToken]
-        );
+        $response = $this->get('/dashboard');
 
         $response->assertStatus(200);
         $response->assertSee('لوحة التحليلات والمؤشرات التنفيذية');
@@ -59,7 +27,6 @@ class ReportsAndDashboardTest extends TestCase
             'GET',
             '/dashboard',
             ['period' => '30days'],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertStatus(200);
@@ -78,7 +45,6 @@ class ReportsAndDashboardTest extends TestCase
             'GET',
             '/reports/history',
             ['search' => $patientCode],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertStatus(200);
@@ -93,12 +59,7 @@ class ReportsAndDashboardTest extends TestCase
             'MRP_MOBILE_NO' => '0559988776',
         ])->MRP_PATREC_CODE;
 
-        $response = $this->call(
-            'GET',
-            "/reports/history/{$patientCode}/export",
-            [],
-            ['hospital_token' => $this->adminJwtToken]
-        );
+        $response = $this->get("/reports/history/{$patientCode}/export");
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');

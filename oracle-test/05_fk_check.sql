@@ -1,5 +1,5 @@
 -- ============================================================================
--- 05_fk_check.sql: optional step, only after build/04_enable_fk.sql (section 8 of wccms_oracle_schema.sql).
+-- 05_fk_check.sql: optional step, only after build/04_enable_fk.sql (section 9 of wccms_oracle_install.sql).
 -- Run as WCCMS. Checks that the composite foreign keys to HOS accept a code of the row's own hospital and
 -- reject a code that exists only in another hospital. Exit code = number of failed checks. Rolled back at the end.
 -- ============================================================================

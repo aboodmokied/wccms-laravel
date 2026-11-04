@@ -16,7 +16,7 @@ use PDOException;
 use Stringable;
 
 /**
- * Calls the Oracle PL/SQL procedures of wccms_oracle_procedures.sql (Oracle 11g or later).
+ * Calls the Oracle PL/SQL procedures of wccms_oracle_install.sql (section 7) (Oracle 11g or later).
  *
  * The form data is sent as XML, not JSON: 11g has no JSON support and the hospital schema already owns a type named
  * JSON_OBJECT_T. The procedures read the XML with XMLTYPE.
@@ -27,9 +27,15 @@ use Stringable;
 class OracleClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
 {
     /**
-     * The XML payload is bound as a PL/SQL string, which Oracle caps at 32767 bytes.
+     * OCI8 bind type SQLT_CLOB. Written as its value because the constant only exists where ext-oci8 is loaded.
+     * The XML payload is bound as a temporary CLOB, so its size is not capped at the 32767 bytes of a PL/SQL string.
      */
-    private const MAX_PAYLOAD_BYTES = 32767;
+    private const OCI_CLOB = 112;
+
+    /**
+     * IN parameter that carries the XML form data (p_payload CLOB in every procedure).
+     */
+    private const PAYLOAD_PARAMETER = 'p_payload';
 
     /**
      * Element name of each value of a list.
@@ -95,9 +101,16 @@ class OracleClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
             $result = DB::transaction(function () use ($procedure, $bindings, $placeholders): ?string {
                 $statement = DB::getPdo()->prepare("BEGIN {$procedure}({$placeholders}); END;");
 
-                foreach ($bindings as $name => $value) {
-                    $statement->bindValue(":{$name}", $value, $value === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+                $values = $bindings;
+
+                foreach ($values as $name => &$value) {
+                    if ($name === self::PAYLOAD_PARAMETER) {
+                        $statement->bindParam(":{$name}", $value, self::OCI_CLOB);
+                    } else {
+                        $statement->bindValue(":{$name}", $value, $value === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+                    }
                 }
+                unset($value);
 
                 $result = null;
                 $statement->bindParam(':p_result', $result, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 36);
@@ -132,13 +145,7 @@ class OracleClinicalWorkflowGateway implements ClinicalWorkflowGatewayInterface
      */
     private function encode(array $payload): string
     {
-        $xml = '<payload>'.$this->encodeChildren($payload).'</payload>';
-
-        if (strlen($xml) > self::MAX_PAYLOAD_BYTES) {
-            throw new ClinicalWorkflowException('بيانات التقييم أطول من المسموح. اختصر الملاحظات وحاول مجدداً.');
-        }
-
-        return $xml;
+        return '<payload>'.$this->encodeChildren($payload).'</payload>';
     }
 
     /**

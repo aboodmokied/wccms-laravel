@@ -61,7 +61,7 @@ return [
     | a database link) and WCCMS has the REFERENCES privilege. Off: the application checks every link before saving
     | (App\Models\Concerns\BelongsToHospital and the Hospital*Exists validation rules), which it does either way.
     |
-    | Read by the local migration; on Oracle the matching section of wccms_oracle_schema.sql is enabled by hand.
+    | Read by the local migration; on Oracle section 9 of wccms_oracle_install.sql is enabled by hand.
     |
     */
 

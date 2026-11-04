@@ -23,18 +23,11 @@ class MonthlyCaseReportTest extends TestCase
     use RefreshDatabase;
     use WorkbookSyntheticCases;
 
-    public function test_unauthenticated_request_redirects_to_hospital_login(): void
-    {
-        $response = $this->get(route('reports.monthly.cases'));
-
-        $response->assertRedirect(config('services.hospital_auth.login_url', '/mock-hospital-auth'));
-    }
-
     public function test_lists_every_case_registered_in_the_month_numbered_in_registration_order(): void
     {
         $this->seedWorkbookCases();
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $cases = $this->casesOf($response);
         $this->assertCount(125, $cases);
@@ -53,7 +46,7 @@ class MonthlyCaseReportTest extends TestCase
             ['diagnosis' => 'bedsore PEU', 'woundType' => 'Pressure'],
         ]]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $cases = $this->casesOf($response);
         $this->assertCount(1, $cases);
@@ -86,7 +79,7 @@ class MonthlyCaseReportTest extends TestCase
             'WC_DREVD_STATUS' => 'IMPROVED_FOLLOWUP',
         ]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $this->assertSame(['Gauze DSG', 'hydrogel'], $this->casesOf($response)->first()->dressings);
     }
@@ -100,7 +93,7 @@ class MonthlyCaseReportTest extends TestCase
             ->map(fn (string $name): string => $this->reportDepartment($name)->WC_DEPT_CODE)
             ->all();
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11', 'departments' => $building]), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11', 'departments' => $building]));
 
         $this->assertSame(
             ['Orthopedic Female', 'Orthopedic Male', 'Special Female', 'Special Male'],
@@ -112,7 +105,7 @@ class MonthlyCaseReportTest extends TestCase
     {
         $this->registerCase(['status' => 'ACTIVE']);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $case = $this->casesOf($response)->first();
         $this->assertNull($case->dischargeDate);
@@ -145,7 +138,7 @@ class MonthlyCaseReportTest extends TestCase
             $this->reviewRegistration($registration, CarbonImmutable::parse('2026-01-05 09:00'), $closingStatus);
         }
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $case = $this->casesOf($response)->first();
         $this->assertSame($expected, $case->outcome);
@@ -164,7 +157,7 @@ class MonthlyCaseReportTest extends TestCase
             'WC_WA_SWAB_TAKEN' => 1,
         ]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $this->assertSame(['debridement', 'swap culture'], $this->casesOf($response)->first()->procedures);
     }
@@ -194,7 +187,7 @@ class MonthlyCaseReportTest extends TestCase
             ]);
         }
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $case = $this->casesOf($response)->first();
         $this->assertSame(['Foot - Right - الكعب'], $case->woundLocations);
@@ -218,7 +211,7 @@ class MonthlyCaseReportTest extends TestCase
             'WC_DREVD_STATUS' => 'IMPROVED_FOLLOWUP',
         ]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $case = $this->casesOf($response)->first();
         $this->assertSame(['Rt foot'], $case->woundLocations);
@@ -239,7 +232,7 @@ class MonthlyCaseReportTest extends TestCase
             'registeredAt' => CarbonImmutable::parse('2025-11-11 09:00'),
         ]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $cases = $this->casesOf($response);
         $this->assertSame(['427408844', '100200300'], $cases->pluck('idNumber')->all());
@@ -251,7 +244,7 @@ class MonthlyCaseReportTest extends TestCase
     {
         $this->registerCase(['registeredAt' => CarbonImmutable::parse('2025-12-03 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $response->assertSee('لا توجد حالات في هذا الشهر.');
     }
@@ -262,14 +255,14 @@ class MonthlyCaseReportTest extends TestCase
         $this->registerCase(['registeredAt' => CarbonImmutable::parse('2025-12-03 09:00')]);
         $this->registerCase(['registeredAt' => CarbonImmutable::parse('2025-11-03 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.cases'), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases'));
 
         $this->assertSame(['2025-12'], $this->casesOf($response)->map(fn (CaseRow $case): string => $case->registeredAt->format('Y-m'))->all());
     }
 
     public function test_rejects_an_invalid_month_with_an_arabic_message(): void
     {
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-13']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-13']));
 
         $response->assertRedirect(route('reports.monthly.cases'));
         $response->assertSessionHasErrors(['month' => 'صيغة الشهر غير صحيحة.']);
@@ -277,7 +270,7 @@ class MonthlyCaseReportTest extends TestCase
 
     public function test_rejects_an_unknown_department_with_an_arabic_message(): void
     {
-        $response = $this->call('GET', route('reports.monthly.cases', ['departments' => ['not-a-department']]), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['departments' => ['not-a-department']]));
 
         $response->assertSessionHasErrors(['departments.0' => 'القسم المحدد غير موجود.']);
     }
@@ -297,7 +290,7 @@ class MonthlyCaseReportTest extends TestCase
         ]);
         $this->reviewRegistration($registration, CarbonImmutable::parse('2025-11-25 09:00'), 'DEATH');
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $response->assertSeeInOrder([
             'NO', 'Pt Name', 'MONTHS', 'ID', 'Gender', 'DoB', 'Diagnosis', 'Discussion', 'DoA', 'PMH', 'Type of Wound',
@@ -310,7 +303,7 @@ class MonthlyCaseReportTest extends TestCase
     {
         $this->registerCase(['patient' => $this->reportPatient(['name' => "O'Brien <script>alert('x')</script>"])]);
 
-        $response = $this->call('GET', route('reports.monthly.cases', ['month' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.cases', ['month' => '2025-11']));
 
         $response->assertSee('&lt;script&gt;', false);
         $response->assertDontSee("<script>alert('x')</script>", false);

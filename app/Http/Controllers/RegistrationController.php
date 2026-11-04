@@ -15,8 +15,8 @@ use App\Models\WcRegistration;
 use App\Models\WcWoundType;
 use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\WoundPhotoStorage;
+use App\Support\SystemUser;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class RegistrationController extends Controller
 {
@@ -204,7 +204,7 @@ class RegistrationController extends Controller
             $payload['assessment']['photos'] = $photos;
             unset($payload['assessment']['wound_photos']);
             $payload['clinic_nurse_code'] = $payload['clinical_nurse_code'];
-            $payload['entry_user_code'] = Auth::user()->PER_USER_CODE;
+            $payload['entry_user_code'] = SystemUser::code();
             $payload['assessed_at'] = now()->toDateTimeString();
             $this->clinicalWorkflows->addWound($registration, $payload);
         } catch (\Throwable $exception) {

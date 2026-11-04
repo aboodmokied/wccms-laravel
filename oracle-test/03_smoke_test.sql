@@ -1,6 +1,6 @@
 -- ============================================================================
 -- 03_smoke_test.sql: calls the 4 WCCMS procedures with XML payloads and checks what they wrote.
--- Run as WCCMS (the application's user), after the two WCCMS scripts, through one of:
+-- Run as the account WCCMS was installed in (the application's user), after wccms_oracle_install.sql, through:
 --   03_smoke_stub.sql  the Docker kit (run.ps1 / run.sh): the HOS stub of 01_hos_stub.sql;
 --   live_check.sql     the real hospital database, with a real nurse and patient of HOSPITAL_NO.
 -- They set the substitution variables used below (SQL*Plus DEFINE with the caret as prefix, since the
@@ -21,7 +21,9 @@ SET PAGESIZE 200
 PROMPT === Compilation errors in WCCMS (expected: none) ===
 COLUMN name FORMAT A28
 COLUMN text FORMAT A120
-SELECT name, type, line, position, text FROM user_errors ORDER BY name, sequence;
+SELECT name, type, line, position, text FROM user_errors
+ WHERE (name LIKE 'WC\_%' ESCAPE '\' OR name LIKE 'FN\_WC\_%' ESCAPE '\' OR name LIKE 'SP\_WC\_%' ESCAPE '\')
+ ORDER BY name, sequence;
 
 VARIABLE failures NUMBER
 
@@ -176,9 +178,12 @@ BEGIN
     -- ------------------------------------------------------------------
     -- 0. The objects are there and valid
     -- ------------------------------------------------------------------
-    SELECT COUNT(*) INTO v_count FROM user_tables;
+    -- Only the WCCMS objects: the account may hold other tables (e.g. when WCCMS is installed in HOS).
+    SELECT COUNT(*) INTO v_count FROM user_tables WHERE table_name LIKE 'WC\_%\_TB' ESCAPE '\';
     assert_true('20 WCCMS tables (found ' || v_count || ')', v_count = 20);
-    SELECT COUNT(*) INTO v_count FROM user_objects WHERE status = 'INVALID';
+    SELECT COUNT(*) INTO v_count FROM user_objects WHERE status = 'INVALID'
+      AND (object_name LIKE 'WC\_%' ESCAPE '\' OR object_name LIKE 'FN\_WC\_%' ESCAPE '\'
+           OR object_name LIKE 'SP\_WC\_%' ESCAPE '\');
     assert_true('no INVALID objects (found ' || v_count || ')', v_count = 0);
     SELECT COUNT(*) INTO v_count FROM user_objects WHERE object_type = 'PROCEDURE'
       AND object_name IN ('SP_WC_INSERT_ASSESSMENT', 'SP_WC_ACCEPT_REGISTRATION', 'SP_WC_COMPLETE_REVIEW', 'SP_WC_ADD_WOUND');

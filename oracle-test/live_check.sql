@@ -2,9 +2,9 @@
 -- live_check.sql: the same checks as the Docker kit (03_smoke_test.sql), against the REAL hospital database,
 -- during deployment and BEFORE going live.
 --
--- Run as WCCMS after wccms_oracle_schema.sql and wccms_oracle_procedures.sql, from the oracle-test folder:
+-- Run with the account wccms_oracle_install.sql was run with (DB_USERNAME of .env), from the oracle-test folder:
 --
---   sqlplus WCCMS/<password>@//<host>:<port>/<service> @live_check.sql <HOSPITAL_NO> <nurse EMP_SERIAL> <patient MRP_PATREC_CODE>
+--   sqlplus <user>/<password>@//<host>:<port>/<service> @live_check.sql <HOSPITAL_NO> <nurse EMP_SERIAL> <patient MRP_PATREC_CODE>
 --
 --   <HOSPITAL_NO>        the HOSPITAL_NO of .env (wccms:check-hospital prints it)
 --   <nurse EMP_SERIAL>   any active employee of that hospital with no WCCMS account yet (a nurse, ideally)

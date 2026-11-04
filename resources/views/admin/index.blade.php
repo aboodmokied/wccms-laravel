@@ -153,25 +153,6 @@
         </div>
 
         <div class="col-md-4 col-sm-6">
-            <div class="card border-0 shadow-sm h-100 border-start border-primary border-4 bg-primary-subtle">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle bg-primary text-white p-3 me-3">
-                            <i class="bi bi-people-fill fs-4"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold text-dark mb-0">إدارة المستخدمين</h5>
-                            <small class="text-muted">تعيين الأدوار والصلاحيات وتفعيل الحسابات</small>
-                        </div>
-                    </div>
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-primary btn-sm w-100">
-                        إدارة المستخدمين <i class="bi bi-arrow-left ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 col-sm-6">
             <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3"><div class="rounded-circle bg-info-subtle text-info p-3 me-3"><i class="bi bi-ui-checks-grid fs-4"></i></div><div><h5 class="fw-bold text-dark mb-0">خيارات التقييم السريري</h5><small class="text-muted">التسميات والترتيب وحالة الاستخدام</small></div></div>

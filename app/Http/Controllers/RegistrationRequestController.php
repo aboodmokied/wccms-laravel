@@ -22,8 +22,8 @@ use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\HospitalPatientSyncServiceInterface;
 use App\Services\WoundPhotoStorage;
 use App\Support\HospitalCode;
+use App\Support\SystemUser;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class RegistrationRequestController extends Controller
@@ -50,12 +50,12 @@ class RegistrationRequestController extends Controller
         return view('requests.index', compact('requests', 'query'));
     }
 
+    /**
+     * Every referral: with no sign-in there is no "mine", all rows are entered by the system account.
+     */
     public function myRequests(Request $request)
     {
-        $userCode = Auth::user()?->PER_USER_CODE;
-
         $requests = WcRequestReg::with(['patient', 'nurse', 'reviewer'])
-            ->where('WC_REQ_ENTRY_USER_CD', $userCode)
             ->orderBy('WC_REQ_CREATED_AT', 'desc')
             ->paginate(15);
 
@@ -115,16 +115,15 @@ class RegistrationRequestController extends Controller
     public function store(StoreRegistrationRequest $request)
     {
         $patient = MrPatient::query()->findOrFail((int) $request->validated('patient_code'));
-        $userCode = Auth::user()?->PER_USER_CODE;
-
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $patient->MRP_PATREC_CODE,
-            'WC_REQ_PAT_NAME_SNAPSHOT' => mb_substr($patient->full_name, 0, 150),
-            'WC_REQ_PAT_ID_SNAPSHOT' => (string) $patient->MRP_ID,
+            // The hospital may hold a patient with no name or no MRP_ID; store NULL rather than '' (NULL in Oracle anyway).
+            'WC_REQ_PAT_NAME_SNAPSHOT' => mb_substr(trim((string) $patient->full_name), 0, 150) ?: null,
+            'WC_REQ_PAT_ID_SNAPSHOT' => $patient->MRP_ID !== null ? (string) $patient->MRP_ID : null,
             'WC_REQ_PAT_PHONE_SNAPSHOT' => $patient->MRP_MOBILE_NO,
             'WC_REQ_NURSE_CD' => $request->validated('attending_nurse_code'),
-            'WC_REQ_ENTRY_USER_CD' => $userCode,
+            'WC_REQ_ENTRY_USER_CD' => SystemUser::code(),
             'WC_REQ_STATUS' => 'PENDING',
             'WC_REQ_NOTES' => $request->validated('notes'),
             'WC_REQ_CREATED_AT' => now(),
@@ -202,7 +201,7 @@ class RegistrationRequestController extends Controller
             }
             unset($diagnosis);
 
-            $validated['entry_user_code'] = Auth::user()->PER_USER_CODE;
+            $validated['entry_user_code'] = SystemUser::code();
             $validated['assessed_at'] = now()->toDateTimeString();
             $registration = $this->clinicalWorkflows->acceptRegistration($requestModel, $validated);
         } catch (\Throwable $exception) {

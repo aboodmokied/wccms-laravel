@@ -9,7 +9,6 @@ use App\Models\WcDailyReview;
 use App\Models\WcDepartment;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -30,12 +29,9 @@ class TodayReviewStatusTest extends TestCase
 
     protected WcRegistration $registration;
 
-    private string $secret = 'secret-key-change-in-production-32bytes';
-
     protected function setUp(): void
     {
         parent::setUp();
-        config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = PerUser::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -79,29 +75,13 @@ class TodayReviewStatusTest extends TestCase
             'WC_REG_ENTRY_USER_CD' => $this->user->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
-
-        $this->actingAs($this->user);
-    }
-
-    private function generateJwt(string $username): string
-    {
-        $payload = [
-            'sub' => $username,
-            'iat' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'hospital-auth-system',
-        ];
-
-        return JWT::encode($payload, $this->secret, 'HS256');
     }
 
     public function test_registration_shows_not_reviewed_today_when_no_daily_review_exists(): void
     {
-        $token = $this->generateJwt('test_nurse');
         $this->assertFalse($this->registration->isReviewedToday());
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->get(route('registrations.show', $this->registration->WC_REG_CODE));
+        $response = $this->get(route('registrations.show', $this->registration->WC_REG_CODE));
 
         $response->assertStatus(200);
         $response->assertSee('لم تُجرَ مراجعة اليوم');
@@ -110,8 +90,6 @@ class TodayReviewStatusTest extends TestCase
 
     public function test_registration_shows_reviewed_today_when_daily_review_added_today(): void
     {
-        $token = $this->generateJwt('test_nurse');
-
         WcDailyReview::create([
             'WC_DREV_CODE' => (string) Str::uuid(),
             'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
@@ -124,8 +102,7 @@ class TodayReviewStatusTest extends TestCase
 
         $this->assertTrue($this->registration->fresh()->isReviewedToday());
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->get(route('registrations.show', $this->registration->WC_REG_CODE));
+        $response = $this->get(route('registrations.show', $this->registration->WC_REG_CODE));
 
         $response->assertStatus(200);
         $response->assertSee('تمت مراجعته اليوم');

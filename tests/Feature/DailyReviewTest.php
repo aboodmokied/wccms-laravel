@@ -14,8 +14,8 @@ use App\Models\WcRegDiagnosis;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
+use App\Support\SystemUser;
 use Database\Seeders\WcAssessmentChoiceSeeder;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -37,8 +37,6 @@ class DailyReviewTest extends TestCase
     private WcDressing $dressing;
 
     private WcMedication $medication;
-
-    private string $jwtToken;
 
     protected function setUp(): void
     {
@@ -120,23 +118,11 @@ class DailyReviewTest extends TestCase
             'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
         ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-        $this->jwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
     }
 
     public function test_daily_review_entry_form_opens_directly_for_active_registration(): void
     {
-        $response = $this->call(
-            'GET',
-            "/reviews/daily/{$this->registration->WC_REG_CODE}/create",
-            [],
-            ['hospital_token' => $this->jwtToken]
-        );
+        $response = $this->get("/reviews/daily/{$this->registration->WC_REG_CODE}/create");
 
         $response->assertOk();
         $response->assertViewIs('reviews.daily_create');
@@ -147,12 +133,7 @@ class DailyReviewTest extends TestCase
 
     public function test_retired_daily_review_workspace_redirects_to_patient_health_history(): void
     {
-        $response = $this->call(
-            'GET',
-            "/registrations/{$this->registration->WC_REG_CODE}/daily-reviews",
-            [],
-            ['hospital_token' => $this->jwtToken]
-        );
+        $response = $this->get("/registrations/{$this->registration->WC_REG_CODE}/daily-reviews");
 
         $response->assertRedirect(route('patients.show', $this->registration->WC_REG_PATIENT_CD));
     }
@@ -182,7 +163,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -191,7 +171,7 @@ class DailyReviewTest extends TestCase
         $this->assertDatabaseHas('wc_daily_review_tb', [
             'WC_DREV_REGISTRATION_CD' => $this->registration->WC_REG_CODE,
             'WC_DREV_NURSE_CD' => $this->nurseEmployee->EMP_SERIAL,
-            'WC_DREV_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
+            'WC_DREV_ENTRY_USER_CD' => SystemUser::CODE,
             'WC_DREV_OVERALL_STATUS' => 'WORSENED_STAY',
             'WC_DREV_GENERAL_NOTES' => 'ملاحظة اختبارية',
         ]);
@@ -232,7 +212,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -268,7 +247,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -318,7 +296,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -338,12 +315,7 @@ class DailyReviewTest extends TestCase
             'WC_REG_DISCHARGED_BY_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
         ]);
 
-        $response = $this->call(
-            'GET',
-            "/reviews/daily/{$this->registration->WC_REG_CODE}/create",
-            [],
-            ['hospital_token' => $this->jwtToken]
-        );
+        $response = $this->get("/reviews/daily/{$this->registration->WC_REG_CODE}/create");
 
         $response->assertRedirect(route('reviews.daily.pending'));
         $response->assertSessionHas('error', 'لا يمكن إضافة مراجعة يومية لمريض مخرج');
@@ -370,7 +342,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -408,7 +379,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -444,7 +414,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -490,7 +459,6 @@ class DailyReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();

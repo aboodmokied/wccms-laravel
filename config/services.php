@@ -35,9 +35,4 @@ return [
         ],
     ],
 
-    'hospital_auth' => [
-        'jwt_secret' => env('HOSPITAL_JWT_SECRET', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!'),
-        'login_url' => env('APP_HOSPITAL_LOGIN_URL', '/mock-hospital-auth'),
-    ],
-
 ];

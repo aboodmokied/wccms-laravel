@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the WCCMS Oracle scripts on Oracle XE 11g (Docker) from an empty database, then the smoke test.
-#   ./run.sh             HOS stub + wccms_oracle_schema.sql + wccms_oracle_procedures.sql + 03_smoke_test.sql
+#   ./run.sh             HOS stub + wccms_oracle_install.sql + 03_smoke_test.sql
 #   ./run.sh --with-fk   the same, plus the optional composite foreign keys (section 8) and 05_fk_check.sql
 # Passwords: letters, digits and underscore only (they are passed unquoted to sqlplus).
 set -euo pipefail
@@ -43,8 +43,9 @@ prepare() {
         "$1" > "$2"
 }
 prepare 01_hos_stub.sql build/01_hos_stub.sql
-prepare "$ROOT/wccms_oracle_schema.sql" build/02_wccms_oracle_schema.sql
-prepare "$ROOT/wccms_oracle_procedures.sql" build/02_wccms_oracle_procedures.sql
+prepare 02_wccms_user.sql build/02_wccms_user.sql
+prepare "$ROOT/wccms_oracle_install.sql" build/02_wccms_oracle_install.sql
+prepare "$ROOT/wccms_oracle_uninstall.sql" build/06_wccms_oracle_uninstall.sql
 prepare 03_smoke_test.sql build/03_smoke_test.sql
 prepare 03_smoke_stub.sql build/03_smoke_stub.sql
 prepare 05_fk_check.sql build/05_fk_check.sql
@@ -54,11 +55,16 @@ if grep -nE '\{\{[A-Z_]+\}\}' build/*.sql; then
     exit 1
 fi
 
-# Section 8 of the schema (commented out): from the first GRANT REFERENCES line to the end, without "-- ".
+# Section 9 of the install file (commented out): from its first ALTER TABLE line to the end, without "-- ".
+# The REFERENCES grants it needs are in 02_wccms_user.sql.
+if ! grep -q '^-- ALTER TABLE WC_USERS_TB ADD CONSTRAINT FK_WC_USERS_EMPLOYEE' build/02_wccms_oracle_install.sql; then
+    echo "Section 9 (first ALTER TABLE) not found in wccms_oracle_install.sql." >&2
+    exit 1
+fi
 {
     echo "WHENEVER SQLERROR EXIT FAILURE ROLLBACK"
     echo "SET DEFINE OFF"
-    sed -n '/^-- GRANT REFERENCES ON HOS.MR_PATIENT_TB/,$p' build/02_wccms_oracle_schema.sql | sed -E 's/^-- ?//'
+    sed -n '/^-- ALTER TABLE WC_USERS_TB ADD CONSTRAINT FK_WC_USERS_EMPLOYEE/,$p' build/02_wccms_oracle_install.sql | sed -E 's/^-- ?//'
     echo "PROMPT Composite foreign keys to HOS enabled."
 } > build/04_enable_fk.sql
 
@@ -73,10 +79,13 @@ sql() {
 }
 
 sql system "$ORACLE_PASSWORD" build/01_hos_stub.sql
-sql system "$ORACLE_PASSWORD" build/02_wccms_oracle_schema.sql
-sql system "$ORACLE_PASSWORD" build/02_wccms_oracle_procedures.sql
+sql system "$ORACLE_PASSWORD" build/02_wccms_user.sql
+# Install, uninstall, install again: the uninstall file must leave the account ready for a clean reinstall.
+sql wccms "$WCCMS_PASSWORD" build/02_wccms_oracle_install.sql
+sql wccms "$WCCMS_PASSWORD" build/06_wccms_oracle_uninstall.sql
+sql wccms "$WCCMS_PASSWORD" build/02_wccms_oracle_install.sql
 if [ "$WITH_FK" = "1" ]; then
-    sql system "$ORACLE_PASSWORD" build/04_enable_fk.sql
+    sql wccms "$WCCMS_PASSWORD" build/04_enable_fk.sql
 fi
 sql wccms "$WCCMS_PASSWORD" build/03_smoke_stub.sql
 if [ "$WITH_FK" = "1" ]; then

@@ -1,6 +1,6 @@
 # دليل تشغيل WCCMS على قاعدة بيانات المستشفى (Oracle 11g)
 
-يعمل WCCMS على قاعدة Oracle نفسها التي فيها نظام المستشفى (المخطط `HOS`، Oracle 11g، عدة مستشفيات في القاعدة نفسها). يقرأ جداول المستشفى الحقيقية بأعمدتها الحقيقية مباشرة: بلا views، وبلا نسخ لبيانات المستشفى، وبلا أي كتابة فيها. جداول العيادة (`WC_*` و `WC_USERS_TB`) في مخطط `WCCMS` المستقل.
+يعمل WCCMS على قاعدة Oracle نفسها التي فيها نظام المستشفى (المخطط `HOS`، Oracle 11g، عدة مستشفيات في القاعدة نفسها). يقرأ جداول المستشفى الحقيقية بأعمدتها الحقيقية مباشرة: بلا views، وبلا نسخ لبيانات المستشفى، وبلا أي كتابة فيها. جداول العيادة (`WC_*` و `WC_USERS_TB`) والـ procedures تُنشأ في الحساب الذي يُنفَّذ به `wccms_oracle_install.sql`، والنظام يتصل بالحساب نفسه. تسمّيه هذه الوثيقة «حساب WCCMS». قد يكون مستخدماً مخصصاً اسمه `WCCMS` (الأفضل في الإنتاج)، أو حساباً موجوداً.
 
 نفّذ الخطوات بالترتيب. كل خطوة تنتهي بـ **تحقق**؛ لا تنتقل للتي بعدها قبل أن ينجح.
 
@@ -8,8 +8,10 @@
 
 | الملف | ما فيه |
 | --- | --- |
-| `wccms_oracle_schema.sql` | المستخدم WCCMS، صلاحيات SELECT على جداول HOS الثمانية، جداول العيادة الـ 20، الفهارس، CHECK، البيانات الأساسية، والقسم 8 (المفاتيح المركّبة إلى HOS، مُعطَّل) |
-| `wccms_oracle_procedures.sql` | الدوال المساعدة لقراءة XML، `FN_WC_EMPLOYEE_EXISTS`، والـ procedures الأربعة بـ PL/SQL لـ 11g |
+| `wccms_oracle_install.sql` | **ملف واحد ينشئ كل شيء في الحساب المتصل، بلا أي تعديل عليه:** فحص الحساب أولاً (صلاحيات الإنشاء، المساحة، قراءة HOS، عدم وجود كائنات بالأسماء نفسها)، جداول العيادة الـ 20، الفهارس، CHECK، البيانات الأساسية، الدوال والـ procedures الأربعة بـ PL/SQL لـ 11g، وفحص في آخره. القسم 9 (المفاتيح المركّبة إلى HOS) مُعطَّل |
+| `wccms_oracle_uninstall.sql` | يحذف كائنات WCCMS بأسمائها فقط من الحساب المتصل، لإعادة التثبيت من البداية |
+| `.env.hospital.example` | ملف `.env` جاهز لخادم المستشفى، تملأ فيه القيم `<...>` فقط |
+| `config/oracle.php` | اتصال Oracle (حزمة `yajra/laravel-oci8` مثبّتة مسبقاً)، مضبوط على `CASE_NATURAL` وتوقيت UTC |
 | `config/hospital.php` | رقم المستشفى، مخطط وجداول المستشفى، المفاتيح الاختيارية، الموظف النشط، أكواد الوظائف، وأسماء الجنس |
 | `oracle-test/` | تجربة السكربتين: على Oracle XE 11g في Docker (`run.ps1`)، أو على القاعدة الحقيقية (`live_check.sql`) |
 | `app/Services/ClinicalWorkflows/OracleClinicalWorkflowGateway.php` | استدعاء الـ procedures من Laravel (البيانات بصيغة XML) |
@@ -19,7 +21,7 @@
 ## الصورة الكاملة
 
 ```
-HOS (نظام المستشفى — WCCMS يقرأ فقط)            WCCMS (ينشئه wccms_oracle_schema.sql)
+HOS (نظام المستشفى — WCCMS يقرأ فقط)            WCCMS (ينشئه wccms_oracle_install.sql)
 -----------------------------------------      ---------------------------------------------------
 MR_PATIENT_TB        (MRP_PATREC_CODE, HOS_NO) <-- WC_REQUEST_REG_TB, WC_REGISTRATION_TB
 EMPLOYEE_TB          (EMP_SERIAL, HOS_NO)      <-- WC_USERS_TB وجداول الطلب والتسجيل والمراجعة والتقييم والصور
@@ -37,7 +39,7 @@ C_HOSPITAL_TB        (H_CURR = 1)
 
 ## الخطوة 1: قائمة فحص التسليم (`wccms:check-hospital`)
 
-**ما يلزم:** نسخة النظام على الخادم بعد `composer install`، مع oci8 وحزمة Oracle (الخطوة 5؛ إن لم يكن الخادم جاهزاً فجهّزه أولاً ثم عُد هنا)، و `.env` يتصل بقاعدة المستشفى بحساب يقرأ جداول `HOS`. قبل إنشاء المستخدم `WCCMS` (الخطوة 6) استعمل أي حساب قراءة لديك، كحساب الـ DBA؛ وبعدها أعد الفحص بالمستخدم `WCCMS` نفسه (الخطوة 7).
+**ما يلزم:** نسخة النظام على الخادم بعد `composer install`، مع oci8 وحزمة Oracle (الخطوة 5؛ إن لم يكن الخادم جاهزاً فجهّزه أولاً ثم عُد هنا)، و `.env` يتصل بقاعدة المستشفى بحساب يقرأ جداول `HOS`. قبل تنفيذ ملف SQL (الخطوة 6) استعمل أي حساب يقرأ `HOS`؛ وبعده أعد الفحص بحساب WCCMS نفسه (الخطوة 7).
 
 ```ini
 DB_CONNECTION=oracle
@@ -76,7 +78,7 @@ php artisan wccms:check-hospital
 | --- | --- |
 | عدم تطابق: `HOSPITAL_NO` المضبوط هو X، لكن `C_HOSPITAL_TB` يقول إن القاعدة للمستشفى Y | `HOSPITAL_NO=Y` إن كانت هذه قاعدة المستشفى Y؛ وإن كان المقصود X فالاتصال (`DB_*`) على القاعدة الخطأ. |
 | لا يوجد صف فيه `H_CURR = 1`، أو يوجد أكثر من صف | لا يُستنتج آلياً: حدّد رقم المستشفى من `C_HOSPITAL_TB` مع مسؤول القاعدة واضبط `HOSPITAL_NO`. |
-| تعذرت قراءة `HOS.<جدول>` | ليس في `.env`: نفّذ `GRANT SELECT` على الجدول للحساب المستخدم (القسم 2 من `wccms_oracle_schema.sql`)، وتأكد من `HOSPITAL_SCHEMA=HOS`. |
+| تعذرت قراءة `HOS.<جدول>` | ليس في `.env`: نفّذ `GRANT SELECT` على الجدول للحساب المستخدم (القسم 1 من `wccms_oracle_install.sql`)، وتأكد من `HOSPITAL_SCHEMA=HOS`. |
 | رموز جنس لا يطابق `SEX_NAME_EN` فيها `Male` أو `Female` تماماً | إن كان الرمز ذكراً أو أنثى فعلاً بكتابة أخرى (مثل `MALE`): `HOSPITAL_SEX_MALE_NAME_EN=MALE` (أو `HOSPITAL_SEX_FEMALE_NAME_EN=...`) بالكتابة نفسها حرفياً. وإلا فهو ليس ذكراً ولا أنثى ويبقى «Unknown» عن قصد. |
 | `HOSPITAL_DOCTOR_JOB_CODES` فارغ، أو أكواد وظائف الأطباء غير موجودة | `HOSPITAL_DOCTOR_JOB_CODES=<أكواد الأطباء من قسم «كل الوظائف»>`، مفصولة بفواصل. |
 | لم توجد في `C_JOB_TB` وظيفة تمريض بالأسماء، أو تعذرت قراءته | `HOSPITAL_NURSE_JOB_CODES=<أكواد التمريض من قسم «كل الوظائف»>`. إلى أن يُضبط، تعرض حقول الممرض وفريق الجروح كل الموظفين النشطين، مع تنبيه ظاهر في الشاشات وتحذير في السجل. |
@@ -104,8 +106,8 @@ DB_HOST=<خادم Oracle>
 DB_PORT=1521
 DB_SERVICE_NAME=<service name>
 DB_DATABASE=
-DB_USERNAME=WCCMS
-DB_PASSWORD=<كلمة مرور WCCMS>
+DB_USERNAME=<الحساب الذي نُفّذ به wccms_oracle_install.sql>
+DB_PASSWORD=<كلمة مروره>
 DB_CHARSET=AL32UTF8
 DB_SERVER_VERSION=11g
 ORA_MAX_NAME_LEN=30
@@ -199,26 +201,21 @@ powershell -ExecutionPolicy Bypass -File .\run.ps1 -WithForeignKeys   # ومعه
 
 **تحقق:** `php -m` يُظهر `oci8`.
 
-**5.2 الحزمة:**
-
-```bash
-composer require yajra/laravel-oci8:^13
-php artisan vendor:publish --tag=oracle
-```
-
-**5.3 `config/oracle.php`:**
+**5.2 الحزمة والإعدادات: جاهزة في الكود، لا تفعل شيئاً.** `yajra/laravel-oci8` في `composer.json` فيُثبَّت مع `composer install` (الذي يتطلب oci8 من 5.1). و `config/oracle.php` مضبوط مسبقاً:
 
 ```php
 'options' => [
     PDO::ATTR_CASE => PDO::CASE_NATURAL,
 ],
 'sessionVars' => [
-    // ... الموجود كما هو (NLS_DATE_FORMAT, NLS_NUMERIC_CHARACTERS ...)
+    // ... (NLS_DATE_FORMAT, NLS_NUMERIC_CHARACTERS ...)
     'TIME_ZONE' => '+00:00',
 ],
 ```
 
-`CASE_NATURAL` ضروري: القيمة الافتراضية `CASE_LOWER` تجعل كل الأعمدة (`MRP_FIRST_NAME_AR`...) فارغة في الشاشات دون أي خطأ.
+لا تغيّرهما: القيمة الافتراضية `CASE_LOWER` تجعل كل الأعمدة (`MRP_FIRST_NAME_AR`...) فارغة في الشاشات دون أي خطأ. ولا تشغّل `vendor:publish --tag=oracle --force`، فهو يستبدل الملف بالنسخة الافتراضية.
+
+**5.3 ملف `.env`:** انسخ `.env.hospital.example` إلى `.env`، املأ القيم `<...>`، ثم `php artisan key:generate`.
 
 **5.4 الأحرف الكبيرة في الـ aliases:** Oracle يُرجع كل اسم غير مقتبس بأحرف كبيرة. القاعدة في الكود: داخل `DB::raw` / `selectRaw` ضع الـ alias بين علامتي تنصيص مزدوجتين (`DB::raw('COUNT(*) as "total"')`)، وفي `select('col as ALIAS')` و `withCount('rel as REL_COUNT')` اكتبه بأحرف كبيرة واقرأه كذلك.
 
@@ -238,46 +235,54 @@ php artisan tinker
 
 > **لا تشغّل `php artisan migrate` ولا `php artisan db:seed` على الإنتاج أبداً.** الـ migration للتطوير والاختبارات فقط، وينشئ نسخاً محلية من جداول المستشفى.
 
-**6.1 الـ placeholders:** استبدل `{{WCCMS_PASSWORD}}` و `{{WCCMS_TABLESPACE}}` في `wccms_oracle_schema.sql`.
+كل ما يلزم في ملف واحد: `wccms_oracle_install.sql`.
 
-**تحقق:** هذا الأمر لا يُرجع شيئاً:
+**6.1 الحساب:** الملف لا يُنشئ مستخدماً، ولا يحتاج أي تعديل. يُنشئ كل شيء في الحساب المتصل، فاتصل بالحساب الذي سيستعمله النظام (`DB_USERNAME`). يحتاج هذا الحساب أربعة أمور، والقسم 1 من الملف يفحصها قبل أن يُنشئ أي شيء، ويتوقف برسالة `ORA-20000` فيها الأمر الذي يحل النقص:
 
-```bash
-grep -nE "\{\{[A-Z_]+\}\}" wccms_oracle_schema.sql wccms_oracle_procedures.sql
-```
+- صلاحيات `CREATE TABLE` و `CREATE PROCEDURE` و `CREATE TYPE`.
+- مساحة (quota) في الـ tablespace الافتراضي له.
+- قراءة جداول `HOS` الثمانية، بأي طريقة: مالك `HOS`، أو `GRANT SELECT`، أو عبر role مثل DBA. الـ procedures بـ `AUTHID CURRENT_USER` فتكفي الـ role.
+- ألا يكون فيه كائن بأحد أسماء WCCMS.
 
-**6.2 الجداول** (DBA، بـ SQL*Plus مع `NLS_LANG=AMERICAN_AMERICA.AL32UTF8` حتى يُحفظ النص العربي سليماً):
-
-```sql
-@wccms_oracle_schema.sql
-```
-
-الملف يتوقف عند أول خطأ. إذا رفض Oracle أسطر `GRANT SELECT ON HOS.*` (ORA-01031) فيجب أن ينفّذها مالك المخطط `HOS`، ثم يُكمل الباقي.
-
-**6.3 الـ procedures:**
+لا يُقبل `SYS`. في الإنتاج الأفضل حساب مخصص، يُنشئه الـ DBA:
 
 ```sql
-@wccms_oracle_procedures.sql
+CREATE USER WCCMS IDENTIFIED BY "<كلمة مرور>" DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS;
+GRANT CREATE SESSION, CREATE TABLE, CREATE PROCEDURE, CREATE TYPE TO WCCMS;
+GRANT SELECT ON HOS.MR_PATIENT_TB TO WCCMS;   -- وكذلك بقية الجداول الثمانية
 ```
 
-**تحقق:**
+**6.2 التنفيذ.** في SQL Developer: الصق الملف كاملاً في Worksheet واحدة (من محرر يعرض العربي سليماً)، ثم **Run Script (F5)**. أو بـ SQL*Plus مع `NLS_LANG=AMERICAN_AMERICA.AL32UTF8` حتى يُحفظ النص العربي سليماً:
 
 ```sql
-SELECT COUNT(*) FROM all_tables WHERE owner = 'WCCMS';                                         -- 20
-SELECT object_name, object_type FROM all_objects WHERE owner = 'WCCMS' AND status = 'INVALID';  -- لا صفوف
-SELECT COUNT(*) FROM WCCMS.WC_ASSESSMENT_CHOICE_TB;                                            -- 46
+@wccms_oracle_install.sql
 ```
 
-إذا ظهر كائن INVALID: `SHOW ERRORS PROCEDURE WCCMS.<الاسم>` يعرض السطر والسبب.
+الملف يتوقف عند أول خطأ. لإعادة التشغيل من البداية: نفّذ `wccms_oracle_uninstall.sql` بالحساب نفسه. يحذف كائنات WCCMS بأسمائها فقط، ولا يلمس `HOS` ولا غيره.
 
-**6.4 (اختياري) المفاتيح المركّبة إلى HOS:** فقط إذا تحقق الشرطان في الخطوة 3. أزل التعليق عن القسم 8 في آخر `wccms_oracle_schema.sql` ونفّذه (يحتاج `GRANT REFERENCES` من مالك `HOS`)، ثم اضبط `HOSPITAL_FOREIGN_KEYS=true`. إن فشل أي مفتاح بـ ORA-02298 فهناك صفوف عيادة ترمز لمريض/موظف غير موجود: صحّحها أولاً.
+**تحقق:** آخر الملف يطبع النتائج بنفسه:
 
-**6.5 (إلزامي) فحص الإجراءات على القاعدة الحقيقية، قبل التشغيل الفعلي:** بالمستخدم `WCCMS`، من مجلد `oracle-test`:
+| الاستعلام | المتوقع |
+| --- | --- |
+| `INSTALLED_IN` | الحساب المتصل |
+| `TABLES_COUNT` | 20 |
+| الكائنات INVALID | لا صفوف |
+| `PLSQL_COUNT` | 16 |
+| `CHOICES_COUNT` | 46 |
+| `HOS_TABLES` | 8 |
+
+إذا ظهر كائن INVALID: `SHOW ERRORS PROCEDURE <الاسم>` يعرض السطر والسبب.
+
+**6.3 —** (لم تعد خطوة منفصلة: الـ procedures في القسم 7 من الملف نفسه.)
+
+**6.4 (اختياري) المفاتيح المركّبة إلى HOS:** فقط إذا تحقق الشرطان في الخطوة 3. أزل التعليق عن القسم 9 في آخر `wccms_oracle_install.sql` ونفّذه بحساب WCCMS. يحتاج `GRANT REFERENCES` مباشراً من مالك `HOS`، إلا إذا كان الحساب هو `HOS` نفسه، ثم اضبط `HOSPITAL_FOREIGN_KEYS=true`. إن فشل أي مفتاح بـ ORA-02298 فهناك صفوف عيادة ترمز لمريض/موظف غير موجود: صحّحها أولاً.
+
+**6.5 (إلزامي) فحص الإجراءات على القاعدة الحقيقية، قبل التشغيل الفعلي:** بحساب WCCMS، من مجلد `oracle-test` (يحتاج SQL*Plus):
 
 ```powershell
 cd oracle-test
 $env:NLS_LANG = 'AMERICAN_AMERICA.AL32UTF8'
-sqlplus WCCMS/<كلمة المرور>@//<الخادم>:1521/<service> "@live_check.sql" <HOSPITAL_NO> <EMP_SERIAL لممرض> <MRP_PATREC_CODE لمريض>
+sqlplus <الحساب>/<كلمة المرور>@//<الخادم>:1521/<service> "@live_check.sql" <HOSPITAL_NO> <EMP_SERIAL لممرض> <MRP_PATREC_CODE لمريض>
 ```
 
 - الموظف: أي موظف نشط في هذا المستشفى **ليس له حساب WCCMS بعد** (يمكن اختياره من قائمة الممرضين التي تعدّها الخطوة 1).
@@ -289,29 +294,28 @@ sqlplus WCCMS/<كلمة المرور>@//<الخادم>:1521/<service> "@live_che
 
 ---
 
-## الخطوة 7: قائمة الفحص بالمستخدم WCCMS
+## الخطوة 7: قائمة الفحص بحساب WCCMS
 
-اضبط `.env` كما في الخطوة 2 (`DB_USERNAME=WCCMS`)، ثم:
+اضبط `.env` كما في الخطوة 2 (`DB_USERNAME` = الحساب الذي نُفّذ به ملف SQL)، ثم:
 
 ```bash
 php artisan config:clear
 php artisan wccms:check-hospital
 ```
 
-هذه المرة يثبت الفحص أيضاً أن صلاحيات `WCCMS` على جداول `HOS` كاملة.
+هذه المرة يثبت الفحص أيضاً أن صلاحيات حساب WCCMS على جداول `HOS` كاملة.
 
 **تحقق:** `التحذيرات: 0`، والنتائج نفسها التي ظهرت في الخطوة 1.
 
 ---
 
-## الخطوة 8: الدخول والصلاحيات
+## الخطوة 8: الوصول إلى النظام
 
-- **من يدخل يقرّره نظام المستشفى.** الدخول بـ JWT منه، و `PER_USER_USERNAME` يساوي `sub` في التوكن.
-- **الحساب يُنشأ عند أول دخول** في `WC_USERS_TB`، مفعّلاً.
-- **شاشة المستخدمين (`/admin`)** تربط أي مستخدم بموظف فعّال من مستشفاه، أو توقف الحساب. الربط يُكتب في `PER_USER_EMP_CD` و `PER_USER_HOS_NO` فقط.
-- حساب مربوط بموظف من مستشفى آخر لا يظهر له موظف هنا (لا يُربط بموظف هذا المستشفى الذي يحمل الرقم نفسه).
+- **لا تسجيل دخول ولا صلاحيات في WCCMS.** من يصل إلى الخادم يفتح الصفحة الرئيسية مباشرة، وكل الشاشات متاحة له.
+- **المستشفى هو من يتحكم بمن يصل:** الشبكة الداخلية، أو جدار الحماية، أو بوابة المستشفى أمام الخادم. لا تجعل الخادم متاحاً من خارج شبكة المستشفى.
+- **«أُدخل بواسطة»:** كل صف يُحفظ بحساب النظام الوحيد `WCCMS_SYSTEM` في `WC_USERS_TB`، وينشئه التطبيق تلقائياً عند أول حفظ. من قام بالعمل السريري يُحفظ منفصلاً: الممرض والطبيب وفريق الجروح المختارون من قائمة الموظفين في كل نموذج.
 
-**تحقق:** أول دخول يفتح لوحة التحكم، ويظهر الصف في `WC_USERS_TB` بقيمة `PER_USER_IS_ACTIVE = 1`.
+**تحقق:** فتح عنوان الخادم يعرض لوحة التحكم مباشرة، وبعد أول طلب تحويل يظهر صف `WCCMS_SYSTEM` في `WC_USERS_TB`.
 
 ---
 
@@ -327,7 +331,6 @@ php artisan view:cache
 
 - [ ] `oracle-test/run.ps1` أو `live_check.sql`: `SMOKE TEST: PASS` (الخطوتان 4 و 6.5).
 - [ ] `wccms:check-hospital`: `التحذيرات: 0` (الخطوة 7).
-- [ ] ربط مستخدم بموظف من شاشة المستخدمين؛ القائمة فيها موظفو هذا المستشفى الفعّالون فقط (كل الوظائف، فالحساب قد يكون لأي موظف).
 - [ ] حقول الطبيب تعرض الأطباء فقط، وحقول الممرض الممرضين فقط، وحقل فريق الجروح الاثنين معاً، ولا يظهر تنبيه «تعرض كل الموظفين النشطين».
 - [ ] البحث عن مريض برقم الوثيقة (`MRP_ID`)، وبرقم الملف (`MRP_PATREC_CODE`)، وبجزء من الاسم: النتائج من هذا المستشفى فقط.
 - [ ] البحث بنص فيه حروف في خانة رقمية لا يُظهر خطأ `ORA-01722`.
@@ -349,7 +352,7 @@ php artisan view:cache
 
 | الخطأ | السبب | الحل |
 | --- | --- | --- |
-| كل الحقول فارغة في الشاشات بلا خطأ | `ATTR_CASE` ما زال `CASE_LOWER` | الخطوة 5.3 ثم `php artisan config:clear` |
+| كل الحقول فارغة في الشاشات بلا خطأ | `ATTR_CASE` ما زال `CASE_LOWER` | الخطوة 5.2 (`config/oracle.php`) ثم `php artisan config:clear` |
 | `ORA-00942: table or view does not exist` | `HOSPITAL_SCHEMA` خطأ، أو لا يوجد `GRANT SELECT` على جدول HOS | الخطوة 2 والخطوة 6.2، ثم `wccms:check-hospital` |
 | `ORA-00933` أو `ORA-00923` في استعلام فيه حدّ للصفوف | `DB_SERVER_VERSION` ليس `11g` (يُولَّد `FETCH FIRST`) | الخطوة 2 |
 | `ORA-00972: identifier is too long` | `ORA_MAX_NAME_LEN` ليس 30 | الخطوة 2 |
@@ -363,4 +366,3 @@ php artisan view:cache
 | `ORA-02291: parent key not found` | المفاتيح المركّبة مفعّلة والرمز غير موجود في HOS | تحقق من الرمز |
 | `ORA-02292` عند الحذف في نظام المستشفى | المفاتيح المركّبة مفعّلة وسجل العيادة يشير لهذا المريض أو الموظف | مقصود؛ انظر الخطوة 3 |
 | نص عربي يظهر `???` | `NLS_LANG` ليس AL32UTF8 عند تشغيل السكربت | أعد التشغيل بالإعداد الصحيح |
-| «بيانات التقييم أطول من المسموح» | XML المراجعة أكبر من 32 KB (حد معامل PL/SQL) | ملاحظات أقصر |

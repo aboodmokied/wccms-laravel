@@ -20,7 +20,6 @@ use App\Services\HospitalPatientSyncService;
 use App\Services\ReportingService;
 use App\Services\Reports\MonthlyCaseReportService;
 use Carbon\CarbonImmutable;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -95,12 +94,7 @@ class HospitalIsolationTest extends TestCase
         $this->assertSame([3001], $listed->pluck('EMP_SERIAL')->all());
         $this->assertSame($nurse->full_name, $listed->first()->full_name);
 
-        $token = JWT::encode(
-            ['sub' => $this->admin()->PER_USER_USERNAME, 'iat' => time(), 'exp' => time() + 3600],
-            config('services.hospital_auth.jwt_secret'),
-            'HS256'
-        );
-        $response = $this->call('GET', route('requests.create'), [], ['hospital_token' => $token]);
+        $response = $this->get(route('requests.create'));
         $response->assertOk()
             ->assertSee('ممرضة المستشفى')
             ->assertDontSee('غريب تماماً')

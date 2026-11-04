@@ -24,7 +24,7 @@
                         <select name="discharging_nurse_code" class="form-select" required>
                             <option value="">اختر الممرض المنفذ للتخريج...</option>
                             @foreach($nurses as $emp)
-                                <option value="{{ $emp->EMP_SERIAL }}" {{ (Auth::user()->employee?->EMP_SERIAL === $emp->EMP_SERIAL) ? 'selected' : '' }}>
+                                <option value="{{ $emp->EMP_SERIAL }}" @selected((string) old('discharging_nurse_code') === (string) $emp->EMP_SERIAL)>
                                     {{ $emp->full_name }} ({{ $emp->job_title ?? 'موظف عيادة' }})
                                 </option>
                             @endforeach

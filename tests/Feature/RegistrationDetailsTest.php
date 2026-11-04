@@ -10,7 +10,6 @@ use App\Models\WcDepartment;
 use App\Models\WcProcedure;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -28,8 +27,6 @@ class RegistrationDetailsTest extends TestCase
     private WcProcedure $procedure;
 
     private WcRegistration $registration;
-
-    private string $jwtToken;
 
     protected function setUp(): void
     {
@@ -83,18 +80,11 @@ class RegistrationDetailsTest extends TestCase
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-        $this->jwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
     }
 
     public function test_can_view_registration_details_page(): void
     {
-        $response = $this->call('GET', "/registrations/{$this->registration->WC_REG_CODE}", [], ['hospital_token' => $this->jwtToken]);
+        $response = $this->get("/registrations/{$this->registration->WC_REG_CODE}");
 
         $response->assertStatus(200);
         $response->assertSee('أحمد محمود علي');
@@ -124,7 +114,7 @@ class RegistrationDetailsTest extends TestCase
             'WC_DREV_GENERAL_NOTES' => 'المراجعة الأحدث',
         ]);
 
-        $response = $this->call('GET', "/registrations/{$this->registration->WC_REG_CODE}", [], ['hospital_token' => $this->jwtToken]);
+        $response = $this->get("/registrations/{$this->registration->WC_REG_CODE}");
 
         $response->assertOk();
         $response->assertSeeInOrder(['المراجعة الأحدث', 'المراجعة الأقدم']);
@@ -135,7 +125,7 @@ class RegistrationDetailsTest extends TestCase
         $response = $this->call('PUT', "/registrations/{$this->registration->WC_REG_CODE}", [
             'procedure_code' => $this->procedure->WC_PROC_CODE,
             'pmh_notes' => 'تاريخ مرضي سابق: السكري من النوع الثاني',
-        ], ['hospital_token' => $this->jwtToken]);
+        ]);
 
         $response->assertRedirect();
 

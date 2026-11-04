@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\WcReportExport;
 use App\Services\Reports\MonthlyReportWorkbook;
+use App\Support\SystemUser;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,9 +24,9 @@ class MonthlyReportExportTest extends TestCase
         $this->seedWorkbookCases();
         $departments = [$this->reportDepartment('Medical Male')->WC_DEPT_CODE];
 
-        $response = $this->call('GET', route('reports.monthly.export', [
+        $response = $this->get(route('reports.monthly.export', [
             'from' => '2025-11', 'to' => '2025-12', 'departments' => $departments,
-        ]), [], $this->reportCookies());
+        ]));
 
         $response->assertDownload('monthly-cases-2025-11-to-2025-12.xlsx');
         $sheets = $this->readSheets($response->baseResponse->getFile()->getPathname());
@@ -41,7 +42,7 @@ class MonthlyReportExportTest extends TestCase
         $this->assertCount(7, $sheets[MonthlyReportWorkbook::READMISSIONS_SHEET]);
 
         $export = WcReportExport::query()->sole();
-        $this->assertSame($this->reportUser()->PER_USER_CODE, $export->WC_RPEX_USER_CD);
+        $this->assertSame(SystemUser::CODE, $export->WC_RPEX_USER_CD);
         $this->assertSame('2026-01-05 10:00:00', $export->WC_RPEX_EXPORTED_AT->toDateTimeString());
         $this->assertSame('2025-11-01', $export->WC_RPEX_PERIOD_FROM->toDateString());
         $this->assertSame('2025-12-01', $export->WC_RPEX_PERIOD_TO->toDateString());
@@ -58,7 +59,7 @@ class MonthlyReportExportTest extends TestCase
             'dischargedAt' => CarbonImmutable::parse('2025-11-22 13:00'),
         ]);
 
-        $response = $this->call('GET', route('reports.monthly.export', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.export', ['from' => '2025-11', 'to' => '2025-11']));
 
         $response->assertDownload('monthly-cases-2025-11.xlsx');
         $row = $this->readSheets($response->baseResponse->getFile()->getPathname())[MonthlyReportWorkbook::CASES_SHEET][1];
@@ -74,7 +75,7 @@ class MonthlyReportExportTest extends TestCase
     {
         $this->registerCase();
 
-        $response = $this->call('GET', route('reports.monthly.export', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.export', ['from' => '2025-11', 'to' => '2025-11']));
 
         $zip = new ZipArchive;
         $zip->open($response->baseResponse->getFile()->getPathname());
@@ -84,17 +85,9 @@ class MonthlyReportExportTest extends TestCase
         $zip->close();
     }
 
-    public function test_unauthenticated_export_redirects_and_records_nothing(): void
-    {
-        $response = $this->get(route('reports.monthly.export', ['from' => '2025-11', 'to' => '2025-11']));
-
-        $response->assertRedirect(config('services.hospital_auth.login_url', '/mock-hospital-auth'));
-        $this->assertDatabaseCount('wc_report_export_tb', 0);
-    }
-
     public function test_invalid_range_exports_nothing(): void
     {
-        $response = $this->call('GET', route('reports.monthly.export', ['from' => '2025-12', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.export', ['from' => '2025-12', 'to' => '2025-11']));
 
         $response->assertSessionHasErrors(['to' => 'شهر النهاية يجب أن يكون بعد شهر البداية أو مساوياً له.']);
         $this->assertDatabaseCount('wc_report_export_tb', 0);

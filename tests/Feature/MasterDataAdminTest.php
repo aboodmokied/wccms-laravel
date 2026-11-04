@@ -2,14 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\WcDepartment;
 use App\Models\WcDiagnosis;
 use App\Models\WcDressing;
 use App\Models\WcPmh;
 use App\Models\WcProcedure;
 use App\Models\WcWoundType;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -18,58 +16,12 @@ class MasterDataAdminTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $adminUser;
-
-    private User $nurseUser;
-
-    private string $adminJwtToken;
-
-    private string $nurseJwtToken;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->adminUser = User::create([
-            'PER_USER_CODE' => (string) Str::uuid(),
-            'PER_USER_USERNAME' => 'admin_user',
-            'PER_USER_ROLE' => 'ADMIN',
-            'PER_USER_IS_ACTIVE' => 1,
-        ]);
-
-        $this->nurseUser = User::create([
-            'PER_USER_CODE' => (string) Str::uuid(),
-            'PER_USER_USERNAME' => 'nurse_user',
-            'PER_USER_ROLE' => 'NURSE',
-            'PER_USER_IS_ACTIVE' => 1,
-        ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-
-        $this->adminJwtToken = JWT::encode([
-            'sub' => $this->adminUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
-
-        $this->nurseJwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
-    }
-
     /**
-     * Settings are open to every signed-in user; the hospital permission system decides who reaches WCCMS.
+     * Settings open with no sign-in or role: the hospital decides who reaches WCCMS.
      */
-    public function test_nurses_can_access_master_data_admin_routes(): void
+    public function test_master_data_admin_routes_open_without_sign_in(): void
     {
-        $response = $this->call(
-            'GET',
-            '/admin/departments',
-            [],
-            ['hospital_token' => $this->nurseJwtToken]
-        );
+        $response = $this->get('/admin/departments');
 
         $response->assertOk();
     }
@@ -89,7 +41,6 @@ class MasterDataAdminTest extends TestCase
             'GET',
             '/admin/departments',
             ['search' => 'الجراحة'],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertOk();
@@ -106,7 +57,6 @@ class MasterDataAdminTest extends TestCase
             'POST',
             '/admin/medications',
             ['name' => 'مرهم السيلفر نترات الإضافي'],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertRedirect();
@@ -133,7 +83,6 @@ class MasterDataAdminTest extends TestCase
             'POST',
             '/admin/dressings',
             ['name' => 'ضمادة رغوية ممتازة'],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertRedirect();
@@ -155,7 +104,6 @@ class MasterDataAdminTest extends TestCase
             'PUT',
             "/admin/procedures/{$procedure->WC_PROC_CODE}",
             ['name' => 'تنظيف وتنضير الجرح السريري'],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertRedirect();
@@ -183,7 +131,6 @@ class MasterDataAdminTest extends TestCase
             'PATCH',
             "/admin/wound-types/{$woundType->WC_WTYPE_CODE}/toggle",
             [],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response->assertRedirect();
@@ -198,7 +145,6 @@ class MasterDataAdminTest extends TestCase
             'PATCH',
             "/admin/wound-types/{$woundType->WC_WTYPE_CODE}/toggle",
             [],
-            ['hospital_token' => $this->adminJwtToken]
         );
 
         $response2->assertRedirect();
@@ -226,11 +172,11 @@ class MasterDataAdminTest extends TestCase
             'WC_DIAG_IS_ACTIVE' => 1,
         ]);
 
-        $response1 = $this->call('GET', '/admin/pmh', [], ['hospital_token' => $this->adminJwtToken]);
+        $response1 = $this->get('/admin/pmh');
         $response1->assertOk();
         $response1->assertSee('ارتفاع ضغط الدم الشرياني');
 
-        $response2 = $this->call('GET', '/admin/diagnoses', [], ['hospital_token' => $this->adminJwtToken]);
+        $response2 = $this->get('/admin/diagnoses');
         $response2->assertOk();
         $response2->assertSee('قرحة الشرايين الطرفية');
     }

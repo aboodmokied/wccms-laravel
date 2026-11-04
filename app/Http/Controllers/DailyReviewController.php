@@ -12,10 +12,10 @@ use App\Models\WcRegistration;
 use App\Models\WcScheduledReview;
 use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\WoundPhotoStorage;
+use App\Support\SystemUser;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -121,7 +121,7 @@ class DailyReviewController extends Controller
             }
             unset($detail);
 
-            $payload['entry_user_code'] = Auth::user()->PER_USER_CODE;
+            $payload['entry_user_code'] = SystemUser::code();
             $payload['assessed_at'] = now()->toDateTimeString();
             $this->clinicalWorkflows->completeReview($registration, $payload, $scheduledReview);
         } catch (\Throwable $exception) {

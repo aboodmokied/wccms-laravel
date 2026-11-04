@@ -1,5 +1,5 @@
 # Runs the WCCMS Oracle scripts on Oracle XE 11g (Docker) from an empty database, then the smoke test.
-#   .\run.ps1                    HOS stub + wccms_oracle_schema.sql + wccms_oracle_procedures.sql + 03_smoke_test.sql
+#   .\run.ps1                    HOS stub + wccms_oracle_install.sql + 03_smoke_test.sql
 #   .\run.ps1 -WithForeignKeys   the same, plus the optional composite foreign keys (section 8) and 05_fk_check.sql
 # Passwords: letters, digits and underscore only (they are passed unquoted to sqlplus).
 param(
@@ -47,8 +47,9 @@ function Copy-Prepared([string]$Source, [string]$Target) {
 }
 
 Copy-Prepared (Join-Path $PSScriptRoot '01_hos_stub.sql') 'build/01_hos_stub.sql'
-Copy-Prepared (Join-Path $Root 'wccms_oracle_schema.sql') 'build/02_wccms_oracle_schema.sql'
-Copy-Prepared (Join-Path $Root 'wccms_oracle_procedures.sql') 'build/02_wccms_oracle_procedures.sql'
+Copy-Prepared (Join-Path $PSScriptRoot '02_wccms_user.sql') 'build/02_wccms_user.sql'
+Copy-Prepared (Join-Path $Root 'wccms_oracle_install.sql') 'build/02_wccms_oracle_install.sql'
+Copy-Prepared (Join-Path $Root 'wccms_oracle_uninstall.sql') 'build/06_wccms_oracle_uninstall.sql'
 Copy-Prepared (Join-Path $PSScriptRoot '03_smoke_test.sql') 'build/03_smoke_test.sql'
 Copy-Prepared (Join-Path $PSScriptRoot '03_smoke_stub.sql') 'build/03_smoke_stub.sql'
 Copy-Prepared (Join-Path $PSScriptRoot '05_fk_check.sql') 'build/05_fk_check.sql'
@@ -59,13 +60,14 @@ if ($left) {
     Stop-Run 'A placeholder was not replaced (see above).'
 }
 
-# Section 8 of the schema (commented out): from the first GRANT REFERENCES line to the end, without "-- ".
-$schemaLines = [System.IO.File]::ReadAllLines((Join-Path $PSScriptRoot 'build/02_wccms_oracle_schema.sql'), $Utf8)
+# Section 9 of the install file (commented out): from its first ALTER TABLE line to the end, without "-- ".
+# The REFERENCES grants it needs are in 02_wccms_user.sql.
+$schemaLines = [System.IO.File]::ReadAllLines((Join-Path $PSScriptRoot 'build/02_wccms_oracle_install.sql'), $Utf8)
 $start = -1
 for ($i = 0; $i -lt $schemaLines.Length; $i++) {
-    if ($schemaLines[$i].StartsWith('-- GRANT REFERENCES ON HOS.MR_PATIENT_TB')) { $start = $i; break }
+    if ($schemaLines[$i].StartsWith('-- ALTER TABLE WC_USERS_TB ADD CONSTRAINT FK_WC_USERS_EMPLOYEE')) { $start = $i; break }
 }
-if ($start -lt 0) { Stop-Run 'Section 8 (GRANT REFERENCES) not found in wccms_oracle_schema.sql.' }
+if ($start -lt 0) { Stop-Run 'Section 9 (first ALTER TABLE) not found in wccms_oracle_install.sql.' }
 $fkLines = @('WHENEVER SQLERROR EXIT FAILURE ROLLBACK', 'SET DEFINE OFF')
 $fkLines += $schemaLines[$start..($schemaLines.Length - 1)] | ForEach-Object { $_ -replace '^-- ?', '' }
 $fkLines += 'PROMPT Composite foreign keys to HOS enabled.'
@@ -81,9 +83,12 @@ function Invoke-Sql([string]$User, [string]$Password, [string]$File) {
 }
 
 Invoke-Sql 'system' $OraclePassword 'build/01_hos_stub.sql'
-Invoke-Sql 'system' $OraclePassword 'build/02_wccms_oracle_schema.sql'
-Invoke-Sql 'system' $OraclePassword 'build/02_wccms_oracle_procedures.sql'
-if ($WithForeignKeys) { Invoke-Sql 'system' $OraclePassword 'build/04_enable_fk.sql' }
+Invoke-Sql 'system' $OraclePassword 'build/02_wccms_user.sql'
+# Install, uninstall, install again: the uninstall file must leave the account ready for a clean reinstall.
+Invoke-Sql 'wccms' $WccmsPassword 'build/02_wccms_oracle_install.sql'
+Invoke-Sql 'wccms' $WccmsPassword 'build/06_wccms_oracle_uninstall.sql'
+Invoke-Sql 'wccms' $WccmsPassword 'build/02_wccms_oracle_install.sql'
+if ($WithForeignKeys) { Invoke-Sql 'wccms' $WccmsPassword 'build/04_enable_fk.sql' }
 Invoke-Sql 'wccms' $WccmsPassword 'build/03_smoke_stub.sql'
 if ($WithForeignKeys) { Invoke-Sql 'wccms' $WccmsPassword 'build/05_fk_check.sql' }
 

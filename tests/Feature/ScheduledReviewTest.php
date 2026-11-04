@@ -16,7 +16,6 @@ use App\Models\WcRequestReg;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundType;
 use Database\Seeders\WcAssessmentChoiceSeeder;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -38,8 +37,6 @@ class ScheduledReviewTest extends TestCase
     private WcDressing $dressing;
 
     private WcMedication $medication;
-
-    private string $jwtToken;
 
     protected function setUp(): void
     {
@@ -121,13 +118,6 @@ class ScheduledReviewTest extends TestCase
             'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
             'WC_RDIAG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
         ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-        $this->jwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
     }
 
     /**
@@ -166,7 +156,6 @@ class ScheduledReviewTest extends TestCase
             'GET',
             '/reviews/scheduled',
             ['tab' => 'TODAY'],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertOk();
@@ -192,7 +181,6 @@ class ScheduledReviewTest extends TestCase
             'GET',
             '/reviews/scheduled',
             ['tab' => 'UPCOMING', 'search' => 'عبدالله'],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertOk();
@@ -210,12 +198,7 @@ class ScheduledReviewTest extends TestCase
             'WC_SREV_STATUS' => 'PENDING',
         ]);
 
-        $response = $this->call(
-            'GET',
-            "/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}/create",
-            [],
-            ['hospital_token' => $this->jwtToken]
-        );
+        $response = $this->get("/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}/create");
 
         $response->assertOk();
         $response->assertViewIs('reviews.daily_create');
@@ -237,7 +220,6 @@ class ScheduledReviewTest extends TestCase
             'POST',
             "/reviews/scheduled/{$scheduledReview->WC_SREV_CODE}/fulfill",
             [],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect(route('reviews.scheduled.create', $scheduledReview));
@@ -275,7 +257,6 @@ class ScheduledReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect(route('reviews.scheduled'));
@@ -315,7 +296,6 @@ class ScheduledReviewTest extends TestCase
                 'scheduled_date' => $newDate,
                 'notes' => 'تأجيل الموعد بطلب المريض',
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -347,7 +327,6 @@ class ScheduledReviewTest extends TestCase
             [
                 'notes' => 'تعذر حضور المريض',
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();
@@ -407,7 +386,6 @@ class ScheduledReviewTest extends TestCase
                     ],
                 ],
             ],
-            ['hospital_token' => $this->jwtToken]
         );
 
         $response->assertRedirect();

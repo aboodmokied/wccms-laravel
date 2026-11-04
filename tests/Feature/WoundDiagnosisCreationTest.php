@@ -13,8 +13,8 @@ use App\Models\WcMedication;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
+use App\Support\SystemUser;
 use Database\Seeders\WcAssessmentChoiceSeeder;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -38,8 +38,6 @@ class WoundDiagnosisCreationTest extends TestCase
     private WcDressing $dressing;
 
     private WcMedication $medication;
-
-    private string $jwtToken;
 
     protected function setUp(): void
     {
@@ -112,13 +110,6 @@ class WoundDiagnosisCreationTest extends TestCase
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-        $this->jwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
     }
 
     public function test_can_add_wound_diagnosis_with_dual_audit_tracking(): void
@@ -132,7 +123,7 @@ class WoundDiagnosisCreationTest extends TestCase
                 'dressing_code' => $this->dressing->WC_DRESS_CODE,
                 'medication_code' => $this->medication->WC_MED_CODE,
             ],
-        ], ['hospital_token' => $this->jwtToken]);
+        ]);
 
         $response->assertSessionHasNoErrors();
 
@@ -143,7 +134,7 @@ class WoundDiagnosisCreationTest extends TestCase
             'WC_RDIAG_WOUND_TYPE_CD' => $this->woundType->WC_WTYPE_CODE,
             'WC_RDIAG_DIAGNOSIS_CD' => $this->diagnosis->WC_DIAG_CODE,
             'WC_RDIAG_CLINICAL_EMP_CD' => $this->nurseEmployee->EMP_SERIAL,
-            'WC_RDIAG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
+            'WC_RDIAG_ENTRY_USER_CD' => SystemUser::CODE,
         ]);
     }
 

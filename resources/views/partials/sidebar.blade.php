@@ -85,30 +85,4 @@
 
     </nav>
 
-    {{-- Sidebar Footer: User Info + Logout --}}
-    <div class="m8-sidebar-footer">
-        <div class="m8-user-pill">
-            <div class="m8-user-avatar">
-                {{ mb_substr(auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'م', 0, 1) }}
-            </div>
-            <div class="d-flex flex-column text-truncate flex-grow-1">
-                <span class="fw-bold text-truncate" style="font-size: 0.82rem;">
-                    {{ auth()->user()?->employee?->full_name ?? auth()->user()?->PER_USER_USERNAME ?? 'مستخدم' }}
-                </span>
-                <span class="text-muted" style="font-size: 0.725rem;">
-                    @if(auth()->user()?->PER_USER_ROLE === 'ADMIN') مسؤول النظام
-                    @elseif(auth()->user()?->PER_USER_ROLE === 'NURSE') ممرض جروح
-                    @else مستخدم @endif
-                </span>
-            </div>
-        </div>
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="m8-logout-btn mt-2">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>تسجيل الخروج</span>
-            </button>
-        </form>
-    </div>
-
 </aside>

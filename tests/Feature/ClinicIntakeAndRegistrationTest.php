@@ -14,7 +14,6 @@ use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
 use App\Models\WcWoundType;
 use Database\Seeders\WcAssessmentChoiceSeeder;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -31,13 +30,10 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     private WcDepartment $department;
 
-    private string $secret = 'secret-key-change-in-production-32bytes';
-
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(WcAssessmentChoiceSeeder::class);
-        config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = User::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -63,22 +59,8 @@ class ClinicIntakeAndRegistrationTest extends TestCase
         ]);
     }
 
-    private function generateJwt(string $username): string
-    {
-        $payload = [
-            'sub' => $username,
-            'iat' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'hospital-auth-system',
-        ];
-
-        return JWT::encode($payload, $this->secret, 'HS256');
-    }
-
     public function test_clinic_nurse_can_view_incoming_queue(): void
     {
-        $token = $this->generateJwt('clinic_nurse_1');
-
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -90,8 +72,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->get(route('requests.index'));
+        $response = $this->get(route('requests.index'));
 
         $response->assertStatus(200);
         $response->assertSee('محمود مصطفى طه');
@@ -99,8 +80,6 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     public function test_clinic_nurse_can_start_ward_visit(): void
     {
-        $token = $this->generateJwt('clinic_nurse_1');
-
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -112,10 +91,9 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.visit', $req->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->EMP_SERIAL,
-            ]);
+        $response = $this->post(route('requests.visit', $req->WC_REQ_CODE), [
+            'clinic_nurse_code' => $this->employee->EMP_SERIAL,
+        ]);
 
         $response->assertStatus(302);
         $response->assertRedirect(route('requests.show', $req->WC_REQ_CODE));
@@ -129,8 +107,6 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     public function test_clinic_nurse_can_accept_referral_and_create_registration(): void
     {
-        $token = $this->generateJwt('clinic_nurse_1');
-
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -143,8 +119,7 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload());
+        $response = $this->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload());
 
         $response->assertStatus(302);
 
@@ -165,8 +140,6 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     public function test_clinic_nurse_can_accept_referral_with_clinical_data_and_diagnosis(): void
     {
-        $token = $this->generateJwt('clinic_nurse_1');
-
         $procedure = WcProcedure::create([
             'WC_PROC_CODE' => (string) Str::uuid(),
             'WC_PROC_NAME' => 'تنظيف وتضميد جراح أول',
@@ -197,11 +170,10 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload($woundType, $diagnosis, [
-                'procedure_code' => $procedure->WC_PROC_CODE,
-                'pmh_notes' => 'المريض يعاني من السكري الضغط',
-            ]));
+        $response = $this->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload($woundType, $diagnosis, [
+            'procedure_code' => $procedure->WC_PROC_CODE,
+            'pmh_notes' => 'المريض يعاني من السكري الضغط',
+        ]));
 
         $response->assertStatus(302);
 
@@ -221,8 +193,6 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     public function test_clinic_nurse_can_mark_referral_ineligible(): void
     {
-        $token = $this->generateJwt('clinic_nurse_1');
-
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -234,11 +204,10 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.ineligible', $req->WC_REQ_CODE), [
-                'reason' => 'الحالة السريرية للمريض لا تتطلب متابعة العيادة المتخصصة',
-                'clinic_nurse_code' => $this->employee->EMP_SERIAL,
-            ]);
+        $response = $this->post(route('requests.ineligible', $req->WC_REQ_CODE), [
+            'reason' => 'الحالة السريرية للمريض لا تتطلب متابعة العيادة المتخصصة',
+            'clinic_nurse_code' => $this->employee->EMP_SERIAL,
+        ]);
 
         $response->assertStatus(302);
         $response->assertRedirect(route('requests.index'));
@@ -251,8 +220,6 @@ class ClinicIntakeAndRegistrationTest extends TestCase
 
     public function test_clinic_nurse_can_accept_referral_with_initial_medication_creates_baseline_assessment(): void
     {
-        $token = $this->generateJwt('clinic_nurse_1');
-
         $woundType = WcWoundType::create([
             'WC_WTYPE_CODE' => (string) Str::uuid(),
             'WC_WTYPE_NAME' => 'جرح سكري',
@@ -283,10 +250,9 @@ class ClinicIntakeAndRegistrationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload($woundType, $diagnosis, [
-                'medication_code' => $medication->WC_MED_CODE,
-            ]));
+        $response = $this->post(route('requests.accept', $req->WC_REQ_CODE), $this->structuredAcceptancePayload($woundType, $diagnosis, [
+            'medication_code' => $medication->WC_MED_CODE,
+        ]));
 
         $response->assertStatus(302);
 

@@ -6,7 +6,6 @@ use App\Models\Employee;
 use App\Models\MrPatient;
 use App\Models\User;
 use App\Models\WcRequestReg;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -21,12 +20,9 @@ class MyRequestsAndCancellationTest extends TestCase
 
     private MrPatient $patient;
 
-    private string $secret = 'secret-key-change-in-production-32bytes';
-
     protected function setUp(): void
     {
         parent::setUp();
-        config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = User::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -46,22 +42,8 @@ class MyRequestsAndCancellationTest extends TestCase
         ]);
     }
 
-    private function generateJwt(string $username): string
-    {
-        $payload = [
-            'sub' => $username,
-            'iat' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'hospital-auth-system',
-        ];
-
-        return JWT::encode($payload, $this->secret, 'HS256');
-    }
-
     public function test_ward_nurse_can_view_submitted_referrals_list(): void
     {
-        $token = $this->generateJwt('ward_nurse_owner');
-
         WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -73,8 +55,7 @@ class MyRequestsAndCancellationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->get(route('requests.my'));
+        $response = $this->get(route('requests.my'));
 
         $response->assertStatus(200);
         $response->assertSee('خالد عبد الله سعيد');
@@ -82,8 +63,6 @@ class MyRequestsAndCancellationTest extends TestCase
 
     public function test_ward_nurse_can_cancel_pending_referral(): void
     {
-        $token = $this->generateJwt('ward_nurse_owner');
-
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -95,8 +74,7 @@ class MyRequestsAndCancellationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.cancel', $req->WC_REQ_CODE));
+        $response = $this->post(route('requests.cancel', $req->WC_REQ_CODE));
 
         $response->assertStatus(302);
         $response->assertRedirect(route('requests.my'));
@@ -109,8 +87,6 @@ class MyRequestsAndCancellationTest extends TestCase
 
     public function test_ward_nurse_cannot_cancel_handled_referral(): void
     {
-        $token = $this->generateJwt('ward_nurse_owner');
-
         $req = WcRequestReg::create([
             'WC_REQ_CODE' => (string) Str::uuid(),
             'WC_REQ_PATIENT_CD' => $this->patient->MRP_PATREC_CODE,
@@ -122,8 +98,7 @@ class MyRequestsAndCancellationTest extends TestCase
             'WC_REQ_CREATED_AT' => now(),
         ]);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.cancel', $req->WC_REQ_CODE));
+        $response = $this->post(route('requests.cancel', $req->WC_REQ_CODE));
 
         $response->assertSessionHas('error');
         $this->assertDatabaseHas('wc_request_reg_tb', [

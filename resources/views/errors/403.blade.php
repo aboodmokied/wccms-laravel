@@ -54,7 +54,7 @@
     <div class="card">
         <h1>غير مصرح بالوصول (403)</h1>
         <p>{{ $message ?? 'غير مصرح لك بالوصول إلى هذه الصفحة' }}</p>
-        <a href="{{ config('services.hospital_auth.login_url', 'http://hospital.local/login') }}" class="btn">العودة لبوابة المستشفى</a>
+        <a href="{{ url('/dashboard') }}" class="btn">العودة للصفحة الرئيسية</a>
     </div>
 </body>
 </html>

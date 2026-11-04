@@ -16,7 +16,7 @@ class MonthlyCaseSummaryTest extends TestCase
     {
         $this->seedWorkbookCases();
 
-        $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-12']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-12']));
 
         $summary = $response->viewData('summary');
         $this->assertSame([['2025-11', 125], ['2025-12', 79]], $this->monthCounts($summary));
@@ -42,7 +42,7 @@ class MonthlyCaseSummaryTest extends TestCase
             ],
         ]);
 
-        $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-11']));
 
         $summary = $response->viewData('summary');
         $this->assertSame([['2025-11', 1]], $this->monthCounts($summary));
@@ -57,7 +57,7 @@ class MonthlyCaseSummaryTest extends TestCase
         $this->registerCase(['registeredAt' => CarbonImmutable::parse('2025-04-02 09:00')]);
         $this->registerCase(['registeredAt' => CarbonImmutable::parse('2025-03-31 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.summary'), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.summary'));
 
         $months = $this->monthCounts($response->viewData('summary'));
         $this->assertCount(12, $months);
@@ -70,7 +70,7 @@ class MonthlyCaseSummaryTest extends TestCase
     {
         $this->registerCase(['patient' => $this->reportPatient(['sex' => null])]);
 
-        $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-11']));
 
         $this->assertSame(
             [['label' => 'Male', 'count' => 0], ['label' => 'Female', 'count' => 0], ['label' => 'Unknown', 'count' => 1]],
@@ -82,7 +82,7 @@ class MonthlyCaseSummaryTest extends TestCase
     {
         $this->seedWorkbookCases();
 
-        $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-12']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.summary', ['from' => '2025-11', 'to' => '2025-12']));
 
         $response->assertSeeInOrder(['Nov -2025', '125', 'Dec -2025', '79']);
         $response->assertSeeInOrder(['Male', '122', 'Female', '82']);
@@ -90,7 +90,7 @@ class MonthlyCaseSummaryTest extends TestCase
 
     public function test_rejects_an_end_month_before_the_start_month(): void
     {
-        $response = $this->call('GET', route('reports.monthly.summary', ['from' => '2025-12', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.summary', ['from' => '2025-12', 'to' => '2025-11']));
 
         $response->assertRedirect(route('reports.monthly.summary'));
         $response->assertSessionHasErrors(['to' => 'شهر النهاية يجب أن يكون بعد شهر البداية أو مساوياً له.']);

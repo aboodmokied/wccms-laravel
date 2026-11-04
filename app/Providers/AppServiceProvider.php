@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\User;
 use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
 use App\Services\ClinicalWorkflows\MySqlClinicalWorkflowGateway;
 use App\Services\ClinicalWorkflows\OracleClinicalWorkflowGateway;
@@ -12,7 +11,6 @@ use App\Services\HospitalPatientSyncServiceInterface;
 use App\Support\Hospital;
 use App\Support\HospitalStartupCheck;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
@@ -46,14 +44,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         app()->setLocale('ar');
-
-        Gate::define('admin-only', function (User $user) {
-            return (bool) $user->PER_USER_IS_ACTIVE && $user->PER_USER_ROLE === 'ADMIN';
-        });
-
-        Gate::define('clinic-staff', function (User $user) {
-            return (bool) $user->PER_USER_IS_ACTIVE && in_array($user->PER_USER_ROLE, ['ADMIN', 'NURSE'], true);
-        });
 
         $this->scheduleHospitalStartupCheck();
     }

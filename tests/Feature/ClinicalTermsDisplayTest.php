@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\WcAssessmentChoice;
 use App\Services\ClinicalWorkflows\ClinicalWorkflowGatewayInterface;
-use Firebase\JWT\JWT;
 use Illuminate\Support\Str;
 use Tests\StructuredWoundTestCase;
 
@@ -17,7 +16,7 @@ class ClinicalTermsDisplayTest extends StructuredWoundTestCase
     {
         $request = $this->pendingRequest();
 
-        $response = $this->call('GET', route('requests.show', $request->WC_REQ_CODE), [], $this->cookies());
+        $response = $this->get(route('requests.show', $request->WC_REQ_CODE));
 
         foreach (['Type of Wound', 'Diagnosis', 'Wound Status', 'Exudate Amount', 'Exudate Type', 'Wound Bed', 'Wound Margins',
             'Pain Severity', 'Type of DSG', 'Medication', 'Procedure', 'Allergies?', 'PMH', 'Swab Taken?',
@@ -36,7 +35,7 @@ class ClinicalTermsDisplayTest extends StructuredWoundTestCase
     {
         [$registration] = $this->registrationWithWound();
 
-        $response = $this->call('GET', route('reviews.daily.create', $registration), [], $this->cookies());
+        $response = $this->get(route('reviews.daily.create', $registration));
 
         $response->assertSeeInOrder(['Overall Outcome', 'Improved – Continuing Treatment', 'Worsened – Admitted', 'Death']);
         $response->assertSeeInOrder(['Wound Outcome', 'Improved – Follow-up', 'Healed', 'Worsened', 'Deceased']);
@@ -49,7 +48,7 @@ class ClinicalTermsDisplayTest extends StructuredWoundTestCase
         $payload = $this->registrationPayload();
         unset($payload['diagnoses'][0]['exudate_amount_choice_code']);
 
-        $response = $this->call('POST', route('requests.accept', $request->WC_REQ_CODE), $payload, $this->cookies());
+        $response = $this->call('POST', route('requests.accept', $request->WC_REQ_CODE), $payload);
 
         $response->assertSessionHasErrors(['diagnoses.0.exudate_amount_choice_code' => 'حقل Exudate Amount مطلوب.']);
         $this->assertDatabaseCount('wc_registration_tb', 0);
@@ -64,7 +63,7 @@ class ClinicalTermsDisplayTest extends StructuredWoundTestCase
             'details' => [$this->followupAssessment($wound)],
         ]);
 
-        $response = $this->call('GET', route('registrations.show', $registration), [], $this->cookies());
+        $response = $this->get(route('registrations.show', $registration));
 
         $response->assertSee('Improved – Continuing Treatment');
         $response->assertSee('Improved – Follow-up');
@@ -84,17 +83,5 @@ class ClinicalTermsDisplayTest extends StructuredWoundTestCase
 
         $this->assertSame(0, WcAssessmentChoice::query()->whereKeyNot($unnamed->getKey())->whereNull('WC_ACH_LABEL_EN')->count());
         $this->assertSame('Hyper Granulation', $unnamed->displayLabel());
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function cookies(): array
-    {
-        return ['hospital_token' => JWT::encode([
-            'sub' => $this->user->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], config('services.hospital_auth.jwt_secret'), 'HS256')];
     }
 }

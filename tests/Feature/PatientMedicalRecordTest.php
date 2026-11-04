@@ -17,7 +17,6 @@ use App\Models\WcRequestReg;
 use App\Models\WcScheduledReview;
 use App\Models\WcWoundPhoto;
 use App\Models\WcWoundType;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -28,25 +27,11 @@ class PatientMedicalRecordTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $secret = 'secret-key-change-in-production-32bytes';
-
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->withoutVite();
-        config([
-            'services.hospital_auth.jwt_secret' => $this->secret,
-            'services.hospital_auth.login_url' => 'http://hospital.local/login',
-        ]);
-    }
-
-    public function test_unauthenticated_patient_record_redirects_to_hospital_login(): void
-    {
-        $patient = $this->createPatient();
-
-        $this->get(route('patients.show', $patient->MRP_PATREC_CODE))
-            ->assertRedirect('http://hospital.local/login');
     }
 
     public function test_patient_record_orders_all_registrations_and_opens_newest_active(): void
@@ -264,14 +249,8 @@ class PatientMedicalRecordTest extends TestCase
     {
         $context = $this->createClinicalContext();
         $historical = $this->createRegistration($context, '2026-08-01 09:00:00', 'DISCHARGED');
-        $token = $this->jwtFor($context['user']);
 
-        $response = $this->call(
-            'GET',
-            route('registrations.show', $historical->WC_REG_CODE),
-            [],
-            ['hospital_token' => $token],
-        );
+        $response = $this->get(route('registrations.show', $historical->WC_REG_CODE));
 
         $response->assertOk();
         $response->assertSee(route('patients.show', $context['patient']->MRP_PATREC_CODE), false);
@@ -696,26 +675,9 @@ class PatientMedicalRecordTest extends TestCase
     /**
      * @param  array{user: User, employee: Employee, department: WcDepartment, patient: MrPatient}  $context
      */
-    private function jwtFor(User $user): string
-    {
-        return JWT::encode([
-            'sub' => $user->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'hospital-auth-system',
-        ], $this->secret, 'HS256');
-    }
-
     private function getPatientRecord(array $context): TestResponse
     {
-        $token = $this->jwtFor($context['user']);
-
-        return $this->call(
-            'GET',
-            route('patients.show', $context['patient']->MRP_PATREC_CODE),
-            [],
-            ['hospital_token' => $token],
-        );
+        return $this->get(route('patients.show', $context['patient']->MRP_PATREC_CODE));
     }
 
     /**

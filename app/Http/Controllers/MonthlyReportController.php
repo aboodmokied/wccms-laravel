@@ -7,6 +7,7 @@ use App\Models\WcDepartment;
 use App\Models\WcReportExport;
 use App\Services\Reports\MonthlyCaseReportService;
 use App\Services\Reports\MonthlyReportWorkbook;
+use App\Support\SystemUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -77,7 +78,7 @@ class MonthlyReportController extends Controller
         );
 
         WcReportExport::create([
-            'WC_RPEX_USER_CD' => $request->user()->PER_USER_CODE,
+            'WC_RPEX_USER_CD' => SystemUser::code(),
             'WC_RPEX_EXPORTED_AT' => now(),
             'WC_RPEX_PERIOD_FROM' => $from->toDateString(),
             'WC_RPEX_PERIOD_TO' => $to->toDateString(),

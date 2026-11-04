@@ -1,7 +1,7 @@
 # تجربة سكربتات Oracle على Oracle XE 11g قبل التسليم
 
 > **تنبيه:** هذه الأدوات لم تُشغَّل بعد (لا Docker ولا Oracle على جهاز التطوير). Docker غير مثبّت على جهاز التطوير الذي كُتبت عليه. شغّلها مرة واحدة على
-> جهاز فيه Docker قبل تسليم `wccms_oracle_schema.sql` و `wccms_oracle_procedures.sql`.
+> جهاز فيه Docker قبل تسليم `wccms_oracle_install.sql`.
 
 هذه الأدوات تشغّل ملفَّي Oracle الخاصين بـ WCCMS على قاعدة **Oracle XE 11.2.0.2** حقيقية داخل Docker.
 قاعدة المستشفى الحقيقية تعمل على 11g، فهذا أقرب اختبار ممكن لها.
@@ -20,8 +20,11 @@
    | المريض 5001 | موجود | موجود (شخص آخر) |
    | المريض 5002 | — | موجود |
 
-2. `wccms_oracle_schema.sql` ثم `wccms_oracle_procedures.sql` (بالمستخدم SYSTEM): الملفان نفساهما اللذان
-   سيُسلَّمان، بعد استبدال `{{WCCMS_PASSWORD}}` و `{{WCCMS_TABLESPACE}}` فقط.
+2. `02_wccms_user.sql` (بالمستخدم SYSTEM): ينشئ حساب التطبيق `WCCMS` بأقل ما يحتاجه، أي صلاحيات
+   الإنشاء ومساحة تخزين و `SELECT` على جداول HOS الثمانية و `REFERENCES` على جدولي المفاتيح الاختيارية.
+   ثم `wccms_oracle_install.sql` (بالمستخدم `WCCMS`): الملف نفسه الذي سيُسلَّم، بلا أي تعديل، لأنه يثبّت في
+   الحساب المتصل. ثم `wccms_oracle_uninstall.sql` ثم التثبيت مرة ثانية، للتأكد أن ملف الحذف يترك الحساب
+   جاهزاً لإعادة تثبيت نظيفة.
 3. `03_smoke_stub.sql` ← `03_smoke_test.sql` (بالمستخدم `WCCMS`، أي صلاحيات التطبيق نفسها): يتحقق أولاً أن WCCMS يقرأ جداول HOS الثمانية وأن الرموز المستخدمة موجودة، ثم يُدخل مستخدماً وطلبَي تحويل، ثم يستدعي
    الإجراءات الأربعة ببيانات XML كما يرسلها التطبيق، ويتحقق من:
    - كل صف أُنشئ يحمل `HOS_NO = 1` (التسجيل، الجروح، التقييمات، الصور، زيارة المراجعة).
@@ -95,7 +98,7 @@ sqlplus WCCMS/<كلمة المرور>@//<الخادم>:1521/<service> "@live_che
 
 ## خطوة اختيارية: المفاتيح الأجنبية المركّبة (القسم 8)
 
-القسم 8 في آخر `wccms_oracle_schema.sql` مُعطَّل (تعليقات). لتجربته:
+القسم 9 في آخر `wccms_oracle_install.sql` مُعطَّل (تعليقات). لتجربته:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run.ps1 -WithForeignKeys
@@ -105,7 +108,7 @@ powershell -ExecutionPolicy Bypass -File .\run.ps1 -WithForeignKeys
 ./run.sh --with-fk
 ```
 
-السكربت ينسخ القسم 8 من الملف نفسه، يحذف `-- ` من أول كل سطر، وينفّذه (`build/04_enable_fk.sql`) قبل الاختبار.
+السكربت ينسخ القسم 9 من الملف نفسه (من أول `ALTER TABLE`)، يحذف `-- ` من أول كل سطر، وينفّذه بالمستخدم `WCCMS` (`build/04_enable_fk.sql`) قبل الاختبار.
 بعد الاختبار ينفّذ `05_fk_check.sql`، الذي يتحقق من:
 
 - وجود 14 مفتاحاً أجنبياً إلى `HOS`.
@@ -121,8 +124,7 @@ powershell -ExecutionPolicy Bypass -File .\run.ps1 -WithForeignKeys
 | المتغير | الافتراضي | الاستخدام |
 |---|---|---|
 | `ORACLE_PASSWORD` | `Oracle_Test_1` | كلمة مرور SYS و SYSTEM في الحاوية |
-| `WCCMS_PASSWORD` | `Wccms_Test_1` | تحل محل `{{WCCMS_PASSWORD}}` |
-| `WCCMS_TABLESPACE` | `USERS` | تحل محل `{{WCCMS_TABLESPACE}}` |
+| `WCCMS_PASSWORD` | `Wccms_Test_1` | كلمة مرور الحساب `WCCMS` الذي ينشئه `02_wccms_user.sql` |
 
 مثال في PowerShell:
 

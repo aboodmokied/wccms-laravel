@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Models\WcDepartment;
 use App\Models\WcRegistration;
 use App\Models\WcRequestReg;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -24,8 +23,6 @@ class RegistrationDischargeTest extends TestCase
     private WcDepartment $department;
 
     private WcRegistration $registration;
-
-    private string $jwtToken;
 
     protected function setUp(): void
     {
@@ -73,20 +70,13 @@ class RegistrationDischargeTest extends TestCase
             'WC_REG_ENTRY_USER_CD' => $this->nurseUser->PER_USER_CODE,
             'WC_REG_STATUS' => 'ACTIVE',
         ]);
-
-        $secret = config('services.hospital_auth.jwt_secret', 'wccms_hospital_jwt_secret_key_minimum_32_bytes!');
-        $this->jwtToken = JWT::encode([
-            'sub' => $this->nurseUser->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], $secret, 'HS256');
     }
 
     public function test_can_discharge_active_patient_registration(): void
     {
         $response = $this->call('POST', "/registrations/{$this->registration->WC_REG_CODE}/discharge", [
             'discharging_nurse_code' => $this->nurseEmployee->EMP_SERIAL,
-        ], ['hospital_token' => $this->jwtToken]);
+        ]);
 
         $response->assertRedirect();
 

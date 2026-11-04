@@ -16,7 +16,6 @@ use App\Models\WcRequestReg;
 use App\Models\WcWoundAssessment;
 use App\Models\WcWoundType;
 use Carbon\CarbonImmutable;
-use Firebase\JWT\JWT;
 use Illuminate\Support\Str;
 
 /**
@@ -251,21 +250,5 @@ trait WorkbookSyntheticCases
         }
 
         return $this->reportEmployee;
-    }
-
-    /**
-     * Cookies that sign the report user in through the hospital JWT middleware.
-     *
-     * @return array<string, string>
-     */
-    protected function reportCookies(): array
-    {
-        $token = JWT::encode([
-            'sub' => $this->reportUser()->PER_USER_USERNAME,
-            'iat' => time(),
-            'exp' => time() + 3600,
-        ], config('services.hospital_auth.jwt_secret'), 'HS256');
-
-        return ['hospital_token' => $token];
     }
 }

@@ -50,7 +50,7 @@ class HospitalStartupCheck
      */
     private const SUGGESTED_JOB_SHARE = 0.05;
 
-    private const GRANT_FIX = 'تأكد أن مستخدم WCCMS يملك GRANT SELECT على جداول HOS (القسم 2 من wccms_oracle_schema.sql)، وأن HOSPITAL_SCHEMA=HOS في .env.';
+    private const GRANT_FIX = 'تأكد أن الحساب في DB_USERNAME (الذي نُفّذ به wccms_oracle_install.sql) يقرأ جداول HOS (GRANT SELECT من مالك HOS)، وأن HOSPITAL_SCHEMA=HOS في .env.';
 
     /**
      * @return list<array{level: string, section: string, message: string, fix: ?string}>

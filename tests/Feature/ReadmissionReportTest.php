@@ -25,7 +25,7 @@ class ReadmissionReportTest extends TestCase
         ]);
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-12-01 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.readmissions', ['from' => '2025-12', 'to' => '2025-12']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.readmissions', ['from' => '2025-12', 'to' => '2025-12']));
 
         $readmissions = $response->viewData('readmissions');
         $this->assertCount(1, $readmissions);
@@ -41,7 +41,7 @@ class ReadmissionReportTest extends TestCase
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-11-22 09:00')]);
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-12-01 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.readmissions', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.readmissions', ['from' => '2025-11', 'to' => '2025-11']));
 
         $this->assertCount(0, $response->viewData('readmissions'));
         $response->assertSee('لا توجد حالات إعادة دخول في هذه الفترة.');
@@ -53,7 +53,7 @@ class ReadmissionReportTest extends TestCase
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2024-10-05 09:00')]);
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-11-03 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.readmissions', ['from' => '2025-11', 'to' => '2025-11']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.readmissions', ['from' => '2025-11', 'to' => '2025-11']));
 
         $this->assertSame(
             ['2024-10-05'],
@@ -65,7 +65,7 @@ class ReadmissionReportTest extends TestCase
     {
         $this->seedWorkbookCases();
 
-        $response = $this->call('GET', route('reports.monthly.readmissions', ['from' => '2025-11', 'to' => '2025-12']), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.readmissions', ['from' => '2025-11', 'to' => '2025-12']));
 
         $readmissions = $response->viewData('readmissions');
         $this->assertCount(6, $readmissions);
@@ -83,7 +83,7 @@ class ReadmissionReportTest extends TestCase
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-11-20 09:00')]);
         $this->registerCase(['patient' => $patient, 'registeredAt' => CarbonImmutable::parse('2025-12-02 09:00')]);
 
-        $response = $this->call('GET', route('reports.monthly.readmissions'), [], $this->reportCookies());
+        $response = $this->get(route('reports.monthly.readmissions'));
 
         $readmissions = $response->viewData('readmissions');
         $this->assertCount(1, $readmissions);

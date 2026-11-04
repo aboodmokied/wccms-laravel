@@ -14,7 +14,6 @@ use App\Models\WcRequestReg;
 use App\Models\WcWoundPhoto;
 use App\Models\WcWoundType;
 use Database\Seeders\WcAssessmentChoiceSeeder;
-use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -35,13 +34,10 @@ class WoundPhotoDocumentationTest extends TestCase
 
     protected WcDiagnosis $diagnosis;
 
-    private string $secret = 'secret-key-change-in-production-32bytes';
-
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(WcAssessmentChoiceSeeder::class);
-        config(['services.hospital_auth.jwt_secret' => $this->secret]);
 
         $this->user = PerUser::create([
             'PER_USER_CODE' => (string) Str::uuid(),
@@ -71,26 +67,11 @@ class WoundPhotoDocumentationTest extends TestCase
             'WC_DIAG_NAME' => 'Grade 2 Ulcer',
             'WC_DIAG_IS_ACTIVE' => 1,
         ]);
-
-        $this->actingAs($this->user);
-    }
-
-    private function generateJwt(string $username): string
-    {
-        $payload = [
-            'sub' => $username,
-            'iat' => time(),
-            'exp' => time() + 3600,
-            'iss' => 'hospital-auth-system',
-        ];
-
-        return JWT::encode($payload, $this->secret, 'HS256');
     }
 
     public function test_initial_wound_photo_is_stored_during_registration_acceptance(): void
     {
         Storage::fake('public');
-        $token = $this->generateJwt('test_nurse');
 
         $patient = MrPatient::factory()->male()->named('John Doe')->create([
             'MRP_ID' => 123456789,
@@ -109,23 +90,22 @@ class WoundPhotoDocumentationTest extends TestCase
 
         $photoFile = UploadedFile::fake()->image('wound_baseline.jpg', 800, 600);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('requests.accept', $requestModel->WC_REQ_CODE), [
-                'clinic_nurse_code' => $this->employee->EMP_SERIAL,
-                'department_code' => $this->department->WC_DEPT_CODE,
-                'has_allergies' => false,
-                'no_comorbidities' => true,
-                'next_visit_date' => now()->addWeek()->toDateString(),
-                'follow_up_objective' => 'متابعة الجرح',
-                'diagnoses' => [
-                    [
-                        ...$this->structuredAssessment(true),
-                        'wound_type_code' => $this->woundType->WC_WTYPE_CODE,
-                        'diagnosis_code' => $this->diagnosis->WC_DIAG_CODE,
-                        'wound_photos' => [$photoFile],
-                    ],
+        $response = $this->post(route('requests.accept', $requestModel->WC_REQ_CODE), [
+            'clinic_nurse_code' => $this->employee->EMP_SERIAL,
+            'department_code' => $this->department->WC_DEPT_CODE,
+            'has_allergies' => false,
+            'no_comorbidities' => true,
+            'next_visit_date' => now()->addWeek()->toDateString(),
+            'follow_up_objective' => 'متابعة الجرح',
+            'diagnoses' => [
+                [
+                    ...$this->structuredAssessment(true),
+                    'wound_type_code' => $this->woundType->WC_WTYPE_CODE,
+                    'diagnosis_code' => $this->diagnosis->WC_DIAG_CODE,
+                    'wound_photos' => [$photoFile],
                 ],
-            ]);
+            ],
+        ]);
 
         $response->assertRedirect();
 
@@ -142,7 +122,6 @@ class WoundPhotoDocumentationTest extends TestCase
     public function test_follow_up_wound_photo_is_stored_during_daily_review(): void
     {
         Storage::fake('public');
-        $token = $this->generateJwt('test_nurse');
 
         $patient = MrPatient::factory()->female()->named('Jane Smith')->create([
             'MRP_ID' => 987654321,
@@ -181,22 +160,21 @@ class WoundPhotoDocumentationTest extends TestCase
 
         $reviewPhotoFile = UploadedFile::fake()->image('review_followup.png', 800, 600);
 
-        $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post(route('registrations.daily-reviews.store', $registration->WC_REG_CODE), [
-                'submission_key' => (string) Str::uuid(),
-                'nurse_code' => $this->employee->EMP_SERIAL,
-                'overall_status' => 'WORSENED_STAY',
-                'general_notes' => 'متابعة سريرية للجرح',
-                'details' => [
-                    [
-                        ...$this->structuredAssessment(false),
-                        'registration_diagnosis_code' => $regDiag->WC_RDIAG_CODE,
-                        'outcome_status' => 'IMPROVED_FOLLOWUP',
-                        'clinical_observation' => 'تحسن في أطراف الجرح',
-                        'wound_photos' => [$reviewPhotoFile],
-                    ],
+        $response = $this->post(route('registrations.daily-reviews.store', $registration->WC_REG_CODE), [
+            'submission_key' => (string) Str::uuid(),
+            'nurse_code' => $this->employee->EMP_SERIAL,
+            'overall_status' => 'WORSENED_STAY',
+            'general_notes' => 'متابعة سريرية للجرح',
+            'details' => [
+                [
+                    ...$this->structuredAssessment(false),
+                    'registration_diagnosis_code' => $regDiag->WC_RDIAG_CODE,
+                    'outcome_status' => 'IMPROVED_FOLLOWUP',
+                    'clinical_observation' => 'تحسن في أطراف الجرح',
+                    'wound_photos' => [$reviewPhotoFile],
                 ],
-            ]);
+            ],
+        ]);
 
         $response->assertRedirect();
 
@@ -209,8 +187,7 @@ class WoundPhotoDocumentationTest extends TestCase
         $this->assertNotNull($photo);
         Storage::disk('public')->assertExists($photo->WC_PHOTO_PATH);
 
-        $detailsResponse = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->get(route('registrations.show', $registration->WC_REG_CODE));
+        $detailsResponse = $this->get(route('registrations.show', $registration->WC_REG_CODE));
 
         $detailsResponse->assertOk();
         $detailsResponse->assertSee('صور الجرح');
